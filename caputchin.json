@@ -2,7 +2,7 @@
   "id": "@caputchin/games-core",
   "version": "0.1.0",
   "displayName": "Caputchin Games — Core Pack",
-  "description": "First-party games seeding the Caputchin marketplace.",
+  "description": "The official Caputchin pack. Built playful, accessible, and surveillance-free.",
   "npm": "@caputchin/games-core",
   "games": ["./packages/leaf-memory"]
 }
