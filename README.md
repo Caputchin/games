@@ -34,26 +34,59 @@ caputchin-games/
 
 ## Local development
 
-The local-dev harness loads `@caputchin/widget` from jsDelivr and the local leaf-memory bundle from disk.
+Two harnesses, two trade-offs:
+
+| Harness | URL | What it tests | Requires HTTPS? |
+|---|---|---|---|
+| `examples/direct-mount.html` | `/examples/direct-mount.html` | Game DOM, leaf rendering, timer, replay, `bridge.pass` payload — bridge is mocked, widget iframe path bypassed | No — HTTP works |
+| `examples/host.html` | `/examples/host.html` | Full production path: `@caputchin/widget` mounts the sandboxed iframe, postMessage protocol, real `pass` CustomEvent | **Yes** — the published widget rejects non-HTTPS `game-src` as `invalid-config` |
+
+### Boot the harness
 
 ```bash
 pnpm install
-# Build all games once:
-pnpm build
-# Serve the harness on http://localhost:5173:
-pnpm dev:serve
-# Open http://localhost:5173/examples/host.html
+pnpm --filter @caputchin/leaf-memory build   # produces packages/leaf-memory/dist/leaf-memory.js
+pnpm dev:serve                                # default: http://localhost:5173
 ```
 
-To iterate on a single game with hot rebuild:
+For iterative dev with a watch-rebuild on save, in two terminals:
 
 ```bash
 # Terminal 1:
 pnpm --filter @caputchin/leaf-memory dev
 # Terminal 2:
 pnpm dev:serve
-# Reload the browser to pick up the new bundle.
 ```
+
+### Enable HTTPS for `host.html` (one-time mkcert setup)
+
+`host.html` exercises the real widget — which enforces HTTPS on `game-src`. Plain HTTP fires `invalid-config` and stays inert. To unblock:
+
+```bash
+# 1. Install mkcert (one-time, platform-specific):
+#    macOS:    brew install mkcert nss
+#    Linux:    sudo apt install libnss3-tools && \
+#              curl -JLO https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-v*-linux-amd64 && \
+#              chmod +x mkcert-v*-linux-amd64 && sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+#    Windows:  choco install mkcert  or  scoop install mkcert
+
+# 2. Trust the mkcert local CA (one-time):
+mkcert -install
+
+# 3. Generate localhost cert + key for this repo:
+mkdir -p examples/.cert
+cd examples/.cert
+mkcert -cert-file localhost.pem -key-file localhost-key.pem localhost 127.0.0.1
+cd ../..
+
+# 4. Restart the dev server — it auto-detects the cert pair:
+pnpm dev:serve
+# →  https://localhost:5173/examples/host.html
+```
+
+The `examples/.cert/` directory is git-ignored — never commit cert material.
+
+To revert to HTTP, just delete or rename `examples/.cert/`.
 
 ## Verification
 
