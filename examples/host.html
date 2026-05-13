@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leaf Memory — local dev harness</title>
+    <style>
+      body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 40rem; margin: 0 auto; color: #2B2926; }
+      h1 { color: #2F6640; margin-bottom: 0.25rem; }
+      p { color: #595550; margin-top: 0; }
+      caputchin-widget { display: block; margin-top: 1.5rem; min-height: 30rem; }
+      #log { font-family: ui-monospace, "SF Mono", monospace; font-size: 0.85rem; background: #1A1917; color: #E0F2DA; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem; min-height: 8rem; max-height: 14rem; overflow-y: auto; white-space: pre-wrap; }
+      #log .ev-pass { color: #6fe86f; }
+      #log .ev-start { color: #82cfff; }
+      #log .ev-error { color: #ff7070; }
+    </style>
+  </head>
+  <body>
+    <h1>Leaf Memory — local dev harness</h1>
+    <p>
+      Widget loaded from jsDelivr (<code>@caputchin/widget@1</code>).<br />
+      Game bundle loaded from local <code>packages/leaf-memory/dist/leaf-memory.js</code>.
+    </p>
+
+    <div id="widget-mount"></div>
+    <div id="log" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@caputchin/widget@1/dist/widget.js"></script>
+    <script>
+      // Build widget in JS so we can pass an absolute game-src derived from the
+      // current origin — the widget rejects relative URLs as invalid-config.
+      const mount = document.getElementById('widget-mount');
+      const log = document.getElementById('log');
+
+      const gameSrc = new URL(
+        '../packages/leaf-memory/dist/leaf-memory.js',
+        location.href,
+      ).toString();
+
+      const w = document.createElement('caputchin-widget');
+      w.setAttribute('mode', 'game-only');
+      w.setAttribute('game', '@caputchin/leaf-memory');
+      w.setAttribute('game-src', gameSrc);
+
+      function append(kind, detail) {
+        const line = document.createElement('div');
+        line.className = 'ev-' + kind;
+        line.textContent =
+          '[' + new Date().toLocaleTimeString() + '] ' + kind + ' ' + JSON.stringify(detail);
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+      w.addEventListener('start', (e) => append('start', e.detail));
+      w.addEventListener('pass', (e) => append('pass', e.detail));
+      w.addEventListener('error', (e) => append('error', e.detail));
+
+      mount.appendChild(w);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leaf Memory — direct-mount dev harness</title>
+    <style>
+      body { font-family: system-ui, sans-serif; padding: 1.5rem; max-width: 38rem; margin: 0 auto; color: #2B2926; }
+      h1 { color: #2F6640; margin-bottom: 0.25rem; }
+      p { color: #595550; margin-top: 0; }
+      .note { background: #F7F5F2; padding: 0.75rem 1rem; border-radius: 0.5rem; border-left: 4px solid #C2410C; margin-top: 1rem; font-size: 0.85rem; }
+      #game-mount { margin-top: 1.5rem; min-height: 30rem; border: 1px dashed #C4C0B8; border-radius: 0.5rem; }
+      #log { font-family: ui-monospace, "SF Mono", monospace; font-size: 0.85rem; background: #1A1917; color: #E0F2DA; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; min-height: 6rem; max-height: 12rem; overflow-y: auto; white-space: pre-wrap; }
+      #log .ev-pass { color: #6fe86f; }
+      #log .ev-error { color: #ff7070; }
+    </style>
+  </head>
+  <body>
+    <h1>Leaf Memory — direct-mount harness</h1>
+    <p>
+      Loads the game bundle directly into this page and invokes its registered
+      factory with a mocked bridge. Bypasses the widget iframe (the widget
+      requires <code>https</code> for <code>game-src</code>).
+    </p>
+    <p class="note">
+      For production-style testing through the real widget iframe, use
+      <code>host.html</code> from a context that serves over HTTPS (jsDelivr, a
+      Cloudflare Pages preview, a local <code>mkcert</code>-backed tunnel, etc.).
+      The direct-mount harness here exists for fast game-DOM iteration.
+    </p>
+
+    <div id="game-mount"></div>
+    <div id="log" aria-live="polite"></div>
+
+    <script>
+      // Mock the iframe-side Caputchin global before loading the bundle.
+      // The bundle's register() call writes into Caputchin.games.
+      globalThis.Caputchin = { games: {} };
+
+      const log = document.getElementById('log');
+      function append(kind, detail) {
+        const line = document.createElement('div');
+        line.className = 'ev-' + kind;
+        line.textContent =
+          '[' + new Date().toLocaleTimeString() + '] ' + kind + ' ' + JSON.stringify(detail);
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      const bridge = {
+        pass: (result) => append('pass', result),
+        error: (err) => append('error', err),
+      };
+    </script>
+    <script src="../packages/leaf-memory/dist/leaf-memory.js"></script>
+    <script>
+      const mount = document.getElementById('game-mount');
+      const factory = globalThis.Caputchin.games['@caputchin/leaf-memory'];
+      if (!factory) {
+        append('error', { code: 'bundle-load-failed', message: 'leaf-memory factory not registered' });
+      } else {
+        factory(mount, bridge);
+      }
+    </script>
+  </body>
+</html>
