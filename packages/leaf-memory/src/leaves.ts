@@ -1,7 +1,7 @@
 // Inlined SVG markup for each leaf shape. Bundle constraint: no external
 // fetches, no path-relative asset URLs. The strings render via innerHTML
 // inside an <svg> wrapper element so we keep them as raw markup.
-// See [game-distribution.md#bundle-constraint] for the why.
+// See [features/game-distribution.md#bundle-constraint] for the why.
 
 export type LeafId =
   | 'fern'
