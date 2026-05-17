@@ -1,6 +1,6 @@
 # Caputchin trademark and brand-usage guidelines
 
-This file is a copy of the canonical guidelines. The current published version will live at <https://caputchin.com/legal/trademark> once the wordmark registration completes; until then, this file is the published version.
+This file is a copy of the canonical guidelines published at <https://caputchin.com/trademark>.
 
 **Status:** "Caputchin" is currently an unregistered mark, claimed under common law via continuous use in commerce. Wordmark registration in EU + US is planned but has not been filed yet. Today, our enforcement layer is common-law trademark + these guidelines. We can send cease-and-desist letters and file platform takedowns; we cannot yet point to a registration certificate.
 
