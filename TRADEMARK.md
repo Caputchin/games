@@ -66,7 +66,7 @@ When the same project has both — e.g., npm package `caputchin-react-helper` wh
 
 ## Asking for permission
 
-Submit requests to `legal@caputchin.com` with:
+Submit requests to `info@caputchin.com` with:
 
 - Who you are (individual, company, project).
 - The proposed use of the marks (name, context, scope, geography).
