@@ -2,7 +2,7 @@
 
 This file is a copy of the canonical guidelines published at <https://caputchin.com/legal/trademark>.
 
-**Status:** "Caputchin" and the marks listed below are owned by **Praxalab** ([praxalab.com](https://praxalab.com)), an Australian business that operates the Caputchin product. They are common-law trademarks held through continuous use in commerce. Our enforcement layer is common-law trademark plus these guidelines. We can send cease-and-desist letters and file platform takedowns.
+**Status:** "Caputchin" and the marks listed below are owned by **Praxa Lab** ([praxalab.com](https://praxalab.com)), an Australian business that operates the Caputchin product. They are common-law trademarks held through continuous use in commerce. Our enforcement layer is common-law trademark plus these guidelines. We can send cease-and-desist letters and file platform takedowns.
 
 ## Underlying principle
 
@@ -10,7 +10,7 @@ Trademark protects users from being misled about who builds and operates Caputch
 
 ## Marks covered
 
-The following marks are owned by Praxalab and used to brand the Caputchin product:
+The following marks are owned by Praxa Lab and used to brand the Caputchin product:
 
 | Mark | Form |
 |---|---|
