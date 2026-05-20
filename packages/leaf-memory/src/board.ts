@@ -21,6 +21,7 @@ export interface BoardCallbacks {
 
 export interface BoardOptions {
   pairs: number;
+  cols: number;
   doc: Document;
   announcer: Announcer;
   callbacks: BoardCallbacks;
@@ -56,6 +57,7 @@ function defaultShuffle(n: number): number[] {
 export function createBoard(opts: BoardOptions): Board {
   const {
     pairs,
+    cols,
     doc,
     announcer,
     callbacks,
@@ -73,6 +75,7 @@ export function createBoard(opts: BoardOptions): Board {
 
   const root = doc.createElement('div');
   root.className = 'lm-grid';
+  root.style.gridTemplateColumns = `repeat(${cols}, max-content)`;
   root.setAttribute('role', 'grid');
   root.setAttribute('aria-label', 'Memory board');
 
@@ -185,11 +188,11 @@ export function createBoard(opts: BoardOptions): Board {
         break;
       case 'ArrowDown':
         event.preventDefault();
-        focusNeighbor(index, 3);
+        focusNeighbor(index, cols);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        focusNeighbor(index, -3);
+        focusNeighbor(index, -cols);
         break;
       default:
         break;

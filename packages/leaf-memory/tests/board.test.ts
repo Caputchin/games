@@ -28,6 +28,7 @@ describe('createBoard', () => {
   it('renders pairs × 2 cards with grid + gridcell roles', () => {
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: noOpCallbacks(),
@@ -46,6 +47,7 @@ describe('createBoard', () => {
     expect(() =>
       createBoard({
         pairs: 999,
+        cols: 3,
         doc: document,
         announcer: makeAnnouncer(),
         callbacks: noOpCallbacks(),
@@ -58,6 +60,7 @@ describe('createBoard', () => {
     const cb = noOpCallbacks();
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: cb,
@@ -77,6 +80,7 @@ describe('createBoard', () => {
     // So cards[0] and cards[3] share a leaf.
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: cb,
@@ -100,6 +104,7 @@ describe('createBoard', () => {
     const cb = noOpCallbacks();
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: cb,
@@ -129,6 +134,7 @@ describe('createBoard', () => {
     const cb = noOpCallbacks();
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: cb,
@@ -154,6 +160,7 @@ describe('createBoard', () => {
   it('arrow keys move focus across cells', () => {
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: noOpCallbacks(),
@@ -175,6 +182,7 @@ describe('createBoard', () => {
     const cb = noOpCallbacks();
     const board = createBoard({
       pairs: 3,
+      cols: 2,
       doc: document,
       announcer: makeAnnouncer(),
       callbacks: cb,
