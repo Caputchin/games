@@ -3,7 +3,8 @@
   "compilerOptions": {
     "lib": ["DOM", "ES2022"],
     "types": ["node"],
+    "resolveJsonModule": true,
     "outDir": "dist"
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "caputchin.json"]
 }

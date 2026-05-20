@@ -1,11 +1,11 @@
 // Scoped CSS for Leaf Memory. Injected into the iframe document on first
-// render. No external font fetches (CSP blocks them) — system font stack.
+// render. No external font fetches (CSP blocks them); system font stack.
 //
 // Brand palette: green-100 background, green-600 card backs, persimmon
 // accent-600 match flash. See docs/brand/design.md.
 //
 // Layout contract: the .lm-root stage is a fixed px footprint sized to
-// hold the largest grid (L4: 4 cols × 3 rows of 72px cells). Smaller
+// hold the largest grid (L4: 4 cols x 3 rows of 72px cells). Smaller
 // grids center within .lm-board-area. Start / win / loss screens share
 // the same stage so the iframe never changes size between states.
 
@@ -61,12 +61,12 @@ export const STYLES = `
   color: var(--neutral-800);
   opacity: 0.6;
   font-weight: 500;
-  margin-right: 0.25rem;
+  margin-inline-end: 0.25rem;
 }
 
-.lm-best { text-align: left; }
+.lm-best { text-align: start; }
 .lm-level { text-align: center; }
-.lm-time { text-align: right; }
+.lm-time { text-align: end; }
 .lm-time[data-hidden="true"] { visibility: hidden; }
 .lm-level[data-hidden="true"] { visibility: hidden; }
 

@@ -1,9 +1,10 @@
 // Board rendering + flip mechanics + keyboard navigation.
 // Owns the grid DOM and the per-cell state. Knows nothing about scoring
-// or the bridge — game.ts wires those.
+// or the bridge; game.ts wires those.
 
 import { LEAF_IDS, LEAVES, type LeafId } from './leaves.js';
 import type { Announcer } from './a11y.js';
+import type { Strings } from './strings.js';
 
 export interface Card {
   index: number;
@@ -24,6 +25,11 @@ export interface BoardOptions {
   cols: number;
   doc: Document;
   announcer: Announcer;
+  /** Localized strings + direction. Pass-through from game.ts so the
+   *  announcer, aria-labels, and any future board copy share one locale.
+   *  Optional so tests that don't care about locale can omit it; we fall
+   *  back to hardcoded English internally. */
+  strings?: Strings;
   callbacks: BoardCallbacks;
   shuffle?: (n: number) => number[];
   flipBackDelayMs?: number;
@@ -61,11 +67,31 @@ export function createBoard(opts: BoardOptions): Board {
     doc,
     announcer,
     callbacks,
+    strings,
     shuffle = defaultShuffle,
     flipBackDelayMs = DEFAULT_FLIP_BACK_MS,
     setTimeoutFn = setTimeout,
     clearTimeoutFn = clearTimeout,
   } = opts;
+
+  // Each board-side string falls back to hardcoded English when no
+  // strings helper is provided (legacy tests, defensive default).
+  function tBoard(key: 'announceRoundPassed' | 'announceMatch' | 'announceNoMatch' | 'ariaCard' | 'ariaBoard', vars?: Record<string, string | number>): string {
+    if (strings) return strings.t(key, vars);
+    const fallback: Record<string, string> = {
+      announceRoundPassed: 'Round passed',
+      announceMatch: 'Match',
+      announceNoMatch: 'No match',
+      ariaCard: 'Card {index}',
+      ariaBoard: 'Memory board',
+    };
+    const raw = fallback[key] ?? '';
+    if (!vars) return raw;
+    return raw.replace(/\{(\w+)\}/g, (_, name) => {
+      const v = vars[name];
+      return v === undefined ? `{${name}}` : String(v);
+    });
+  }
 
   if (pairs > LEAF_IDS.length) {
     throw new Error(
@@ -77,7 +103,7 @@ export function createBoard(opts: BoardOptions): Board {
   root.className = 'lm-grid';
   root.style.gridTemplateColumns = `repeat(${cols}, max-content)`;
   root.setAttribute('role', 'grid');
-  root.setAttribute('aria-label', 'Memory board');
+  root.setAttribute('aria-label', tBoard('ariaBoard'));
 
   const leaves = LEAF_IDS.slice(0, pairs);
   const deck: LeafId[] = [...leaves, ...leaves];
@@ -96,7 +122,7 @@ export function createBoard(opts: BoardOptions): Board {
     cell.type = 'button';
     cell.className = 'lm-cell';
     cell.setAttribute('role', 'gridcell');
-    cell.setAttribute('aria-label', `Card ${index + 1}`);
+    cell.setAttribute('aria-label', tBoard('ariaCard', { index: index + 1 }));
     cell.setAttribute('aria-pressed', 'false');
     cell.dataset['flipped'] = 'false';
     cell.dataset['matched'] = 'false';
@@ -148,7 +174,7 @@ export function createBoard(opts: BoardOptions): Board {
       const cleared = matches === pairs;
       firstPick = null;
       busy = false;
-      announcer.say(cleared ? 'Round passed' : 'Match');
+      announcer.say(cleared ? tBoard('announceRoundPassed') : tBoard('announceMatch'));
       if (cleared) {
         callbacks.onRoundCleared();
       } else {
@@ -156,7 +182,7 @@ export function createBoard(opts: BoardOptions): Board {
       }
     } else {
       mismatches += 1;
-      announcer.say('No match');
+      announcer.say(tBoard('announceNoMatch'));
       callbacks.onMismatch();
       const a = firstPick;
       const b = card;

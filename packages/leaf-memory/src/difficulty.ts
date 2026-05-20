@@ -1,7 +1,7 @@
 // Difficulty ladder for Leaf Memory.
 //
 // Each level binds a pairs count (drives scoring + board sizing) to a
-// cols × rows grid layout. The top-level grid (L4: 3×4) sets the fixed
+// cols x rows grid layout. The top-level grid (L4: 3x4) sets the fixed
 // stage footprint in styles.ts; smaller grids center inside it so the
 // iframe never resizes between levels.
 
@@ -14,8 +14,8 @@ export interface DifficultyLevel {
    *  player can memorize positions. Scales with card count: 4 cards =
    *  short glance, 12 cards = enough to plan a strategy. */
   peekMs: number;
-  /** Round time budget in seconds. Tuned per level — 2×2 is trivial so
-   *  10s is plenty; 3×4 wants enough time to recover from a couple of
+  /** Round time budget in seconds. Tuned per level; 2x2 is trivial so
+   *  10s is plenty; 3x4 wants enough time to recover from a couple of
    *  early mismatches. */
   timeSec: number;
 }

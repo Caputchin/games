@@ -1,4 +1,4 @@
-// Accessibility helpers — aria-live announcement region + reduced-motion
+// Accessibility helpers: aria-live announcement region + reduced-motion
 // query. Used by board.ts to surface match / no-match / round-passed /
 // out-of-time events to screen readers.
 

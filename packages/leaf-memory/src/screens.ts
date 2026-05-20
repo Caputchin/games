@@ -1,6 +1,9 @@
 // Start / win / loss overlays that share the fixed stage footprint.
 // Each function builds the screen DOM and returns it; game.ts decides
-// when to mount/unmount.
+// when to mount/unmount. Strings come from game.ts via the Strings helper
+// so locale + RTL choices stay in one place.
+
+import type { Strings } from './strings.js';
 
 export interface ScreenButton {
   label: string;
@@ -44,38 +47,37 @@ function buildScreen(
   return root;
 }
 
-export function renderStartScreen(doc: Document, onStart: () => void): HTMLElement {
+export function renderStartScreen(doc: Document, strings: Strings, onStart: () => void): HTMLElement {
   return buildScreen(
     doc,
     'start',
-    'Leaf Memory',
-    'Flip two cards at a time to find matching leaves. Clear the board before time runs out.',
-    [{ label: 'Start', onClick: onStart, primary: true }],
+    strings.t('startTitle'),
+    strings.t('startBody'),
+    [{ label: strings.t('startButton'), onClick: onStart, primary: true }],
   );
 }
 
 export interface WinScreenOptions {
   /** Headline shown above the score. game.ts varies it per level so the
-   *  praise escalates with the climb (e.g. "You win!" → "Nice memory!"
-   *  → "Razor sharp!" → "No bot can ever be that good!"). */
+   *  praise escalates with the climb. The string lookup happens upstream
+   *  so screens.ts is locale-agnostic. */
   title: string;
   score: number;
   newBest: boolean;
   onRetry: () => void;
   onHarder: (() => void) | null;
   /** Label for the advance-level button; set when onHarder is non-null.
-   *  game.ts varies it per level (e.g. "Bigger board!" → "Even bigger!"
-   *  → "Final challenge!") so the player knows the climb is real. */
+   *  Already localized by the caller. */
   harderLabel?: string;
 }
 
-export function renderWinScreen(doc: Document, opts: WinScreenOptions): HTMLElement {
+export function renderWinScreen(doc: Document, strings: Strings, opts: WinScreenOptions): HTMLElement {
   const body = opts.newBest
-    ? `New best score: ${opts.score}.`
-    : `Score: ${opts.score}.`;
-  const buttons: ScreenButton[] = [{ label: 'Retry', onClick: opts.onRetry, primary: true }];
+    ? strings.t('winBodyNewBest', { score: opts.score })
+    : strings.t('winBodyScore', { score: opts.score });
+  const buttons: ScreenButton[] = [{ label: strings.t('winRetry'), onClick: opts.onRetry, primary: true }];
   if (opts.onHarder) {
-    buttons.push({ label: opts.harderLabel ?? 'Level up!', onClick: opts.onHarder });
+    buttons.push({ label: opts.harderLabel ?? strings.t('winLevelUpDefault'), onClick: opts.onHarder });
   }
   return buildScreen(doc, 'win', opts.title, body, buttons);
 }
@@ -85,10 +87,10 @@ export interface LossScreenOptions {
   onEasier: (() => void) | null;
 }
 
-export function renderLossScreen(doc: Document, opts: LossScreenOptions): HTMLElement {
-  const buttons: ScreenButton[] = [{ label: 'Retry', onClick: opts.onRetry, primary: true }];
+export function renderLossScreen(doc: Document, strings: Strings, opts: LossScreenOptions): HTMLElement {
+  const buttons: ScreenButton[] = [{ label: strings.t('lossRetry'), onClick: opts.onRetry, primary: true }];
   if (opts.onEasier) {
-    buttons.push({ label: 'Try easier', onClick: opts.onEasier });
+    buttons.push({ label: strings.t('lossEasier'), onClick: opts.onEasier });
   }
-  return buildScreen(doc, 'loss', 'Out of time', 'The board did not clear before the buzzer.', buttons);
+  return buildScreen(doc, 'loss', strings.t('lossTitle'), strings.t('lossBody'), buttons);
 }

@@ -75,7 +75,7 @@ describe('runLeafMemory state machine', () => {
     expect(buttons[0]?.textContent).toBe('Start');
     expect(level?.getAttribute('data-hidden')).toBe('true');
     expect(time?.getAttribute('data-hidden')).toBe('true');
-    expect(best?.textContent).toMatch(/—/);
+    expect(best?.textContent).toMatch(/Best-/);
   });
 
   it('clicking the board during peek ends the memorize phase immediately', () => {

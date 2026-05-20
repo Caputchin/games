@@ -1,11 +1,11 @@
-// State machine for Leaf Memory: start → playing → won | lost.
+// State machine for Leaf Memory: start, playing, won, lost.
 // Persistent shell (header + stage + actions) keeps the iframe footprint
 // stable across every state and difficulty.
 //
 // bridge.pass is gated: only fires on the first successful round of the
 // session or when the player sets a new session-best score.
 
-import type { Bridge } from '@caputchin/game-sdk';
+import type { Bridge, GameContext } from '@caputchin/game-sdk';
 import { createBoard, revealAll, coverAll, type Board } from './board.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
 import { isWithinTimeBudget, score as scoreOf } from './scoring.js';
@@ -22,10 +22,12 @@ import {
   renderWinScreen,
   renderLossScreen,
 } from './screens.js';
+import { buildStrings, type StringKey } from './strings.js';
 
 export interface GameOptions {
   container: HTMLElement;
   bridge: Bridge;
+  ctx?: GameContext;
   clock?: Clock;
   setIntervalFn?: typeof setInterval;
   clearIntervalFn?: typeof clearInterval;
@@ -36,25 +38,26 @@ export interface GameOptions {
   peekMsOverride?: number;
 }
 
-// Per-level win-screen headline (indexed by current level, 0-based).
-// Compliment ladder that lands the bot-resistance punchline at L4.
-const WIN_TITLES = [
-  'You win!',
-  'Nice memory!',
-  'Razor sharp!',
-  'No bot can ever be that good!',
+const WIN_TITLE_KEYS: StringKey[] = [
+  'winTitleLevel1',
+  'winTitleLevel2',
+  'winTitleLevel3',
+  'winTitleLevel4',
 ];
 
-// Indexed by current level (0-based). Shown on the win screen as the
-// label of the advance-level button. Tone climbs with the ladder so the
-// final step reads like a boss-room invite. No entry at MAX_LEVEL-1
-// since onHarder is null at the top — the button is hidden entirely.
-const HARDER_LABELS = ['Bigger board!', 'Even bigger!', 'Final challenge!'];
+// Indexed by current level (0-based). The MAX_LEVEL-1 slot has no entry
+// because the level-up button is hidden at the top of the ladder.
+const HARDER_KEYS: StringKey[] = [
+  'winLevelUpAfter1',
+  'winLevelUpAfter2',
+  'winLevelUpAfter3',
+];
 
 export function runLeafMemory(opts: GameOptions): () => void {
   const {
     container,
     bridge,
+    ctx,
     clock = realClock,
     setIntervalFn = setInterval,
     clearIntervalFn = clearInterval,
@@ -63,6 +66,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     peekMsOverride,
   } = opts;
 
+  const strings = buildStrings(ctx?.lang);
   const doc = container.ownerDocument;
   const view = doc.defaultView ?? window;
 
@@ -75,6 +79,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
 
   const root = doc.createElement('div');
   root.className = 'lm-root';
+  if (strings.direction === 'rtl') root.setAttribute('dir', 'rtl');
 
   const header = doc.createElement('div');
   header.className = 'lm-header';
@@ -112,8 +117,8 @@ export function runLeafMemory(opts: GameOptions): () => void {
   let disposed = false;
 
   function renderBest(): void {
-    const value = bestScore === null ? '—' : String(bestScore);
-    bestEl.innerHTML = `<span class="label">Best</span>${value}`;
+    const value = bestScore === null ? strings.t('bestEmpty') : String(bestScore);
+    bestEl.innerHTML = `<span class="label">${strings.t('headerBest')}</span>${value}`;
   }
 
   function renderLevel(level: DifficultyLevel | null): void {
@@ -123,7 +128,8 @@ export function runLeafMemory(opts: GameOptions): () => void {
       return;
     }
     levelEl.dataset['hidden'] = 'false';
-    levelEl.innerHTML = `<span class="label">Level</span>${level.level} / ${MAX_LEVEL}`;
+    const value = strings.t('levelDisplay', { current: level.level, max: MAX_LEVEL });
+    levelEl.innerHTML = `<span class="label">${strings.t('headerLevel')}</span>${value}`;
   }
 
   function renderTime(remainingSec: number | null): void {
@@ -133,7 +139,8 @@ export function runLeafMemory(opts: GameOptions): () => void {
       return;
     }
     timeEl.dataset['hidden'] = 'false';
-    timeEl.innerHTML = `<span class="label">Time</span>${Math.ceil(remainingSec)}s`;
+    const value = strings.t('timeDisplay', { seconds: Math.ceil(remainingSec) });
+    timeEl.innerHTML = `<span class="label">${strings.t('headerTime')}</span>${value}`;
   }
 
   function elapsedSec(): number {
@@ -168,7 +175,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     renderLevel(null);
     renderTime(null);
     renderBest();
-    const screen = renderStartScreen(doc, () => {
+    const screen = renderStartScreen(doc, strings, () => {
       currentIndex = 0;
       startRound();
     });
@@ -188,13 +195,15 @@ export function runLeafMemory(opts: GameOptions): () => void {
             startRound();
           }
         : null;
-    const screen = renderWinScreen(doc, {
-      title: WIN_TITLES[currentIndex] ?? 'You win!',
+    const titleKey = WIN_TITLE_KEYS[currentIndex] ?? 'winTitleLevel1';
+    const harderKey = onHarder ? HARDER_KEYS[currentIndex] ?? 'winLevelUpDefault' : undefined;
+    const screen = renderWinScreen(doc, strings, {
+      title: strings.t(titleKey),
       score,
       newBest,
       onRetry: () => startRound(),
       onHarder,
-      harderLabel: onHarder ? HARDER_LABELS[currentIndex] : undefined,
+      harderLabel: harderKey ? strings.t(harderKey) : undefined,
     });
     stage.appendChild(screen);
     const firstBtn = screen.querySelector('button');
@@ -212,7 +221,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
             startRound();
           }
         : null;
-    const screen = renderLossScreen(doc, {
+    const screen = renderLossScreen(doc, strings, {
       onRetry: () => startRound(),
       onEasier,
     });
@@ -235,6 +244,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
       cols: level.cols,
       doc,
       announcer,
+      strings,
       setTimeoutFn,
       clearTimeoutFn,
       callbacks: {
@@ -261,14 +271,14 @@ export function runLeafMemory(opts: GameOptions): () => void {
     }
 
     if (prefersReducedMotion(view)) {
-      announcer.say('Round started');
+      announcer.say(strings.t('announceRoundStarted'));
       active = true;
       startTimer();
       return;
     }
 
     revealAll(newBoard);
-    announcer.say('Memorize the cards');
+    announcer.say(strings.t('announceMemorize'));
 
     // Skippable peek: any click on the board ends the memorize phase
     // immediately and starts the timer. The click itself doesn't count
@@ -282,7 +292,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
       if (disposed) return;
       newBoard.element.removeEventListener('click', endPeek);
       coverAll(newBoard);
-      announcer.say('Round started');
+      announcer.say(strings.t('announceRoundStarted'));
       active = true;
       startTimer();
     }
@@ -295,7 +305,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     if (!active) return;
     active = false;
     stopTimer();
-    announcer.say('Out of time');
+    announcer.say(strings.t('announceOutOfTime'));
     showLoss();
   }
 
@@ -311,7 +321,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
       bestScore = s;
       bridge.pass({ score: s, durationMs: Math.round(e * 1000) });
     }
-    announcer.say('Round passed');
+    announcer.say(strings.t('announceRoundPassed'));
     showWin(s, isNewBest);
   }
 
