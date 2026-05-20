@@ -12,6 +12,141 @@
   "npm": "@caputchin/leaf-memory",
   "script": "dist/leaf-memory.js",
   "languages": {
+    "schema": {
+      "headerBest": {
+        "name": "Best score label",
+        "description": "Header label preceding the session-best score."
+      },
+      "headerLevel": {
+        "name": "Level label",
+        "description": "Header label preceding the current level indicator."
+      },
+      "headerTime": {
+        "name": "Time label",
+        "description": "Header label preceding the remaining seconds."
+      },
+      "bestEmpty": {
+        "name": "Best score placeholder",
+        "description": "Shown in place of the score when the player has not passed any round yet."
+      },
+      "levelDisplay": {
+        "name": "Level value template",
+        "description": "Current level vs. total levels. Keep both placeholders.",
+        "tokens": ["current", "max"]
+      },
+      "timeDisplay": {
+        "name": "Time value template",
+        "description": "Remaining time with a units suffix (e.g. seconds).",
+        "tokens": ["seconds"]
+      },
+      "announceRoundStarted": {
+        "name": "Announcer: round started",
+        "description": "Live-region screen-reader message when the round begins (after peek phase ends)."
+      },
+      "announceMemorize": {
+        "name": "Announcer: memorize",
+        "description": "Live-region screen-reader message during the peek phase while cards are revealed."
+      },
+      "announceOutOfTime": {
+        "name": "Announcer: out of time",
+        "description": "Live-region screen-reader message when the round timer hits zero."
+      },
+      "announceRoundPassed": {
+        "name": "Announcer: round passed",
+        "description": "Live-region screen-reader message when all pairs are matched."
+      },
+      "announceMatch": {
+        "name": "Announcer: match",
+        "description": "Live-region screen-reader message when the player flips a matching pair."
+      },
+      "announceNoMatch": {
+        "name": "Announcer: no match",
+        "description": "Live-region screen-reader message when the player flips a mismatched pair."
+      },
+      "ariaCard": {
+        "name": "Card aria-label",
+        "description": "Screen-reader label for each tile. Index is 1-based.",
+        "tokens": ["index"]
+      },
+      "ariaBoard": {
+        "name": "Board aria-label",
+        "description": "Screen-reader label for the grid of cards."
+      },
+      "startTitle": {
+        "name": "Start screen title",
+        "description": "Headline shown on the start screen before the player begins level 1."
+      },
+      "startBody": {
+        "name": "Start screen body",
+        "description": "Instructions shown on the start screen."
+      },
+      "startButton": {
+        "name": "Start button",
+        "description": "Label for the button that begins level 1."
+      },
+      "winTitleLevel1": {
+        "name": "Win title (level 1)",
+        "description": "Headline shown after the player passes level 1."
+      },
+      "winTitleLevel2": {
+        "name": "Win title (level 2)",
+        "description": "Headline shown after the player passes level 2."
+      },
+      "winTitleLevel3": {
+        "name": "Win title (level 3)",
+        "description": "Headline shown after the player passes level 3."
+      },
+      "winTitleLevel4": {
+        "name": "Win title (final level)",
+        "description": "Headline shown after the player passes the final level. Tone is intentionally celebratory and bot-aware."
+      },
+      "winBodyNewBest": {
+        "name": "Win body (new best)",
+        "description": "Body shown when the round score beats the previous session best.",
+        "tokens": ["score"]
+      },
+      "winBodyScore": {
+        "name": "Win body (regular)",
+        "description": "Body shown after a passed round when the score did not beat the previous best.",
+        "tokens": ["score"]
+      },
+      "winRetry": {
+        "name": "Retry button (win screen)",
+        "description": "Label for the button that restarts the same level after passing it."
+      },
+      "winLevelUpDefault": {
+        "name": "Level-up button (default)",
+        "description": "Fallback label for the advance-level button when no per-level label is defined."
+      },
+      "winLevelUpAfter1": {
+        "name": "Level-up button (after level 1)",
+        "description": "Label for the button that advances from level 1 to level 2."
+      },
+      "winLevelUpAfter2": {
+        "name": "Level-up button (after level 2)",
+        "description": "Label for the button that advances from level 2 to level 3."
+      },
+      "winLevelUpAfter3": {
+        "name": "Level-up button (after level 3)",
+        "description": "Label for the button that advances from level 3 to level 4 (the final level)."
+      },
+      "lossTitle": {
+        "name": "Loss screen title",
+        "description": "Headline shown on the loss screen when the timer expires."
+      },
+      "lossBody": {
+        "name": "Loss screen body",
+        "description": "Body text shown on the loss screen."
+      },
+      "lossRetry": {
+        "name": "Retry button (loss screen)",
+        "description": "Label for the button that restarts the failed level."
+      },
+      "lossEasier": {
+        "name": "Try easier button",
+        "description": "Label for the button that drops one level down. Hidden at level 1."
+      }
+    },
     "presets": {
       "en": {
         "_iso": "en",
