@@ -1,16 +1,17 @@
 {
-  "id": "@caputchin/leaf-memory",
-  "version": "0.1.0",
-  "displayName": "Leaf Memory",
-  "description": "Match pairs of tropical leaves before the timer runs out.",
-  "support": {
-    "responsive": true,
-    "touch": true,
-    "accessible": true,
-    "audio": "none"
+  "marketplace": {
+    "name": "Leaf Memory",
+    "description": "Match pairs of tropical leaves before the timer runs out.",
+    "version": "0.1.0",
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "accessible": true,
+      "audio": "none"
+    }
   },
   "npm": "@caputchin/leaf-memory",
-  "script": "dist/leaf-memory.js",
+  "entry": "dist/leaf-memory.js",
   "languages": {
     "schema": {
       "headerBest": {
