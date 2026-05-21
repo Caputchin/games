@@ -60,10 +60,15 @@ export const DEFAULT_LEAF_URIS: Record<LeafId, string> = {
  *  the MIME at the door; we still re-check the prefix here so a
  *  caller-supplied raw `<svg>` string can't slip through. */
 export function decodeSvgDataUri(uri: string): string {
-  const m = /^data:image\/svg\+xml(?:;[^,]*)?,([\s\S]*)$/.exec(uri);
+  // Capture group 1 is the meta segment (e.g. `;base64` or `;charset=utf-8`,
+  // possibly empty), group 2 is the payload. Sniffing `;base64` on the meta
+  // alone keeps the test honest: a `data:image/svg+xml,<svg>%3Bbase64</svg>`
+  // payload would otherwise mis-route to atob and crash, even though the
+  // body is plain URL-encoded.
+  const m = /^data:image\/svg\+xml((?:;[^,]*)?),([\s\S]*)$/.exec(uri);
   if (!m) return '';
   try {
-    return /;base64/i.test(uri) ? atob(m[1]!) : decodeURIComponent(m[1]!);
+    return /;base64/i.test(m[1]!) ? atob(m[2]!) : decodeURIComponent(m[2]!);
   } catch {
     return '';
   }

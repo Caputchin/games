@@ -120,7 +120,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
         root.style.setProperty(`--lm-${key.replace(/_/g, '-')}`, value);
       }
     }
-    if (palette._mode) root.dataset['skinMode'] = palette._mode;
+    if (palette._mode) root.dataset.skinMode = palette._mode;
   }
 
   const header = doc.createElement('div');

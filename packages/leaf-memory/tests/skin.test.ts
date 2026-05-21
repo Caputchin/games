@@ -38,6 +38,18 @@ describe('leaf-memory caputchin.json — skin schema / preset parity', () => {
     }
   });
 
+  it('three-way structural parity: schema leaf_* ↔ LEAF_ASSET_KEY ↔ DEFAULT_LEAF_URIS', async () => {
+    // Catches drift: if a future refactor adds a leaf to the schema but
+    // forgets the LEAF_ASSET_KEY entry (or the SVG file), this fires.
+    const { LEAF_ASSET_KEY, DEFAULT_LEAF_URIS } = await import('../src/leaves.js');
+    const schemaLeafKeys = Object.keys(skinSchema).filter((k) => k.startsWith('leaf_'));
+    const codeLeafKeys = Object.values(LEAF_ASSET_KEY);
+    expect(new Set(codeLeafKeys)).toEqual(new Set(schemaLeafKeys));
+    for (const id of LEAF_IDS) {
+      expect(DEFAULT_LEAF_URIS[id], `DEFAULT_LEAF_URIS["${id}"]`).toMatch(/^data:image\/svg\+xml/);
+    }
+  });
+
   it('color values are hex strings starting with #', () => {
     for (const preset of Object.values(skinPresets)) {
       for (const [k, v] of Object.entries(preset)) {
