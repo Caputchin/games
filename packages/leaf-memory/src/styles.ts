@@ -4,24 +4,56 @@
 // Brand palette: green-100 background, green-600 card backs, persimmon
 // accent-600 match flash. See docs/brand/design.md.
 //
-// Layout contract: the .lm-root stage is a fixed px footprint sized to
-// hold the largest grid (L4: 4 cols x 3 rows of 72px cells). Smaller
-// grids center within .lm-board-area. Start / win / loss screens share
-// the same stage so the iframe never changes size between states.
+// Layout contract: the stage fills its container (the iframe viewport),
+// flexing for available width/height. Cell size is driven by the
+// `--lm-cell-size` custom property and computed at runtime from the
+// board-area dimensions in game.ts (`applyCellSize`). The min-size floor
+// below guarantees the L4 grid (4x3) is always playable: if the iframe is
+// smaller than that floor, the SDK's auto-measure observer grows the
+// iframe up to the content's scroll size.
 
-const CELL_PX = 72;
 const CELL_GAP_PX = 8;
-const BOARD_W = 4 * CELL_PX + 3 * CELL_GAP_PX + 16;
-const BOARD_H = 3 * CELL_PX + 2 * CELL_GAP_PX + 16;
-const HEADER_H = 40;
-const ACTIONS_H = 56;
-const STAGE_W = BOARD_W + 24;
-const STAGE_H = HEADER_H + BOARD_H + ACTIONS_H + 24;
+const CELL_MIN_PX = 36;
+const CELL_DEFAULT_PX = 72;
+const CELL_MAX_PX = 96;
 
-export const STAGE_WIDTH = STAGE_W;
-export const STAGE_HEIGHT = STAGE_H;
+// Initial / preferred footprint advertised in the manifest. Picked so the
+// L4 grid renders at the default cell size with comfortable padding. Once
+// mounted, the game adapts to whatever the iframe actually receives.
+const MAX_COLS = 4;
+const MAX_ROWS = 3;
+const ROOT_PAD = 12;
+const ROOT_GAP = 8;
+const PREF_BOARD_W = MAX_COLS * CELL_DEFAULT_PX + (MAX_COLS - 1) * CELL_GAP_PX;
+const PREF_BOARD_H = MAX_ROWS * CELL_DEFAULT_PX + (MAX_ROWS - 1) * CELL_GAP_PX;
+const PREF_HEADER_H = 40;
+const PREF_ACTIONS_H = 56;
+const PREF_STAGE_W = PREF_BOARD_W + ROOT_PAD * 2;
+const PREF_STAGE_H = PREF_HEADER_H + PREF_BOARD_H + PREF_ACTIONS_H + ROOT_PAD * 2 + ROOT_GAP * 2;
+
+const MIN_STAGE_W = MAX_COLS * CELL_MIN_PX + (MAX_COLS - 1) * CELL_GAP_PX + ROOT_PAD * 2;
+const MIN_STAGE_H = MAX_ROWS * CELL_MIN_PX + (MAX_ROWS - 1) * CELL_GAP_PX
+  + PREF_HEADER_H + PREF_ACTIONS_H + ROOT_PAD * 2 + ROOT_GAP * 2;
+
+export const STAGE_WIDTH = PREF_STAGE_W;
+export const STAGE_HEIGHT = PREF_STAGE_H;
+export const CELL_GAP = CELL_GAP_PX;
+export const CELL_MIN = CELL_MIN_PX;
+export const CELL_MAX = CELL_MAX_PX;
+export const STAGE_ROOT_PADDING = ROOT_PAD;
+export const STAGE_ROOT_GAP = ROOT_GAP;
 
 export const STYLES = `
+/* Establish a full-viewport height chain so .lm-root's height:100% resolves
+   against the iframe size instead of collapsing to content height. The
+   srcdoc gives us margin:0/padding:0 on html+body but no height, and
+   #cpt-root is a plain <div>; without these rules percentage heights
+   inside the game fall back to auto. */
+html, body, #cpt-root {
+  width: 100%;
+  height: 100%;
+}
+
 :host, .lm-root {
   --green-100: #E0F2DA;
   --green-200: #C2E3BB;
@@ -32,19 +64,23 @@ export const STYLES = `
   --neutral-800: #2B2926;
   --neutral-100: #EDEBE6;
   --neutral-50: #F7F5F2;
+  --lm-cell-size: ${CELL_DEFAULT_PX}px;
+  --lm-cell-gap: ${CELL_GAP_PX}px;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--neutral-800);
 }
 
 .lm-root {
-  width: ${STAGE_W}px;
-  height: ${STAGE_H}px;
+  width: 100%;
+  height: 100%;
+  min-width: ${MIN_STAGE_W}px;
+  min-height: ${MIN_STAGE_H}px;
   display: grid;
-  grid-template-rows: ${HEADER_H}px 1fr ${ACTIONS_H}px;
+  grid-template-rows: auto 1fr auto;
   background: var(--neutral-50);
   box-sizing: border-box;
-  padding: 12px;
-  gap: 8px;
+  padding: ${ROOT_PAD}px;
+  gap: ${ROOT_GAP}px;
 }
 
 .lm-header {
@@ -55,6 +91,7 @@ export const STYLES = `
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0 4px;
+  min-height: 32px;
 }
 
 .lm-header .label {
@@ -77,23 +114,25 @@ export const STYLES = `
   width: 100%;
   height: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
 .lm-actions {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 40px;
 }
 
 .lm-grid {
   display: grid;
-  gap: ${CELL_GAP_PX}px;
+  gap: var(--lm-cell-gap);
 }
 
 .lm-cell {
   position: relative;
-  width: ${CELL_PX}px;
-  height: ${CELL_PX}px;
+  width: var(--lm-cell-size);
+  height: var(--lm-cell-size);
   perspective: 600px;
   background: transparent;
   border: 0;

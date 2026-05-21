@@ -9,7 +9,7 @@ import type { Bridge, GameContext } from '@caputchin/game-sdk';
 import { createBoard, revealAll, coverAll, type Board } from './board.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
 import { isWithinTimeBudget, score as scoreOf } from './scoring.js';
-import { STYLES } from './styles.js';
+import { STYLES, CELL_GAP, CELL_MIN, CELL_MAX } from './styles.js';
 import { realClock, type Clock } from './time.js';
 import {
   DIFFICULTY_LADDER,
@@ -109,12 +109,39 @@ export function runLeafMemory(opts: GameOptions): () => void {
 
   let bestScore: number | null = null;
   let currentIndex = 0;
+  let currentLevel: DifficultyLevel | null = null;
   let board: Board | null = null;
   let tickTimer: ReturnType<typeof setInterval> | null = null;
   let peekTimer: ReturnType<typeof setTimeout> | null = null;
   let startedAt = 0;
   let active = false;
   let disposed = false;
+
+  // Responsive cell sizing: compute cell px from the live stage rect and
+  // the current level's cols/rows. Clamp to [CELL_MIN, CELL_MAX] so the
+  // board stays playable on small iframes and doesn't blow up on huge
+  // ones. A ResizeObserver re-runs this whenever the iframe (and thus
+  // .lm-board-area) reflows.
+  function applyCellSize(): void {
+    if (!currentLevel) return;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const { cols, rows } = currentLevel;
+    const cellW = (rect.width - (cols - 1) * CELL_GAP) / cols;
+    const cellH = (rect.height - (rows - 1) * CELL_GAP) / rows;
+    const raw = Math.min(cellW, cellH);
+    const size = Math.max(CELL_MIN, Math.min(CELL_MAX, Math.floor(raw)));
+    root.style.setProperty('--lm-cell-size', `${size}px`);
+  }
+
+  let resizeObserver: ResizeObserver | null = null;
+  if (typeof view.ResizeObserver === 'function') {
+    resizeObserver = new view.ResizeObserver(() => {
+      if (disposed) return;
+      applyCellSize();
+    });
+    resizeObserver.observe(stage);
+  }
 
   function renderBest(): void {
     const value = bestScore === null ? strings.t('bestEmpty') : String(bestScore);
@@ -172,6 +199,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
   function showStart(): void {
     clearStage();
     active = false;
+    currentLevel = null;
     renderLevel(null);
     renderTime(null);
     renderBest();
@@ -233,6 +261,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
   function startRound(): void {
     clearStage();
     const level = levelAt(currentIndex);
+    currentLevel = level;
     const budget = level.timeSec;
     const peek = peekMsOverride ?? level.peekMs;
     renderLevel(level);
@@ -255,6 +284,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     });
     board = newBoard;
     stage.appendChild(newBoard.element);
+    applyCellSize();
 
     function startTimer(): void {
       startedAt = clock.now();
@@ -334,6 +364,10 @@ export function runLeafMemory(opts: GameOptions): () => void {
     if (peekTimer !== null) {
       clearTimeoutFn(peekTimer);
       peekTimer = null;
+    }
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
     }
     board?.destroy();
     root.remove();
