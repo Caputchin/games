@@ -11,6 +11,7 @@
 // nested because the schema DSL doesn't support nested objects.
 
 import type { GameContext } from '@caputchin/game-sdk';
+import manifestJson from '../caputchin.json';
 import { DIFFICULTY_LADDER, MAX_LEVEL, type DifficultyLevel } from './difficulty.js';
 
 export interface LeafMemoryConfig {
@@ -24,13 +25,25 @@ export interface LeafMemoryConfig {
   mismatchFlipBackMs: number;
 }
 
-/** Fallback values if the widget passes no config payload. Mirror the
- *  `default` preset in caputchin.json. */
+/** Fallback values if the widget passes no config payload. Derived from
+ *  the JSON's `default` preset at module init so the two sources can't
+ *  drift: editing caputchin.json automatically refreshes these. Hardcoded
+ *  literals only kick in if the JSON itself is missing the field. Same
+ *  pattern as widget skin / widget-config shells. */
+const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
+function jsonNumber(key: string, hardcoded: number): number {
+  const v = DEFAULT_PRESET[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : hardcoded;
+}
+function jsonBoolean(key: string, hardcoded: boolean): boolean {
+  const v = DEFAULT_PRESET[key];
+  return typeof v === 'boolean' ? v : hardcoded;
+}
 const FALLBACK = {
-  startIndex: 0,
-  showHighScore: true,
-  showLevelIndicator: true,
-  mismatchFlipBackMs: 600,
+  startIndex: Math.max(0, Math.min(MAX_LEVEL - 1, Math.round(jsonNumber('start_level', 1)) - 1)),
+  showHighScore: jsonBoolean('show_high_score', true),
+  showLevelIndicator: jsonBoolean('show_level_indicator', true),
+  mismatchFlipBackMs: jsonNumber('mismatch_flip_back_ms', 600),
 };
 
 function readNumber(cfg: Record<string, unknown> | null, key: string): number | null {

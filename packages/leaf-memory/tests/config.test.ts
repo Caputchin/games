@@ -44,6 +44,24 @@ describe('leaf-memory caputchin.json — configurations schema / preset parity',
       expect(defaultKeys.includes(key), `default preset missing "${key}"`).toBe(true);
     }
   });
+
+  // LC5 drift guard: per-level timings live in BOTH the JSON default preset
+  // (runtime override source when widget hands a config) AND in
+  // DIFFICULTY_LADDER (the code-side default when no config is passed).
+  // If the two ever disagree, a player who never customizes config gets
+  // different timing than a player who picks the bundled default. Lock
+  // them together at CI time.
+  it('DIFFICULTY_LADDER per-level timings match the JSON default preset', () => {
+    const defaultPreset = presets['default'] ?? {};
+    for (const level of DIFFICULTY_LADDER) {
+      const jsonPeek = defaultPreset[`memorize_seconds_level_${level.level}`];
+      const jsonSolve = defaultPreset[`solve_seconds_level_${level.level}`];
+      expect(typeof jsonPeek).toBe('number');
+      expect(typeof jsonSolve).toBe('number');
+      expect(Math.round((jsonPeek as number) * 1000), `peek L${level.level}`).toBe(level.peekMs);
+      expect(jsonSolve, `solve L${level.level}`).toBe(level.timeSec);
+    }
+  });
 });
 
 describe('resolveLeafMemoryConfig — null ctx (no configurations block)', () => {

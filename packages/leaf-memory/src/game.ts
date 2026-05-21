@@ -196,11 +196,17 @@ export function runLeafMemory(opts: GameOptions): () => void {
   }
 
   function renderBest(): void {
+    // Skip when the chip is configured hidden: no point computing the label
+    // string + writing innerHTML against a visibility:hidden node nobody
+    // sees. bestScore tracking still updates via `onRoundCleared`; the
+    // value is just never rendered.
+    if (!memoryConfig.showHighScore) return;
     const value = bestScore === null ? strings.t('bestEmpty') : String(bestScore);
     bestEl.innerHTML = `<span class="label">${strings.t('headerBest')}</span>${value}`;
   }
 
   function renderLevel(level: DifficultyLevel | null): void {
+    if (!memoryConfig.showLevelIndicator) return;
     if (level === null) {
       levelEl.dataset['hidden'] = 'true';
       levelEl.textContent = '';
