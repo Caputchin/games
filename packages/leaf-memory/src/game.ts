@@ -12,11 +12,10 @@ import { isWithinTimeBudget, score as scoreOf } from './scoring.js';
 import { STYLES, CELL_GAP, CELL_MIN, CELL_MAX } from './styles.js';
 import { realClock, type Clock } from './time.js';
 import {
-  DIFFICULTY_LADDER,
   MAX_LEVEL,
-  levelAt,
   type DifficultyLevel,
 } from './difficulty.js';
+import { resolveLeafMemoryConfig } from './config.js';
 import {
   renderStartScreen,
   renderWinScreen,
@@ -93,6 +92,11 @@ export function runLeafMemory(opts: GameOptions): () => void {
 
   const strings = buildStrings(ctx?.lang);
   const leafSvgs = resolveLeafSvgs(ctx?.skin ?? null);
+  // Customer-tweakable knobs: start level, per-level memorize / solve times,
+  // header chip visibility, mismatch flip-back delay. Falls back to the
+  // bundled `default` preset if the widget passes no config (game manifest
+  // without a configurations block).
+  const memoryConfig = resolveLeafMemoryConfig(ctx);
   const doc = container.ownerDocument;
   const view = doc.defaultView ?? window;
 
@@ -136,6 +140,12 @@ export function runLeafMemory(opts: GameOptions): () => void {
   header.appendChild(timeEl);
   root.appendChild(header);
 
+  // Config-driven header chip visibility. `visibility: hidden` keeps the
+  // grid layout balanced (3 cells) so the Time chip stays right-aligned
+  // even when Best / Level are configured off.
+  if (!memoryConfig.showHighScore) bestEl.style.visibility = 'hidden';
+  if (!memoryConfig.showLevelIndicator) levelEl.style.visibility = 'hidden';
+
   const stage = doc.createElement('div');
   stage.className = 'lm-board-area';
   root.appendChild(stage);
@@ -150,7 +160,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
   container.appendChild(root);
 
   let bestScore: number | null = null;
-  let currentIndex = 0;
+  let currentIndex = memoryConfig.startIndex;
   let currentLevel: DifficultyLevel | null = null;
   let board: Board | null = null;
   let tickTimer: ReturnType<typeof setInterval> | null = null;
@@ -246,7 +256,12 @@ export function runLeafMemory(opts: GameOptions): () => void {
     renderTime(null);
     renderBest();
     const screen = renderStartScreen(doc, strings, () => {
-      currentIndex = 0;
+      // Reset to the configured start level (not hardcoded 0). This matters
+      // when the customer ships a `start_level` config OR after a session
+      // where the player advanced past level 1: the start screen re-render
+      // (e.g. after a layout glitch) should land them back at the original
+      // configured start point, not arbitrary index 0.
+      currentIndex = memoryConfig.startIndex;
       startRound();
     });
     stage.appendChild(screen);
@@ -259,7 +274,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     renderTime(null);
     renderBest();
     const onHarder =
-      currentIndex < DIFFICULTY_LADDER.length - 1
+      currentIndex < memoryConfig.levels.length - 1
         ? () => {
             currentIndex += 1;
             startRound();
@@ -302,7 +317,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
 
   function startRound(): void {
     clearStage();
-    const level = levelAt(currentIndex);
+    const level = memoryConfig.levels[currentIndex]!;
     currentLevel = level;
     const budget = level.timeSec;
     const peek = peekMsOverride ?? level.peekMs;
@@ -317,6 +332,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
       announcer,
       strings,
       leafSvgs,
+      flipBackDelayMs: memoryConfig.mismatchFlipBackMs,
       setTimeoutFn,
       clearTimeoutFn,
       callbacks: {
