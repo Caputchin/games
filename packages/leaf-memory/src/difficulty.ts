@@ -21,10 +21,10 @@ export interface DifficultyLevel {
 }
 
 export const DIFFICULTY_LADDER: readonly DifficultyLevel[] = [
-  { level: 1, pairs: 2, cols: 2, rows: 2, peekMs: 800,  timeSec: 10 },
-  { level: 2, pairs: 3, cols: 3, rows: 2, peekMs: 1200, timeSec: 20 },
-  { level: 3, pairs: 4, cols: 4, rows: 2, peekMs: 1800, timeSec: 35 },
-  { level: 4, pairs: 6, cols: 4, rows: 3, peekMs: 2500, timeSec: 60 },
+  { level: 1, pairs: 2, cols: 2, rows: 2, peekMs: 400,  timeSec: 5 },
+  { level: 2, pairs: 3, cols: 3, rows: 2, peekMs: 600,  timeSec: 10 },
+  { level: 3, pairs: 4, cols: 4, rows: 2, peekMs: 900,  timeSec: 17 },
+  { level: 4, pairs: 6, cols: 4, rows: 3, peekMs: 1250, timeSec: 30 },
 ];
 
 export const MAX_LEVEL = DIFFICULTY_LADDER.length;
