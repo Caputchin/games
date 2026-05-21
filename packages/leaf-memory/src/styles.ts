@@ -1,8 +1,11 @@
 // Scoped CSS for Leaf Memory. Injected into the iframe document on first
 // render. No external font fetches (CSP blocks them); system font stack.
 //
-// Brand palette: green-100 background, green-600 card backs, persimmon
-// accent-600 match flash. See docs/brand/design.md.
+// Every visual surface (text + colors + borders) binds to a `--lm-*` CSS
+// custom property that game.ts writes onto the root element from the
+// resolved skin palette. The defaults below mirror the bundled `light`
+// preset so the game still renders if `ctx.skin` is null. See
+// `caputchin.json` `skins.presets` for the source values.
 //
 // Layout contract: the stage fills its container (the iframe viewport),
 // flexing for available width/height. Cell size is driven by the
@@ -55,19 +58,29 @@ html, body, #cpt-root {
 }
 
 :host, .lm-root {
-  --green-100: #E0F2DA;
-  --green-200: #C2E3BB;
-  --green-500: #4E9B65;
-  --green-600: #3A7D4F;
-  --green-700: #2F6640;
-  --accent-600: #C2410C;
-  --neutral-800: #2B2926;
-  --neutral-100: #EDEBE6;
-  --neutral-50: #F7F5F2;
+  /* Defaults mirror the bundled light skin preset. game.ts overwrites
+     each one via style.setProperty when ctx.skin resolves. */
+  --lm-bg: #F7F5F2;
+  --lm-text: #2B2926;
+  --lm-label: #5C5751;
+  --lm-title: #2F6640;
+  --lm-card-back-bg: #3A7D4F;
+  --lm-card-back-text: #E0F2DA;
+  --lm-card-front-bg: #E0F2DA;
+  --lm-card-front-text: #2F6640;
+  --lm-card-border: #C2E3BB;
+  --lm-card-match-accent: #C2410C;
+  --lm-button-bg: #3A7D4F;
+  --lm-button-text: #E0F2DA;
+  --lm-button-hover: #2F6640;
+  --lm-button-secondary-text: #2F6640;
+  --lm-button-secondary-border: #3A7D4F;
+  --lm-button-secondary-hover-bg: #E0F2DA;
+  --lm-focus-ring: #2F6640;
   --lm-cell-size: ${CELL_DEFAULT_PX}px;
   --lm-cell-gap: ${CELL_GAP_PX}px;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  color: var(--neutral-800);
+  color: var(--lm-text);
 }
 
 .lm-root {
@@ -77,7 +90,7 @@ html, body, #cpt-root {
   min-height: ${MIN_STAGE_H}px;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--neutral-50);
+  background: var(--lm-bg);
   box-sizing: border-box;
   padding: ${ROOT_PAD}px;
   gap: ${ROOT_GAP}px;
@@ -95,8 +108,7 @@ html, body, #cpt-root {
 }
 
 .lm-header .label {
-  color: var(--neutral-800);
-  opacity: 0.6;
+  color: var(--lm-label);
   font-weight: 500;
   margin-inline-end: 0.25rem;
 }
@@ -143,7 +155,7 @@ html, body, #cpt-root {
 }
 
 .lm-cell:focus-visible .lm-face {
-  box-shadow: 0 0 0 3px var(--green-700);
+  box-shadow: 0 0 0 3px var(--lm-focus-ring);
 }
 
 .lm-face {
@@ -158,8 +170,8 @@ html, body, #cpt-root {
 }
 
 .lm-back {
-  background: var(--green-600);
-  color: var(--green-100);
+  background: var(--lm-card-back-bg);
+  color: var(--lm-card-back-text);
   font-size: 1.5rem;
 }
 
@@ -172,10 +184,10 @@ html, body, #cpt-root {
 }
 
 .lm-front {
-  background: var(--green-100);
-  color: var(--green-700);
+  background: var(--lm-card-front-bg);
+  color: var(--lm-card-front-text);
   transform: rotateY(180deg);
-  border: 2px solid var(--green-200);
+  border: 2px solid var(--lm-card-border);
 }
 
 .lm-front svg {
@@ -188,15 +200,15 @@ html, body, #cpt-root {
 .lm-cell[data-flipped="true"] .lm-front { transform: rotateY(0deg); }
 
 .lm-cell[data-matched="true"] .lm-front {
-  border-color: var(--accent-600);
-  background: var(--green-100);
+  border-color: var(--lm-card-match-accent);
+  background: var(--lm-card-front-bg);
   animation: lm-match-flash 0.5s ease 1;
 }
 
 @keyframes lm-match-flash {
-  0% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(194, 65, 12, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0); }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--lm-card-match-accent) 40%, transparent); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 .lm-cell[disabled] { cursor: default; }
@@ -205,8 +217,8 @@ html, body, #cpt-root {
   appearance: none;
   border: 0;
   font: inherit;
-  background: var(--green-600);
-  color: var(--green-100);
+  background: var(--lm-button-bg);
+  color: var(--lm-button-text);
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -214,16 +226,16 @@ html, body, #cpt-root {
   font-size: 0.9rem;
 }
 
-.lm-action:hover { background: var(--green-700); }
-.lm-action:focus-visible { box-shadow: 0 0 0 3px var(--green-700); outline: none; }
+.lm-action:hover { background: var(--lm-button-hover); }
+.lm-action:focus-visible { box-shadow: 0 0 0 3px var(--lm-focus-ring); outline: none; }
 
 .lm-action--secondary {
   background: transparent;
-  color: var(--green-700);
-  border: 1px solid var(--green-600);
+  color: var(--lm-button-secondary-text);
+  border: 1px solid var(--lm-button-secondary-border);
 }
 .lm-action--secondary:hover {
-  background: var(--green-100);
+  background: var(--lm-button-secondary-hover-bg);
 }
 
 .lm-screen {
@@ -243,7 +255,7 @@ html, body, #cpt-root {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--green-700);
+  color: var(--lm-title);
 }
 
 .lm-screen-body {

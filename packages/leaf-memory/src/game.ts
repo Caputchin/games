@@ -23,6 +23,31 @@ import {
   renderLossScreen,
 } from './screens.js';
 import { buildStrings, type StringKey } from './strings.js';
+import { resolveLeafSvgs } from './leaves.js';
+
+// Skin color keys consumed as CSS custom properties. Each `foo_bar` key
+// resolves to `--lm-foo-bar` via the formula in `applyPaletteVars`, which
+// matches the binding names in styles.ts. Asset keys (leaf_*) are
+// handled separately via `resolveLeafSvgs`.
+const SKIN_COLOR_KEYS: readonly string[] = [
+  'bg',
+  'text',
+  'label',
+  'title',
+  'card_back_bg',
+  'card_back_text',
+  'card_front_bg',
+  'card_front_text',
+  'card_border',
+  'card_match_accent',
+  'button_bg',
+  'button_text',
+  'button_hover',
+  'button_secondary_text',
+  'button_secondary_border',
+  'button_secondary_hover_bg',
+  'focus_ring',
+];
 
 export interface GameOptions {
   container: HTMLElement;
@@ -67,6 +92,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
   } = opts;
 
   const strings = buildStrings(ctx?.lang);
+  const leafSvgs = resolveLeafSvgs(ctx?.skin ?? null);
   const doc = container.ownerDocument;
   const view = doc.defaultView ?? window;
 
@@ -80,6 +106,22 @@ export function runLeafMemory(opts: GameOptions): () => void {
   const root = doc.createElement('div');
   root.className = 'lm-root';
   if (strings.direction === 'rtl') root.setAttribute('dir', 'rtl');
+  // Apply the resolved skin palette as CSS custom properties on the root
+  // so every styles.ts rule that binds `var(--lm-<key>)` flips together.
+  // Color keys only — leaf assets are decoded separately and threaded
+  // into board.ts via `leafSvgs` above. Adding a new themable surface
+  // means: add it to SKIN_COLOR_KEYS, declare the matching `--lm-<key>`
+  // in styles.ts, and add it to the caputchin.json schema + presets.
+  const palette = ctx?.skin ?? null;
+  if (palette) {
+    for (const key of SKIN_COLOR_KEYS) {
+      const value = palette[key];
+      if (typeof value === 'string') {
+        root.style.setProperty(`--lm-${key.replace(/_/g, '-')}`, value);
+      }
+    }
+    if (palette._mode) root.dataset['skinMode'] = palette._mode;
+  }
 
   const header = doc.createElement('div');
   header.className = 'lm-header';
@@ -274,6 +316,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
       doc,
       announcer,
       strings,
+      leafSvgs,
       setTimeoutFn,
       clearTimeoutFn,
       callbacks: {

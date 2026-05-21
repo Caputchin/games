@@ -2,7 +2,7 @@
 // Owns the grid DOM and the per-cell state. Knows nothing about scoring
 // or the bridge; game.ts wires those.
 
-import { LEAF_IDS, LEAVES, type LeafId } from './leaves.js';
+import { LEAF_IDS, type LeafId } from './leaves.js';
 import type { Announcer } from './a11y.js';
 import type { Strings } from './strings.js';
 
@@ -30,6 +30,10 @@ export interface BoardOptions {
    *  Optional so tests that don't care about locale can omit it; we fall
    *  back to hardcoded English internally. */
   strings?: Strings;
+  /** Inline-SVG markup per leaf id. Already decoded by game.ts from skin
+   *  data URIs (customer override) or the bundled defaults. Optional so
+   *  legacy tests can omit it; we fall back to the bundled defaults. */
+  leafSvgs?: Readonly<Record<LeafId, string>>;
   callbacks: BoardCallbacks;
   shuffle?: (n: number) => number[];
   flipBackDelayMs?: number;
@@ -68,11 +72,17 @@ export function createBoard(opts: BoardOptions): Board {
     announcer,
     callbacks,
     strings,
+    leafSvgs,
     shuffle = defaultShuffle,
     flipBackDelayMs = DEFAULT_FLIP_BACK_MS,
     setTimeoutFn = setTimeout,
     clearTimeoutFn = clearTimeout,
   } = opts;
+
+  // Defensive default: when no leaf map is passed (legacy tests), render
+  // each card with an empty front. game.ts always passes a real map in
+  // production via `resolveLeafSvgs(ctx.skin)`.
+  const leafFor = (id: LeafId): string => leafSvgs?.[id] ?? '';
 
   // Each board-side string falls back to hardcoded English when no
   // strings helper is provided (legacy tests, defensive default).
@@ -129,7 +139,7 @@ export function createBoard(opts: BoardOptions): Board {
     cell.dataset['index'] = String(index);
     cell.innerHTML = `
       <span class="lm-face lm-back" aria-hidden="true">?</span>
-      <span class="lm-face lm-front" aria-hidden="true">${LEAVES[leaf]}</span>
+      <span class="lm-face lm-front" aria-hidden="true">${leafFor(leaf)}</span>
     `;
     root.appendChild(cell);
     return { index, leaf, flipped: false, matched: false, cell };
