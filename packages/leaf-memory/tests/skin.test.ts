@@ -5,13 +5,13 @@ import { DEFAULT_LEAF_URIS, decodeSvgDataUri, LEAF_IDS, resolveLeafSvgs, sanitiz
 
 const skinPresets = manifest.skins?.presets as Record<string, SkinPreset>;
 const skinSchema = (manifest.skins?.schema ?? {}) as Record<string, SkinSchemaEntry>;
-const METADATA_KEYS = new Set(['_mode', '_default', '_extends']);
+const METADATA_KEYS = new Set(['_theme', '_default', '_extends']);
 
 describe('leaf-memory caputchin.json — skin schema / preset parity', () => {
   it('declares a light and a dark preset both marked _default:true', () => {
-    expect(skinPresets['light']?._mode).toBe('light');
+    expect(skinPresets['light']?._theme).toBe('light');
     expect(skinPresets['light']?._default).toBe(true);
-    expect(skinPresets['dark']?._mode).toBe('dark');
+    expect(skinPresets['dark']?._theme).toBe('dark');
     expect(skinPresets['dark']?._default).toBe(true);
   });
 
@@ -94,7 +94,7 @@ describe('leaves.ts — runtime decode pipeline', () => {
   it('resolveLeafSvgs prefers customer skin override per leaf', () => {
     const fakeOverride = 'data:image/svg+xml,' + encodeURIComponent('<svg id="custom-fern"></svg>');
     const out = resolveLeafSvgs({
-      _mode: 'light',
+      _theme: 'light',
       leaf_fern: fakeOverride,
     } as unknown as Record<string, string>);
     expect(out['fern']).toContain('custom-fern');
@@ -107,7 +107,7 @@ describe('leaves.ts — runtime decode pipeline', () => {
     // data: URIs — URL form falls back to the bundled default so the card
     // doesn't render blank.
     const out = resolveLeafSvgs({
-      _mode: 'light',
+      _theme: 'light',
       leaf_fern: 'https://cdn.example.com/custom-fern.svg',
     } as unknown as Record<string, string>);
     expect(out['fern']).toMatch(/^<svg/);
@@ -116,7 +116,7 @@ describe('leaves.ts — runtime decode pipeline', () => {
 
   it('resolveLeafSvgs falls back to default when override is a malformed data URI', () => {
     const out = resolveLeafSvgs({
-      _mode: 'light',
+      _theme: 'light',
       leaf_fern: 'data:image/svg+xml;base64,!!!not-base64!!!',
     } as unknown as Record<string, string>);
     expect(out['fern']).toMatch(/^<svg/);
@@ -199,7 +199,7 @@ describe('sanitizeSvgMarkup — XSS defense-in-depth', () => {
       '<svg onload="alert(1)"><script>alert(2)</script><path d="M0 0"/></svg>',
     );
     const out = resolveLeafSvgs({
-      _mode: 'light',
+      _theme: 'light',
       leaf_fern: attack,
     } as unknown as Record<string, string>);
     expect(out['fern']).not.toMatch(/onload/i);

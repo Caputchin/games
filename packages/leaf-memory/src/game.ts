@@ -90,7 +90,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     peekMsOverride,
   } = opts;
 
-  const strings = buildStrings(ctx?.lang);
+  const strings = buildStrings(ctx?.locale);
   const leafSvgs = resolveLeafSvgs(ctx?.skin ?? null);
   // Customer-tweakable knobs: start level, per-level memorize / solve times,
   // header chip visibility, mismatch flip-back delay. Falls back to the
@@ -124,7 +124,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
         root.style.setProperty(`--lm-${key.replace(/_/g, '-')}`, value);
       }
     }
-    if (palette._mode) root.dataset.skinMode = palette._mode;
+    if (palette._theme) root.dataset.skinTheme = palette._theme;
   }
 
   const header = doc.createElement('div');

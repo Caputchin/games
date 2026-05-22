@@ -1,8 +1,8 @@
-// Lookup helper for ctx.lang text tokens with template substitution and
+// Lookup helper for ctx.locale text tokens with template substitution and
 // hardcoded English fallback. Lives next to game.ts so screens.ts and
 // board.ts can both import it without circular deps.
 
-import type { ResolvedLanguage } from '@caputchin/game-sdk';
+import type { ResolvedLocale } from '@caputchin/game-sdk';
 
 const FALLBACK: Record<string, string> = {
   headerBest: 'Best',
@@ -46,7 +46,7 @@ export interface Strings {
   direction: 'ltr' | 'rtl';
 }
 
-export function buildStrings(lang: ResolvedLanguage | null | undefined): Strings {
+export function buildStrings(lang: ResolvedLocale | null | undefined): Strings {
   return {
     direction: lang?._direction === 'rtl' ? 'rtl' : 'ltr',
     t(key, vars) {

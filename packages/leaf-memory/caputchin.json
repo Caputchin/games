@@ -3,17 +3,19 @@
     "name": "Leaf Memory",
     "description": "Match pairs of tropical leaves before the timer runs out.",
     "version": "0.1.0",
+    "preview": "preview.png",
     "categories": ["Memory", "Puzzle"],
     "support": {
       "responsive": true,
       "touch": true,
-      "accessible": true,
+      "keyboard": true,
+      "screenReader": true,
       "audio": "none"
     }
   },
   "npm": "@caputchin/leaf-memory",
   "entry": "dist/leaf-memory.js",
-  "languages": {
+  "locales": {
     "schema": {
       "headerBest": {
         "name": "Best score label",
@@ -355,7 +357,7 @@
     },
     "presets": {
       "light": {
-        "_mode": "light",
+        "_theme": "light",
         "_default": true,
         "bg": "#F7F5F2",
         "text": "#2B2926",
@@ -376,7 +378,7 @@
         "focus_ring": "#2F6640"
       },
       "dark": {
-        "_mode": "dark",
+        "_theme": "dark",
         "_default": true,
         "bg": "#0F1810",
         "text": "#F7F5F2",

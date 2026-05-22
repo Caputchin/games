@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import type { LanguageKeySchema } from '@caputchin/game-sdk';
+import type { LocaleKeySchema } from '@caputchin/game-sdk';
 import manifest from '../caputchin.json';
 
-const presets = manifest.languages?.presets as Record<string, Record<string, string | boolean | undefined>>;
-const schema = (manifest.languages?.schema ?? {}) as Record<string, LanguageKeySchema>;
+const presets = manifest.locales?.presets as Record<string, Record<string, string | boolean | undefined>>;
+const schema = (manifest.locales?.schema ?? {}) as Record<string, LocaleKeySchema>;
 const METADATA_KEYS = new Set(['_iso', '_direction', '_default', '_extends']);
 
 const presetNames = Object.keys(presets);
