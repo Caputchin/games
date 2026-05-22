@@ -6,3 +6,5 @@ coverage/
 .env
 .env.local
 examples/.cert/
+qa-notes.md
+qa-notes/
