@@ -1,45 +1,29 @@
-# @caputchin/leaf-memory
+# Leaf Memory
 
-Match pairs of tropical leaves before the timer runs out.
+Match pairs of tropical leaves before the timer runs out. A first-party game on the [Caputchin](https://caputchin.com) marketplace.
 
-A first-party game for the [Caputchin](https://caputchin.com) marketplace.
+## How to play
 
-## How it plays
-
-- Default grid: **3×4 = 6 pairs (12 cards)**.
-- Time budget: **`difficulty × 30` seconds**, where `difficulty = pairs / 2`. For the default 3×4 grid that is **90 seconds**.
-- Initial 1.5 s peek to memorize positions, then cards cover and the timer starts.
-- Click / tap to flip; matching pairs stay revealed; mismatches flip back after 600 ms.
-- Clear the board within the time budget to **pass**. Timing out shows a replay prompt — no pass signal is sent.
+- It's a level ladder. You start on a small 2×2 board (2 pairs). A brief peek reveals the leaves (about 0.4s on the smallest board, up to ~1.2s on the largest), then they cover and the timer starts.
+- Tap or click a card to flip it. Matching pairs stay face up; a mismatch flips back after about 0.6s.
+- Clear a level before the timer empties to advance. Boards and budgets grow each level, up to a 3×4 board (6 pairs, 12 cards) with a 30-second budget. Out of time? Retry the level, or drop to an easier one.
 
 ## Scoring
 
-Internal scoring is `score = difficulty × (maxTime − elapsedSec)`:
+Faster clears score higher: your score grows with the time left on the clock when the board is cleared. Scores sit on Leaf Memory's own scale and compare against other Leaf Memory runs, not across different games.
 
-| Scenario | Score |
+| Result | Score |
 |---|---|
-| 3×4 grid passed instantly (0 s elapsed) | 270 |
-| 3×4 grid passed at the buzzer (90 s elapsed) | 0 |
-| 3×4 grid timed out (> 90 s) | no pass signal sent |
-
-Score is a free-form number on this game's own scale, per [ADR-0030](https://github.com/Caputchin/caputchin-platform/blob/main/docs/adr/0030-bridge-pass-not-complete.md). Scoreboards compare within Leaf Memory only.
+| Cleared with lots of time left | highest |
+| Cleared right at the buzzer | zero |
+| Timed out | no score, just a replay |
 
 ## Accessibility
 
-- `role="grid"` with `role="gridcell"` cells; `aria-pressed` reflects flip state.
-- `aria-live="polite"` region announces "match", "no match", "round passed", "out of time".
-- Keyboard navigation: `Tab` / arrow keys move focus; `Space` / `Enter` flip the focused card.
-- Honors `prefers-reduced-motion` — skips flip and timer pulse animations when set.
+- Full keyboard play: Tab and the arrow keys move focus, Space or Enter flips the focused card.
+- Screen-reader friendly: the board is a labelled grid and a live region announces match, no match, round passed, and out of time.
+- Respects reduced motion: flip and timer animations are skipped when your system asks for it.
 
-## Distribution
+## Add it to your site
 
-Loaded by `<caputchin-widget game="@caputchin/leaf-memory">` or `<caputchin-widget game-src="…/dist/leaf-memory.js">`. See the [`caputchin.json` manifest](caputchin.json) and [game-distribution](https://github.com/Caputchin/caputchin-platform/blob/main/docs/game-distribution.md) for the two paths.
-
-## Building
-
-```bash
-pnpm install
-pnpm build       # produces dist/leaf-memory.js (single self-contained IIFE)
-pnpm typecheck
-pnpm test
-```
+Leaf Memory runs as a sandboxed widget behind a Caputchin verification check, and ships in English and Arabic with light and dark skins. Preview it live and copy the embed snippet (with locale, skin, and difficulty presets) from its [marketplace listing](https://caputchin.com/marketplace).

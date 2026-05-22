@@ -2,7 +2,6 @@
   "marketplace": {
     "name": "Leaf Memory",
     "description": "Match pairs of tropical leaves before the timer runs out.",
-    "version": "0.1.0",
     "preview": "preview.png",
     "categories": ["Memory", "Puzzle"],
     "support": {
