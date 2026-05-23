@@ -15,8 +15,8 @@ importers:
   packages/leaf-memory:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
@@ -35,8 +35,8 @@ importers:
 
 packages:
 
-  '@caputchin/game-sdk@1.0.0':
-    resolution: {integrity: sha512-iCXa0JAewEK3spGPTxpsiQYTymTpboKSvDwpKoZMHEqaQ3Szg/rfazYzXubj902td8n+eDWcW6RrImVHOvBhOA==}
+  '@caputchin/game-sdk@2.0.0':
+    resolution: {integrity: sha512-Y7x7jLAsT7pgTv7Te/9xwAZHT7cvAiaVo64f+jiQLRP2HnuoDU3W9Zn9SHDRjdFEB7RIzqoPn88wZCz7bD2Y6g==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -886,7 +886,7 @@ packages:
 
 snapshots:
 
-  '@caputchin/game-sdk@1.0.0': {}
+  '@caputchin/game-sdk@2.0.0': {}
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
