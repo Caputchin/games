@@ -14,6 +14,10 @@
   },
   "npm": "@caputchin/game-leaf-memory",
   "entry": "dist/leaf-memory.js",
+  "preferred": {
+    "width": 336,
+    "height": 368
+  },
   "locales": {
     "schema": {
       "headerBest": {

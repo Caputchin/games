@@ -5,14 +5,12 @@
 
 import { register, type GameManifest } from '@caputchin/game-sdk';
 import { runLeafMemory } from './game.js';
-import { STAGE_WIDTH, STAGE_HEIGHT } from './styles.js';
 import manifestJson from '../caputchin.json';
 
-const manifest: GameManifest = {
-  ...(manifestJson as GameManifest),
-  preferredWidth: STAGE_WIDTH,
-  preferredHeight: STAGE_HEIGHT,
-};
+// caputchin.json is the whole manifest, preferred footprint included. Its
+// `preferred.width` / `preferred.height` stay in lockstep with the stage's
+// computed footprint via tests/preferred-footprint.test.ts.
+const manifest = manifestJson as GameManifest;
 
 register(manifest, (container, bridge, ctx) => {
   return runLeafMemory({ container, bridge, ctx });
