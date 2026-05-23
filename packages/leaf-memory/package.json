@@ -1,8 +1,14 @@
 {
   "name": "@caputchin/game-leaf-memory",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Match pairs of tropical leaves. A Caputchin first-party game.",
-  "keywords": ["caputchin", "caputchin-game", "captcha", "memory", "game"],
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "memory",
+    "game"
+  ],
   "homepage": "https://github.com/Caputchin/caputchin-games#readme",
   "repository": {
     "type": "git",
@@ -12,7 +18,10 @@
   "license": "MIT",
   "private": false,
   "type": "module",
-  "files": ["dist", "caputchin.json"],
+  "files": [
+    "dist",
+    "caputchin.json"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
