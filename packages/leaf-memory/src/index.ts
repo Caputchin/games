@@ -1,4 +1,4 @@
-// Registers @caputchin/leaf-memory with the iframe's Caputchin global.
+// Registers @caputchin/game-leaf-memory with the iframe's Caputchin global.
 // The iframe runtime invokes our factory with (container, bridge, ctx) when
 // the widget kicks off the round. The manifest carries our language presets
 // (en + ar) which the widget resolves and ships down as ctx.locale.

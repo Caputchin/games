@@ -12,7 +12,7 @@
       "audio": "none"
     }
   },
-  "npm": "@caputchin/leaf-memory",
+  "npm": "@caputchin/game-leaf-memory",
   "entry": "dist/leaf-memory.js",
   "locales": {
     "schema": {

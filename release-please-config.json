@@ -8,7 +8,7 @@
   "packages": {
     "packages/leaf-memory": {
       "component": "leaf-memory",
-      "package-name": "@caputchin/leaf-memory"
+      "package-name": "@caputchin/game-leaf-memory"
     }
   }
 }

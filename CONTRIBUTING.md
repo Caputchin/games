@@ -24,7 +24,7 @@ caputchin-games/
   caputchin.json              # collection manifest (the Core Pack wrapper)
   packages/
     leaf-memory/
-      caputchin.json          # game manifest (@caputchin/leaf-memory)
+      caputchin.json          # game manifest (@caputchin/game-leaf-memory)
       preview.png             # marketplace thumbnail (600x315)
       src/                    # game source
       tests/                  # unit tests
