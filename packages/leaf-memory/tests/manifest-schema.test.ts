@@ -7,11 +7,13 @@ const schema = (manifest.locales?.schema ?? {}) as Record<string, LocaleKeySchem
 const METADATA_KEYS = new Set(['_iso', '_direction', '_default', '_extends']);
 
 const presetNames = Object.keys(presets);
-const enKeys = Object.keys(presets['en'] ?? {}).filter((k) => !METADATA_KEYS.has(k));
+// Reference the first declared preset (rename-proof; the parity test below
+// proves every preset shares the same text-key set, so any one is canonical).
+const referenceKeys = Object.keys(Object.values(presets)[0] ?? {}).filter((k) => !METADATA_KEYS.has(k));
 
 describe('leaf-memory caputchin.json — schema / presets parity', () => {
-  it('every text key in the en preset is documented in schema', () => {
-    for (const key of enKeys) {
+  it('every text key in the base preset is documented in schema', () => {
+    for (const key of referenceKeys) {
       expect(schema, `schema missing entry for "${key}"`).toHaveProperty(key);
     }
   });
@@ -23,10 +25,10 @@ describe('leaf-memory caputchin.json — schema / presets parity', () => {
     }
   });
 
-  it('every preset declares the same text keys as the en preset', () => {
+  it('every preset declares the same text keys as the base preset', () => {
     for (const name of presetNames) {
       const presetKeys = Object.keys(presets[name] ?? {}).filter((k) => !METADATA_KEYS.has(k));
-      expect(new Set(presetKeys), `preset "${name}" key set`).toEqual(new Set(enKeys));
+      expect(new Set(presetKeys), `preset "${name}" key set`).toEqual(new Set(referenceKeys));
     }
   });
 

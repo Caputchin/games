@@ -162,7 +162,7 @@
       }
     },
     "presets": {
-      "en": {
+      "English": {
         "_iso": "en",
         "_default": true,
         "headerBest": "Best",
@@ -198,7 +198,7 @@
         "lossRetry": "Retry",
         "lossEasier": "Try easier"
       },
-      "ar": {
+      "Arabic": {
         "_iso": "ar",
         "_default": true,
         "headerBest": "الأفضل",
