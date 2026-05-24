@@ -4,7 +4,7 @@ import manifest from '../caputchin.json';
 
 const presets = manifest.locales?.presets as Record<string, Record<string, string | boolean | undefined>>;
 const schema = (manifest.locales?.schema ?? {}) as Record<string, LocaleKeySchema>;
-const METADATA_KEYS = new Set(['_iso', '_direction', '_default', '_extends']);
+const METADATA_KEYS = new Set(['_lang', '_direction', '_default', '_extends']);
 
 const presetNames = Object.keys(presets);
 // Reference the first declared preset (rename-proof; the parity test below

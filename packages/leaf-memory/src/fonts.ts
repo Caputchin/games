@@ -1,4 +1,4 @@
-// Maps a resolved-locale ISO tag to an ordered list of native CJK UI fonts.
+// Maps a resolved-locale language tag to an ordered list of native CJK UI fonts.
 //
 // Why this exists: the game bundle ships no font. The iframe CSP
 // (widget/src/iframe/srcdoc.ts) allows only `font-src data:`, and a full
@@ -34,12 +34,12 @@ const KOREAN =
 // Simplified, the dominant default.
 const TRADITIONAL_SUBTAGS: ReadonlySet<string> = new Set(['hant', 'tw', 'hk', 'mo']);
 
-/** Native CJK font stack for a locale ISO tag, or null when the locale is
- *  not CJK. Case-insensitive; accepts `-` or `_` subtag separators
+/** Native CJK font stack for a locale language tag, or null when the locale
+ *  is not CJK. Case-insensitive; accepts `-` or `_` subtag separators
  *  (`zh-TW`, `zh_Hant`, `ZH`). */
-export function cjkFontStack(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const parts = iso.toLowerCase().split(/[-_]/).filter(Boolean);
+export function cjkFontStack(lang: string | null | undefined): string | null {
+  if (!lang) return null;
+  const parts = lang.toLowerCase().split(/[-_]/).filter(Boolean);
   const primary = parts[0];
   if (!primary) return null;
   switch (primary) {

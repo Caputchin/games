@@ -44,16 +44,16 @@ export type StringKey = keyof typeof FALLBACK;
 export interface Strings {
   t(key: StringKey, vars?: Record<string, string | number>): string;
   direction: 'ltr' | 'rtl';
-  /** Resolved BCP-47 / ISO language tag, surfaced so game.ts can publish it
-   *  as the root `lang` attribute (Han-glyph selection + screen-reader voice)
-   *  and derive the CJK font stack. Defaults to `en` when no locale resolved. */
-  iso: string;
+  /** Resolved BCP-47 language tag, surfaced so game.ts can publish it as the
+   *  root `lang` attribute (Han-glyph selection + screen-reader voice) and
+   *  derive the CJK font stack. Defaults to `en` when no locale resolved. */
+  lang: string;
 }
 
 export function buildStrings(lang: ResolvedLocale | null | undefined): Strings {
   return {
     direction: lang?._direction === 'rtl' ? 'rtl' : 'ltr',
-    iso: lang?._iso ?? 'en',
+    lang: lang?._lang ?? 'en',
     t(key, vars) {
       const raw = (lang && typeof lang[key] === 'string' ? (lang[key] as string) : FALLBACK[key]) ?? '';
       if (!vars) return raw;

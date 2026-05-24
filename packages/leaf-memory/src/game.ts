@@ -114,12 +114,12 @@ export function runLeafMemory(opts: GameOptions): () => void {
   // Publish the resolved language to the engine: drives Han-unification
   // glyph selection (the right regional CJK shape) and the screen-reader
   // voice for the aria-labels / live-region announcements.
-  root.setAttribute('lang', strings.iso);
+  root.setAttribute('lang', strings.lang);
   // CJK locales also need explicit native UI fonts: the bundle ships no
   // font (iframe CSP allows only `font-src data:`) so glyphs come from the
   // visitor's OS. `--lm-cjk` is appended to the base font-family in
   // styles.ts; non-CJK locales keep its bundled `sans-serif` default.
-  const cjkStack = cjkFontStack(strings.iso);
+  const cjkStack = cjkFontStack(strings.lang);
   if (cjkStack) root.style.setProperty('--lm-cjk', cjkStack);
   // Apply the resolved skin palette as CSS custom properties on the root
   // so every styles.ts rule that binds `var(--lm-<key>)` flips together.
