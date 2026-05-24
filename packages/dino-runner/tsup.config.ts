@@ -15,6 +15,6 @@ export default defineConfig({
   // time so the game stays a single self-contained iframe bundle (no fetch,
   // per the game-distribution bundle constraint). The game decodes the data
   // URI back to SVG markup at runtime so `fill="currentColor"` keeps
-  // inheriting the skin's day / night color through normal CSS.
-  loader: { '.svg': 'dataurl' },
+  // inheriting the skin's foreground color through normal CSS.
+  loader: { '.svg': 'dataurl', '.ogg': 'dataurl' },
 });

@@ -61,11 +61,6 @@ export const SPEED = {
   acceleration: 0.001,
 } as const;
 
-/** Distance (logical units) between day <-> night inversions. */
-export const INVERT_DISTANCE = 700;
-/** Milliseconds the day<->night color cross-fade runs. */
-export const INVERT_FADE_MS = 1500;
-
 /** Obstacle spacing. Larger gapCoefficient => more space between obstacles. */
 export const GAP_COEFFICIENT = 0.6;
 /** Max obstacles grouped side-by-side (cacti can clump up to 3 wide). */

@@ -9,7 +9,7 @@
 
 import type { GameContext } from '@caputchin/game-sdk';
 import manifestJson from '../caputchin.json';
-import { SPEED, JUMP, GAP_COEFFICIENT, INVERT_DISTANCE } from './constants.js';
+import { SPEED, JUMP, GAP_COEFFICIENT } from './constants.js';
 
 export interface DinoConfig {
   startSpeed: number;
@@ -21,12 +21,11 @@ export interface DinoConfig {
   initialJumpVelocity: number;
   gapCoefficient: number;
   passScore: number;
-  nightMode: boolean;
-  nightDistance: number;
   birdsEnabled: boolean;
   birdMinSpeed: number;
   showScore: boolean;
   showBest: boolean;
+  sound: boolean;
 }
 
 // Defaults derived from the JSON `default` preset at module init so the two
@@ -51,12 +50,11 @@ const FALLBACK = {
   jumpMagnitude: jsonNumber('jump_velocity', -JUMP.initialVelocity),
   gapCoefficient: jsonNumber('gap_coefficient', GAP_COEFFICIENT),
   passScore: jsonNumber('pass_score', 100),
-  nightMode: jsonBoolean('night_mode', true),
-  nightDistance: jsonNumber('night_distance', INVERT_DISTANCE),
   birdsEnabled: jsonBoolean('birds_enabled', true),
   birdMinSpeed: jsonNumber('bird_min_speed', 8.5),
   showScore: jsonBoolean('show_score', true),
   showBest: jsonBoolean('show_best', true),
+  sound: jsonBoolean('sound', true),
 };
 
 function readNumber(cfg: Record<string, unknown> | null, key: string): number | null {
@@ -86,11 +84,10 @@ export function resolveDinoConfig(ctx: GameContext | undefined): DinoConfig {
     initialJumpVelocity: -Math.abs(jumpMagnitude),
     gapCoefficient: readNumber(cfg, 'gap_coefficient') ?? FALLBACK.gapCoefficient,
     passScore: readNumber(cfg, 'pass_score') ?? FALLBACK.passScore,
-    nightMode: readBoolean(cfg, 'night_mode') ?? FALLBACK.nightMode,
-    nightDistance: readNumber(cfg, 'night_distance') ?? FALLBACK.nightDistance,
     birdsEnabled: readBoolean(cfg, 'birds_enabled') ?? FALLBACK.birdsEnabled,
     birdMinSpeed: readNumber(cfg, 'bird_min_speed') ?? FALLBACK.birdMinSpeed,
     showScore: readBoolean(cfg, 'show_score') ?? FALLBACK.showScore,
     showBest: readBoolean(cfg, 'show_best') ?? FALLBACK.showBest,
+    sound: readBoolean(cfg, 'sound') ?? FALLBACK.sound,
   };
 }

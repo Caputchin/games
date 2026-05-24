@@ -11,13 +11,15 @@
 // responsive without re-tuning anything.
 //
 // Color model: every sprite + the ground + the HUD text paint with
-// `currentColor`, and `.dr-world`'s color is `--dr-fg-active`. The
-// day -> night inversion just swaps `--dr-bg-active` / `--dr-fg-active` (via
-// `data-phase` on the root) and lets one CSS transition cross-fade the whole
-// scene, exactly like the original. Defaults below mirror the bundled `light`
-// skin preset so the game still renders if `ctx.skin` is null.
+// `currentColor`, and `.dr-world`'s color is `--dr-fg`. The whole palette is
+// the chosen skin (light or dark) and stays fixed for the session — there is
+// no in-game day/night inversion; light and dark are separate skin presets the
+// host selects (see caputchin.json skins.presets). The dark skin also gets a
+// night sky (moon + stars) via `data-theme="dark"` on the root. Defaults below
+// mirror the bundled `light` preset so the game still renders if `ctx.skin` is
+// null.
 
-import { WORLD_WIDTH, WORLD_HEIGHT, GROUND_LINE_HEIGHT, INVERT_FADE_MS } from './constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, GROUND_LINE_HEIGHT } from './constants.js';
 
 // Preferred / advertised footprint equals the logical world; the manifest's
 // `preferred` block must match these (guarded by preferred-footprint.test.ts).
@@ -35,8 +37,6 @@ html, body, #cpt-root {
      one via style.setProperty when ctx.skin resolves. */
   --dr-bg: #F7F7F7;
   --dr-fg: #535353;
-  --dr-bg-night: #1B1B1B;
-  --dr-fg-night: #F7F7F7;
   --dr-button-bg: #535353;
   --dr-button-text: #F7F7F7;
   --dr-button-hover: #333333;
@@ -45,9 +45,6 @@ html, body, #cpt-root {
   --dr-button-secondary-hover-bg: #E2E2E2;
   --dr-focus-ring: #535353;
   --dr-scale: 1;
-  /* Active (phase-resolved) colors. day by default; data-phase="night" flips. */
-  --dr-bg-active: var(--dr-bg);
-  --dr-fg-active: var(--dr-fg);
   /* CJK locales override this with native fonts (game.ts via fonts.ts);
      non-CJK locales keep the sans-serif tail so font-family stays valid. */
   --dr-cjk: sans-serif;
@@ -59,13 +56,7 @@ html, body, #cpt-root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--dr-bg-active);
-  transition: background-color ${INVERT_FADE_MS}ms ease;
-}
-
-.dr-root[data-phase="night"] {
-  --dr-bg-active: var(--dr-bg-night);
-  --dr-fg-active: var(--dr-fg-night);
+  background: var(--dr-bg);
 }
 
 .dr-stage {
@@ -81,8 +72,7 @@ html, body, #cpt-root {
   height: ${WORLD_HEIGHT}px;
   transform: translate(-50%, -50%) scale(var(--dr-scale));
   transform-origin: center center;
-  color: var(--dr-fg-active);
-  transition: color ${INVERT_FADE_MS}ms ease;
+  color: var(--dr-fg);
 }
 
 /* Generic positioned entity: game.ts/horizon.ts set width/height + a
@@ -111,13 +101,6 @@ html, body, #cpt-root {
 
 .dr-cloud { opacity: 0.85; }
 
-.dr-sky-night {
-  /* moon + stars fade in/out with the phase */
-  opacity: 0;
-  transition: opacity ${INVERT_FADE_MS}ms ease;
-}
-.dr-root[data-phase="night"] .dr-sky-night { opacity: 1; }
-
 .dr-hud {
   position: absolute;
   top: 6px;
@@ -128,8 +111,7 @@ html, body, #cpt-root {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1px;
-  color: var(--dr-fg-active);
-  transition: color ${INVERT_FADE_MS}ms ease;
+  color: var(--dr-fg);
 }
 
 .dr-hud .label {
@@ -152,7 +134,7 @@ html, body, #cpt-root {
   text-align: center;
   padding: 10px;
   box-sizing: border-box;
-  color: var(--dr-fg-active);
+  color: var(--dr-fg);
 }
 
 .dr-overlay[data-hidden="true"] { display: none; }
@@ -160,7 +142,7 @@ html, body, #cpt-root {
 .dr-overlay-icon {
   width: 48px;
   height: 48px;
-  color: var(--dr-fg-active);
+  color: var(--dr-fg);
 }
 .dr-overlay-icon svg { display: block; width: 100%; height: 100%; }
 
@@ -264,14 +246,5 @@ html, body, #cpt-root {
   border: 0;
   clip: rect(0 0 0 0);
   overflow: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dr-root,
-  .dr-world,
-  .dr-hud,
-  .dr-sky-night {
-    transition: none;
-  }
 }
 `;
