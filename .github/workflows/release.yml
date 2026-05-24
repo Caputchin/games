@@ -15,6 +15,7 @@ jobs:
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       leaf_memory_released: ${{ steps.release.outputs['packages/leaf-memory--release_created'] }}
+      dino_runner_released: ${{ steps.release.outputs['packages/dino-runner--release_created'] }}
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
@@ -61,3 +62,7 @@ jobs:
       - name: Publish @caputchin/game-leaf-memory
         if: ${{ needs.release-please.outputs.leaf_memory_released == 'true' }}
         run: pnpm --filter @caputchin/game-leaf-memory publish --access public --no-git-checks
+
+      - name: Publish @caputchin/game-dino-runner
+        if: ${{ needs.release-please.outputs.dino_runner_released == 'true' }}
+        run: pnpm --filter @caputchin/game-dino-runner publish --access public --no-git-checks
