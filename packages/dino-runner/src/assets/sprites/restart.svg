@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="currentColor" shape-rendering="geometricPrecision">
+  <!-- reload arrow: open ring + arrowhead at the gap -->
+  <path fill="none" stroke="currentColor" stroke-width="3.5" d="M28 13 A11 11 0 1 0 29 18"/>
+  <path d="M22 4 L31 8 L24 14 Z"/>
+</svg>

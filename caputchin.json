@@ -4,5 +4,5 @@
     "description": "The official Caputchin pack. Built playful, accessible, and surveillance-free.",
     "preview": "preview.png"
   },
-  "games": ["./packages/leaf-memory"]
+  "games": ["./packages/leaf-memory", "./packages/dino-runner"]
 }

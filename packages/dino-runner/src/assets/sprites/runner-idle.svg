@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 47" fill="currentColor" shape-rendering="crispEdges">
+  <!-- head + eye hole (evenodd punches the eye transparent so it recolors with the skin) -->
+  <path fill-rule="evenodd" d="M22 2 H44 V14 H36 V18 H22 Z M38 5 H41 V8 H38 Z"/>
+  <!-- tail -->
+  <rect x="0" y="10" width="3" height="2"/>
+  <rect x="0" y="12" width="6" height="8"/>
+  <!-- back / hump -->
+  <rect x="6" y="14" width="20" height="6"/>
+  <!-- neck -->
+  <rect x="14" y="8" width="10" height="8"/>
+  <!-- body -->
+  <rect x="2" y="18" width="24" height="12"/>
+  <!-- forearm -->
+  <rect x="20" y="22" width="6" height="3"/>
+  <!-- legs (standing, both planted) -->
+  <rect x="6" y="30" width="5" height="13"/>
+  <rect x="4" y="43" width="9" height="3"/>
+  <rect x="15" y="30" width="5" height="13"/>
+  <rect x="13" y="43" width="9" height="3"/>
+</svg>

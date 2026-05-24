@@ -1,0 +1,623 @@
+{
+  "marketplace": {
+    "name": "Dino Runner",
+    "description": "Jump the cactus, duck the birds, and run as far as you can.",
+    "preview": "preview.png",
+    "categories": ["Arcade", "Reflex"],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": true,
+      "audio": "none"
+    }
+  },
+  "npm": "@caputchin/game-dino-runner",
+  "entry": "dist/dino-runner.js",
+  "preferred": {
+    "width": 600,
+    "height": 150
+  },
+  "locales": {
+    "schema": {
+      "ariaGame": {
+        "name": "Game region label",
+        "description": "Screen-reader label for the whole play area."
+      },
+      "headerScore": {
+        "name": "Score label",
+        "description": "Label preceding the live distance score in the header."
+      },
+      "headerBest": {
+        "name": "Best score label",
+        "description": "Label preceding the session-best score in the header."
+      },
+      "startTitle": {
+        "name": "Start screen title",
+        "description": "Headline shown on the start screen before the first run."
+      },
+      "startBody": {
+        "name": "Start screen body",
+        "description": "Short instructions shown on the start screen."
+      },
+      "startButton": {
+        "name": "Start button",
+        "description": "Label for the button that begins the run."
+      },
+      "controlsHint": {
+        "name": "Controls hint",
+        "description": "Small keyboard-controls reminder shown under the start button."
+      },
+      "gameOverTitle": {
+        "name": "Game over title",
+        "description": "Headline shown when the runner crashes. This is the text the host fully controls (the original Chrome game hard-coded it)."
+      },
+      "gameOverScore": {
+        "name": "Game over score line",
+        "description": "Final score shown on the game-over screen.",
+        "tokens": ["score"]
+      },
+      "gameOverBest": {
+        "name": "Game over best line",
+        "description": "Session-best score shown on the game-over screen.",
+        "tokens": ["score"]
+      },
+      "restartButton": {
+        "name": "Restart button",
+        "description": "Label for the button that restarts after a crash."
+      },
+      "ariaJump": {
+        "name": "Jump control label",
+        "description": "Screen-reader / touch-button label for the jump action."
+      },
+      "ariaDuck": {
+        "name": "Duck control label",
+        "description": "Screen-reader / touch-button label for the duck action."
+      },
+      "announceStart": {
+        "name": "Announcer: run started",
+        "description": "Live-region message when the run begins."
+      },
+      "announceGameOver": {
+        "name": "Announcer: game over",
+        "description": "Live-region message when the runner crashes.",
+        "tokens": ["score"]
+      },
+      "announceNewBest": {
+        "name": "Announcer: new best",
+        "description": "Live-region message when the run sets a new session best.",
+        "tokens": ["score"]
+      }
+    },
+    "presets": {
+      "English": {
+        "_lang": "en",
+        "_default": true,
+        "ariaGame": "Endless runner. Jump the cactus, duck the birds, and run as far as you can.",
+        "headerScore": "Score",
+        "headerBest": "Best",
+        "startTitle": "Dino Runner",
+        "startBody": "Jump the cactus and duck the birds. Run as far as you can without crashing.",
+        "startButton": "Start",
+        "controlsHint": "Space or Up to jump, Down to duck",
+        "gameOverTitle": "Game over",
+        "gameOverScore": "Score {score}",
+        "gameOverBest": "Best {score}",
+        "restartButton": "Restart",
+        "ariaJump": "Jump",
+        "ariaDuck": "Duck",
+        "announceStart": "Go",
+        "announceGameOver": "Game over. You scored {score}.",
+        "announceNewBest": "New best score: {score}."
+      },
+      "Chinese (Simplified)": {
+        "_lang": "zh-Hans",
+        "_default": true,
+        "ariaGame": "无尽跑酷。跳过仙人掌，躲开飞鸟，尽量跑得更远。",
+        "headerScore": "得分",
+        "headerBest": "最佳",
+        "startTitle": "小恐龙快跑",
+        "startBody": "跳过仙人掌，躲开飞鸟。在不撞上障碍的情况下尽量跑得更远。",
+        "startButton": "开始",
+        "controlsHint": "空格或上键跳跃，下键下蹲",
+        "gameOverTitle": "游戏结束",
+        "gameOverScore": "得分 {score}",
+        "gameOverBest": "最佳 {score}",
+        "restartButton": "重新开始",
+        "ariaJump": "跳跃",
+        "ariaDuck": "下蹲",
+        "announceStart": "出发",
+        "announceGameOver": "游戏结束。你得了 {score} 分。",
+        "announceNewBest": "新的最佳成绩：{score}。"
+      },
+      "Spanish": {
+        "_lang": "es",
+        "_default": true,
+        "ariaGame": "Carrera sin fin. Salta los cactus, esquiva los pájaros y corre lo más lejos que puedas.",
+        "headerScore": "Puntos",
+        "headerBest": "Mejor",
+        "startTitle": "Dino Runner",
+        "startBody": "Salta los cactus y esquiva los pájaros. Corre lo más lejos que puedas sin chocar.",
+        "startButton": "Empezar",
+        "controlsHint": "Espacio o flecha arriba para saltar, abajo para agacharte",
+        "gameOverTitle": "Fin del juego",
+        "gameOverScore": "Puntos {score}",
+        "gameOverBest": "Mejor {score}",
+        "restartButton": "Reiniciar",
+        "ariaJump": "Saltar",
+        "ariaDuck": "Agacharse",
+        "announceStart": "¡Ya!",
+        "announceGameOver": "Fin del juego. Hiciste {score} puntos.",
+        "announceNewBest": "Nueva mejor puntuación: {score}."
+      },
+      "Arabic": {
+        "_lang": "ar",
+        "_default": true,
+        "ariaGame": "جري بلا نهاية. اقفز فوق الصبار، وتفادَ الطيور، واركض أبعد ما تستطيع.",
+        "headerScore": "النقاط",
+        "headerBest": "الأفضل",
+        "startTitle": "عداء الديناصور",
+        "startBody": "اقفز فوق الصبار وتفادَ الطيور. اركض أبعد ما تستطيع دون أن تصطدم.",
+        "startButton": "ابدأ",
+        "controlsHint": "مسافة أو السهم العلوي للقفز، السهم السفلي للانحناء",
+        "gameOverTitle": "انتهت اللعبة",
+        "gameOverScore": "النقاط {score}",
+        "gameOverBest": "الأفضل {score}",
+        "restartButton": "أعد المحاولة",
+        "ariaJump": "اقفز",
+        "ariaDuck": "انحنِ",
+        "announceStart": "انطلق",
+        "announceGameOver": "انتهت اللعبة. حصلت على {score} نقطة.",
+        "announceNewBest": "أفضل نتيجة جديدة: {score}."
+      },
+      "Portuguese": {
+        "_lang": "pt",
+        "_default": true,
+        "ariaGame": "Corrida sem fim. Pule os cactos, desvie dos pássaros e corra o mais longe que conseguir.",
+        "headerScore": "Pontos",
+        "headerBest": "Melhor",
+        "startTitle": "Dino Runner",
+        "startBody": "Pule os cactos e desvie dos pássaros. Corra o mais longe que conseguir sem bater.",
+        "startButton": "Começar",
+        "controlsHint": "Espaço ou seta para cima para pular, para baixo para abaixar",
+        "gameOverTitle": "Fim de jogo",
+        "gameOverScore": "Pontos {score}",
+        "gameOverBest": "Melhor {score}",
+        "restartButton": "Reiniciar",
+        "ariaJump": "Pular",
+        "ariaDuck": "Abaixar",
+        "announceStart": "Já!",
+        "announceGameOver": "Fim de jogo. Você fez {score} pontos.",
+        "announceNewBest": "Novo recorde: {score}."
+      },
+      "French": {
+        "_lang": "fr",
+        "_default": true,
+        "ariaGame": "Course sans fin. Sautez par-dessus les cactus, esquivez les oiseaux et courez le plus loin possible.",
+        "headerScore": "Score",
+        "headerBest": "Record",
+        "startTitle": "Dino Runner",
+        "startBody": "Sautez par-dessus les cactus et esquivez les oiseaux. Courez le plus loin possible sans vous écraser.",
+        "startButton": "Commencer",
+        "controlsHint": "Espace ou flèche haut pour sauter, bas pour se baisser",
+        "gameOverTitle": "Partie terminée",
+        "gameOverScore": "Score {score}",
+        "gameOverBest": "Record {score}",
+        "restartButton": "Recommencer",
+        "ariaJump": "Sauter",
+        "ariaDuck": "Se baisser",
+        "announceStart": "Partez !",
+        "announceGameOver": "Partie terminée. Vous avez fait {score}.",
+        "announceNewBest": "Nouveau record : {score}."
+      },
+      "German": {
+        "_lang": "de",
+        "_default": true,
+        "ariaGame": "Endlos-Lauf. Spring über die Kakteen, duck dich unter den Vögeln und lauf so weit du kannst.",
+        "headerScore": "Punkte",
+        "headerBest": "Rekord",
+        "startTitle": "Dino Runner",
+        "startBody": "Spring über die Kakteen und duck dich unter den Vögeln. Lauf so weit du kannst, ohne zu verunglücken.",
+        "startButton": "Start",
+        "controlsHint": "Leertaste oder Pfeil hoch zum Springen, runter zum Ducken",
+        "gameOverTitle": "Spiel vorbei",
+        "gameOverScore": "Punkte {score}",
+        "gameOverBest": "Rekord {score}",
+        "restartButton": "Neustart",
+        "ariaJump": "Springen",
+        "ariaDuck": "Ducken",
+        "announceStart": "Los",
+        "announceGameOver": "Spiel vorbei. Du hast {score} Punkte erreicht.",
+        "announceNewBest": "Neuer Rekord: {score}."
+      },
+      "Russian": {
+        "_lang": "ru",
+        "_default": true,
+        "ariaGame": "Бесконечный забег. Перепрыгивай кактусы, уворачивайся от птиц и беги как можно дальше.",
+        "headerScore": "Очки",
+        "headerBest": "Рекорд",
+        "startTitle": "Дино Раннер",
+        "startBody": "Перепрыгивай кактусы и уворачивайся от птиц. Беги как можно дальше, не врезаясь.",
+        "startButton": "Начать",
+        "controlsHint": "Пробел или стрелка вверх, чтобы прыгнуть, вниз, чтобы пригнуться",
+        "gameOverTitle": "Игра окончена",
+        "gameOverScore": "Очки {score}",
+        "gameOverBest": "Рекорд {score}",
+        "restartButton": "Заново",
+        "ariaJump": "Прыжок",
+        "ariaDuck": "Пригнуться",
+        "announceStart": "Вперёд",
+        "announceGameOver": "Игра окончена. Ваш счёт: {score}.",
+        "announceNewBest": "Новый рекорд: {score}."
+      },
+      "Japanese": {
+        "_lang": "ja",
+        "_default": true,
+        "ariaGame": "エンドレスラン。サボテンを飛び越え、鳥をかわして、できるだけ遠くまで走ろう。",
+        "headerScore": "スコア",
+        "headerBest": "ベスト",
+        "startTitle": "ダイノランナー",
+        "startBody": "サボテンを飛び越え、鳥をかわそう。ぶつからずに、できるだけ遠くまで走ってね。",
+        "startButton": "スタート",
+        "controlsHint": "スペースか上キーでジャンプ、下キーでしゃがむ",
+        "gameOverTitle": "ゲームオーバー",
+        "gameOverScore": "スコア {score}",
+        "gameOverBest": "ベスト {score}",
+        "restartButton": "もう一度",
+        "ariaJump": "ジャンプ",
+        "ariaDuck": "しゃがむ",
+        "announceStart": "スタート",
+        "announceGameOver": "ゲームオーバー。スコアは {score} でした。",
+        "announceNewBest": "自己ベスト更新：{score}。"
+      },
+      "Korean": {
+        "_lang": "ko",
+        "_default": true,
+        "ariaGame": "끝없는 달리기. 선인장을 뛰어넘고, 새를 피하며, 최대한 멀리 달리세요.",
+        "headerScore": "점수",
+        "headerBest": "최고",
+        "startTitle": "다이노 러너",
+        "startBody": "선인장을 뛰어넘고 새를 피하세요. 부딪히지 않고 최대한 멀리 달리세요.",
+        "startButton": "시작",
+        "controlsHint": "스페이스나 위쪽 키로 점프, 아래쪽 키로 숙이기",
+        "gameOverTitle": "게임 오버",
+        "gameOverScore": "점수 {score}",
+        "gameOverBest": "최고 {score}",
+        "restartButton": "다시 하기",
+        "ariaJump": "점프",
+        "ariaDuck": "숙이기",
+        "announceStart": "출발",
+        "announceGameOver": "게임 오버. 점수는 {score}점이에요.",
+        "announceNewBest": "최고 기록 경신: {score}."
+      },
+      "Indonesian": {
+        "_lang": "id",
+        "_default": true,
+        "ariaGame": "Lari tanpa henti. Lompati kaktus, hindari burung, dan berlarilah sejauh mungkin.",
+        "headerScore": "Skor",
+        "headerBest": "Terbaik",
+        "startTitle": "Dino Runner",
+        "startBody": "Lompati kaktus dan hindari burung. Berlarilah sejauh mungkin tanpa menabrak.",
+        "startButton": "Mulai",
+        "controlsHint": "Spasi atau panah atas untuk lompat, bawah untuk menunduk",
+        "gameOverTitle": "Permainan selesai",
+        "gameOverScore": "Skor {score}",
+        "gameOverBest": "Terbaik {score}",
+        "restartButton": "Ulangi",
+        "ariaJump": "Lompat",
+        "ariaDuck": "Menunduk",
+        "announceStart": "Lari!",
+        "announceGameOver": "Permainan selesai. Skor kamu {score}.",
+        "announceNewBest": "Rekor baru: {score}."
+      }
+    }
+  },
+  "skins": {
+    "schema": {
+      "bg": {
+        "type": "color",
+        "name": "Background (day)",
+        "description": "Stage background during the day phase; full-bleed behind the scene."
+      },
+      "fg": {
+        "type": "color",
+        "name": "Foreground (day)",
+        "description": "currentColor for every sprite, the ground, and the header text during the day phase."
+      },
+      "bg_night": {
+        "type": "color",
+        "name": "Background (night)",
+        "description": "Stage background during the night phase (the day/night inversion cross-fades to this)."
+      },
+      "fg_night": {
+        "type": "color",
+        "name": "Foreground (night)",
+        "description": "currentColor for sprites, ground, and text during the night phase."
+      },
+      "button_bg": {
+        "type": "color",
+        "name": "Primary button bg",
+        "description": "Background of the Start / Restart primary button."
+      },
+      "button_text": {
+        "type": "color",
+        "name": "Primary button text",
+        "description": "Text on the primary button."
+      },
+      "button_hover": {
+        "type": "color",
+        "name": "Primary button hover bg",
+        "description": "Hover background of the primary button."
+      },
+      "button_secondary_text": {
+        "type": "color",
+        "name": "Touch control text",
+        "description": "Text + border color of the on-screen touch controls (jump / duck)."
+      },
+      "button_secondary_border": {
+        "type": "color",
+        "name": "Touch control border",
+        "description": "Outline color of the on-screen touch controls."
+      },
+      "button_secondary_hover_bg": {
+        "type": "color",
+        "name": "Touch control active bg",
+        "description": "Active / pressed background of the on-screen touch controls."
+      },
+      "focus_ring": {
+        "type": "color",
+        "name": "Focus ring",
+        "description": "Outline color shown on buttons / the stage when keyboard focus enters."
+      },
+      "sprite_runner_idle": {
+        "type": "image",
+        "name": "Runner: idle",
+        "description": "Standing runner shown on the start screen. currentColor drives the tint."
+      },
+      "sprite_runner_run_1": {
+        "type": "image",
+        "name": "Runner: run frame 1",
+        "description": "First running frame (legs alternate with frame 2)."
+      },
+      "sprite_runner_run_2": {
+        "type": "image",
+        "name": "Runner: run frame 2",
+        "description": "Second running frame."
+      },
+      "sprite_runner_jump": {
+        "type": "image",
+        "name": "Runner: jump",
+        "description": "Airborne runner shown during a jump."
+      },
+      "sprite_runner_duck_1": {
+        "type": "image",
+        "name": "Runner: duck frame 1",
+        "description": "First ducking frame (legs alternate with frame 2)."
+      },
+      "sprite_runner_duck_2": {
+        "type": "image",
+        "name": "Runner: duck frame 2",
+        "description": "Second ducking frame."
+      },
+      "sprite_runner_crash": {
+        "type": "image",
+        "name": "Runner: crash",
+        "description": "Runner shown after a collision (closed eye)."
+      },
+      "sprite_cactus_small": {
+        "type": "image",
+        "name": "Obstacle: small cactus",
+        "description": "Small ground obstacle. May clump 1-3 wide."
+      },
+      "sprite_cactus_large": {
+        "type": "image",
+        "name": "Obstacle: large cactus",
+        "description": "Tall ground obstacle. May clump 1-3 wide."
+      },
+      "sprite_bird_1": {
+        "type": "image",
+        "name": "Obstacle: bird wings up",
+        "description": "Flying obstacle, wings-up frame."
+      },
+      "sprite_bird_2": {
+        "type": "image",
+        "name": "Obstacle: bird wings down",
+        "description": "Flying obstacle, wings-down frame."
+      },
+      "sprite_cloud": {
+        "type": "image",
+        "name": "Scenery: cloud",
+        "description": "Decorative parallax cloud (day phase)."
+      },
+      "sprite_moon": {
+        "type": "image",
+        "name": "Scenery: moon",
+        "description": "Decorative moon (night phase)."
+      },
+      "sprite_star": {
+        "type": "image",
+        "name": "Scenery: star",
+        "description": "Decorative star (night phase)."
+      },
+      "sprite_ground": {
+        "type": "image",
+        "name": "Scenery: ground",
+        "description": "Scrolling ground strip. Tiles seamlessly at 600 logical units wide."
+      },
+      "sprite_restart": {
+        "type": "image",
+        "name": "Restart icon",
+        "description": "Reload icon shown on the restart button."
+      }
+    },
+    "presets": {
+      "light": {
+        "_theme": "light",
+        "_default": true,
+        "bg": "#F7F7F7",
+        "fg": "#535353",
+        "bg_night": "#1B1B1B",
+        "fg_night": "#F7F7F7",
+        "button_bg": "#535353",
+        "button_text": "#F7F7F7",
+        "button_hover": "#333333",
+        "button_secondary_text": "#535353",
+        "button_secondary_border": "#535353",
+        "button_secondary_hover_bg": "#E2E2E2",
+        "focus_ring": "#535353"
+      },
+      "dark": {
+        "_theme": "dark",
+        "_default": true,
+        "bg": "#202124",
+        "fg": "#C7C7C7",
+        "bg_night": "#0C0C0D",
+        "fg_night": "#E8E8E8",
+        "button_bg": "#C7C7C7",
+        "button_text": "#202124",
+        "button_hover": "#E8E8E8",
+        "button_secondary_text": "#C7C7C7",
+        "button_secondary_border": "#7A7A7A",
+        "button_secondary_hover_bg": "#33353A",
+        "focus_ring": "#C7C7C7"
+      }
+    }
+  },
+  "configurations": {
+    "schema": {
+      "start_speed": {
+        "type": "range",
+        "min": 3,
+        "max": 10,
+        "step": 0.5,
+        "name": "Starting speed",
+        "description": "Run speed at the start of a run, in logical units per reference frame."
+      },
+      "max_speed": {
+        "type": "range",
+        "min": 6,
+        "max": 20,
+        "step": 0.5,
+        "name": "Max speed",
+        "description": "Speed cap the run accelerates toward."
+      },
+      "acceleration": {
+        "type": "range",
+        "min": 0.0002,
+        "max": 0.004,
+        "step": 0.0002,
+        "name": "Acceleration",
+        "description": "Speed gained per frame until the cap is hit. Higher means the run ramps up faster."
+      },
+      "gravity": {
+        "type": "range",
+        "min": 0.3,
+        "max": 1,
+        "step": 0.05,
+        "name": "Gravity",
+        "description": "Downward pull on the jump arc. Higher means shorter, snappier jumps."
+      },
+      "jump_velocity": {
+        "type": "range",
+        "min": 6,
+        "max": 16,
+        "step": 0.5,
+        "name": "Jump strength",
+        "description": "Initial upward velocity of a jump. Higher means the runner jumps higher."
+      },
+      "gap_coefficient": {
+        "type": "range",
+        "min": 0.3,
+        "max": 1.5,
+        "step": 0.1,
+        "name": "Obstacle spacing",
+        "description": "Multiplier on the gap between obstacles. Higher means more breathing room."
+      },
+      "pass_score": {
+        "type": "range",
+        "min": 10,
+        "max": 2000,
+        "step": 10,
+        "name": "Pass score",
+        "description": "Score a run must reach to count as a pass. The first qualifying crash (and each new best after) reports success."
+      },
+      "night_mode": {
+        "type": "boolean",
+        "name": "Day / night cycle",
+        "description": "Invert the palette to a night phase at intervals during a long run."
+      },
+      "night_distance": {
+        "type": "range",
+        "min": 200,
+        "max": 3000,
+        "step": 50,
+        "name": "Day / night interval",
+        "description": "Distance between day <-> night inversions."
+      },
+      "birds_enabled": {
+        "type": "boolean",
+        "name": "Flying obstacles",
+        "description": "Spawn birds (flying obstacles) once the run is fast enough."
+      },
+      "bird_min_speed": {
+        "type": "range",
+        "min": 5,
+        "max": 15,
+        "step": 0.5,
+        "name": "Bird unlock speed",
+        "description": "Run speed at which birds start to appear."
+      },
+      "show_score": {
+        "type": "boolean",
+        "name": "Show score",
+        "description": "Display the live score in the header."
+      },
+      "show_best": {
+        "type": "boolean",
+        "name": "Show best score",
+        "description": "Display the session-best score in the header."
+      }
+    },
+    "presets": {
+      "default": {
+        "_default": true,
+        "start_speed": 6,
+        "max_speed": 13,
+        "acceleration": 0.001,
+        "gravity": 0.6,
+        "jump_velocity": 8.5,
+        "gap_coefficient": 0.6,
+        "pass_score": 100,
+        "night_mode": true,
+        "night_distance": 700,
+        "birds_enabled": true,
+        "bird_min_speed": 8.5,
+        "show_score": true,
+        "show_best": true
+      },
+      "casual": {
+        "_extends": "default",
+        "start_speed": 5,
+        "max_speed": 10,
+        "acceleration": 0.0006,
+        "gap_coefficient": 0.9,
+        "pass_score": 60,
+        "bird_min_speed": 10
+      },
+      "hardcore": {
+        "_extends": "default",
+        "start_speed": 7,
+        "max_speed": 16,
+        "acceleration": 0.0016,
+        "gap_coefficient": 0.5,
+        "pass_score": 250
+      },
+      "calm": {
+        "_extends": "default",
+        "night_mode": false,
+        "birds_enabled": false,
+        "pass_score": 60
+      }
+    }
+  }
+}

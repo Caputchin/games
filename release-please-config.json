@@ -9,6 +9,10 @@
     "packages/leaf-memory": {
       "component": "leaf-memory",
       "package-name": "@caputchin/game-leaf-memory"
+    },
+    "packages/dino-runner": {
+      "component": "dino-runner",
+      "package-name": "@caputchin/game-dino-runner"
     }
   }
 }
