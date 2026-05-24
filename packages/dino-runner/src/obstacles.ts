@@ -239,8 +239,12 @@ export class ObstacleManager {
   }
 
   private computeGap(type: ObstacleType, width: number, speed: number, gapCoefficient: number): number {
-    // Wider obstacles + faster runs need more trailing room to stay fair.
-    const minGap = Math.round((width * speed) / 6 + type.minGap * gapCoefficient);
+    // Chrome's spacing rule: the trailing gap grows with both the run speed
+    // (so reaction time stays constant as the world speeds up) and the
+    // obstacle width. A single jump is airborne ~0.5s, which covers ~speed*30
+    // world units, so the gap MUST scale with speed or back-to-back obstacles
+    // land closer than one jump apart and the run becomes unclearable.
+    const minGap = Math.round(width * speed + type.minGap * gapCoefficient);
     const maxGap = Math.round(minGap * 1.5);
     return randInt(this.rng, minGap, maxGap);
   }
