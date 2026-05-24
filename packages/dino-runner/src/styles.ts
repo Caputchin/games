@@ -135,6 +135,13 @@ html, body, #cpt-root {
   padding: 10px;
   box-sizing: border-box;
   color: var(--dr-fg);
+  /* The start / game-over screen sits over the live scene; a skin-colored
+     scrim keeps its text legible (otherwise the ground line + sprites bleed
+     through behind the copy, e.g. the controls hint reading like it's struck
+     through by the ground). Solid fallback first for browsers without
+     color-mix; the scrim leaves the scene faintly visible behind. */
+  background: var(--dr-bg);
+  background: color-mix(in srgb, var(--dr-bg) 90%, transparent);
 }
 
 .dr-overlay[data-hidden="true"] { display: none; }
