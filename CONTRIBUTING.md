@@ -4,7 +4,7 @@
 
 Two phases: build the package, then register it in the pipeline so it gets
 versioned and published. Mirror an existing game (`packages/leaf-memory/` or
-`packages/dino-runner/`) end to end — every file below has a working twin there.
+`packages/dino-runner/`) end to end; every file below has a working twin there.
 
 **Build the package**
 
@@ -20,9 +20,10 @@ versioned and published. Mirror an existing game (`packages/leaf-memory/` or
 
 6. Add the package to [`release-please-config.json`](release-please-config.json) `packages` (a `component` + `package-name` entry).
 7. Add its initial version to [`.release-please-manifest.json`](.release-please-manifest.json) (`"packages/<game-id>": "0.1.0"`).
-8. Add a publish step + output to [`.github/workflows/release.yml`](.github/workflows/release.yml) — mirror the `@caputchin/game-dino-runner` block (see [Publishing](#3-publishing-releaseyml)).
+8. Add a publish step + output to [`.github/workflows/release.yml`](.github/workflows/release.yml), mirroring the `@caputchin/game-dino-runner` block (see [Publishing](#3-publishing-releaseyml)).
+9. Regenerate the lockfile and commit it: `pnpm install --lockfile-only`, then commit `pnpm-lock.yaml`. CI installs with `--frozen-lockfile`, so a new package's dependencies must already be in the committed lockfile or CI fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
 
-9. Run `pnpm verify` from the repo root. All three stages (typecheck, test, build) must pass.
+10. Run `pnpm verify`. All three stages (typecheck, test, build) must pass.
 
 ## Game design constraints (non-negotiable)
 
@@ -85,7 +86,7 @@ flowchart TD
 Runs on every push and PR to `main`: a single `verify` job that runs
 `pnpm -r typecheck`, `pnpm -r --if-present test`, and `pnpm -r build`. Because
 every step is recursive (`-r`) over the whole workspace, **a new game package is
-picked up automatically** — there is nothing to register here. Just make sure
+picked up automatically**; there is nothing to register here. Just make sure
 `pnpm verify` is green locally first.
 
 ### 2. Versioning (release-please)
@@ -99,7 +100,7 @@ CHANGELOG; merging that PR tags the release and emits a
 
 A new game must appear in **both** files (step 6–7 above): a `component` +
 `package-name` entry in the config, and a `"packages/<game-id>": "0.1.0"` line in
-the manifest. Versions are release-please-managed — never hand-edit a `version`,
+the manifest. Versions are release-please-managed, so never hand-edit a `version`,
 `CHANGELOG`, or manifest version yourself; the only manual manifest edit is the
 one-time initial-version line when you add the package.
 
@@ -119,11 +120,9 @@ both mirroring the `@caputchin/game-dino-runner` block:
   output, running `pnpm --filter @caputchin/game-<id> publish --access public --no-git-checks`.
 
 Repo-level secrets (`NPM_TOKEN` for the registry, `RELEASE_APP_ID` /
-`RELEASE_APP_PRIVATE_KEY` for the release app) are already configured — no
-per-game change. Note the lockfile caveat in the workflow's own comment: the
-published `pnpm-lock.yaml` must resolve `@caputchin/game-sdk` from the registry,
-so publish the SDK first and regenerate the lockfile when that dep is bumped.
+`RELEASE_APP_PRIVATE_KEY` for the release app) are already configured, so there
+is no per-game change.
 
 A game that skips step 8 still gets versioned (a Release PR, a tag) but is
-**never published to npm** — the symptom is a tagged release with no package on
+**never published to npm**: the symptom is a tagged release with no package on
 the registry.
