@@ -31,7 +31,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@caputchin/game-sdk": "^2.0.0",
+    "@caputchin/game-sdk": "^2.1.0",
     "@types/node": "^20.0.0",
     "happy-dom": "^15.0.0",
     "tsup": "^8.0.0",

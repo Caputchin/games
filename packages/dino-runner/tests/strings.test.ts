@@ -34,11 +34,11 @@ describe('buildStrings', () => {
   });
 
   it('honors a resolved locale + direction', () => {
-    const locale = {
+    const locale: ResolvedLocale = {
       _lang: 'ar',
       _direction: 'rtl',
       headerScore: 'النقاط',
-    } as unknown as ResolvedLocale;
+    };
     const s = buildStrings(locale);
     expect(s.direction).toBe('rtl');
     expect(s.lang).toBe('ar');
