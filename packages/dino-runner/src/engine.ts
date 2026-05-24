@@ -28,9 +28,6 @@ export interface RunnerFrame {
 
 /** Standing top-left Y when grounded: feet rest on the baseline. */
 const GROUND_Y = WORLD_HEIGHT - RUNNER.height - BOTTOM_PAD;
-/** Vertical drop applied to the (shorter) duck sprite so its feet still land
- *  on the baseline while the collision origin stays the standing top. */
-const DUCK_RENDER_OFFSET = RUNNER.height - RUNNER.heightDuck;
 
 export class Runner {
   /** Fixed horizontal position; the world scrolls past, the runner doesn't. */
@@ -42,6 +39,9 @@ export class Runner {
   private velocity = 0;
   private duckHeld = false;
   private speedDrop = false;
+  /** Set once the jump has risen past `minJumpRise`; gates the variable-jump
+   *  velocity cap (see endJump). */
+  private reachedMinHeight = false;
   private runTimer = 0;
   private runFrame = 0;
   private duckTimer = 0;
@@ -71,17 +71,32 @@ export class Runner {
     if (this.status !== 'running' && this.status !== 'ducking') return;
     this.status = 'jumping';
     this.speedDrop = false;
+    this.reachedMinHeight = false;
     // Faster runs get a touch more lift, matching the original's feel.
     this.velocity = this.cfg.initialJumpVelocity - speed / 10;
   }
 
+  /** Release of the jump control: once past the minimum lift, cap any
+   *  remaining upward velocity so a tap jumps lower than a hold (the
+   *  original's variable jump). */
+  endJump(): void {
+    if (this.status === 'jumping' && this.reachedMinHeight && this.velocity < JUMP.dropVelocity) {
+      this.velocity = JUMP.dropVelocity;
+    }
+  }
+
   /** Press / release the duck control. While airborne, holding down turns the
-   *  jump into a fast fall (speed drop) instead of a pose change. */
+   *  jump into a fast fall (speed drop): velocity flips downward and is
+   *  multiplied by speedDropCoefficient in update(). */
   setDuck(down: boolean): void {
     this.duckHeld = down;
     if (down) {
-      if (this.status === 'jumping') this.speedDrop = true;
-      else if (this.status === 'running') this.status = 'ducking';
+      if (this.status === 'jumping') {
+        this.speedDrop = true;
+        this.velocity = 1;
+      } else if (this.status === 'running') {
+        this.status = 'ducking';
+      }
     } else {
       this.speedDrop = false;
       if (this.status === 'ducking') this.status = 'running';
@@ -100,6 +115,7 @@ export class Runner {
     this.velocity = 0;
     this.duckHeld = false;
     this.speedDrop = false;
+    this.reachedMinHeight = false;
     this.runTimer = 0;
     this.runFrame = 0;
     this.duckTimer = 0;
@@ -112,20 +128,27 @@ export class Runner {
     const frames = dtMs / MS_PER_FRAME;
 
     if (this.status === 'jumping') {
-      const g = this.cfg.gravity * (this.speedDrop ? JUMP.speedDropCoefficient : 1);
-      this.y += this.velocity * frames;
-      this.velocity += g * frames;
-      // Don't let a very high jump leave the top of the world.
+      // Port of the original updateJump: integrate velocity + gravity, with a
+      // fast-fall multiplier while speed-dropping.
+      this.y += this.velocity * (this.speedDrop ? JUMP.speedDropCoefficient : 1) * frames;
+      this.velocity += this.cfg.gravity * frames;
+
+      if (this.y <= GROUND_Y - JUMP.minJumpRise) this.reachedMinHeight = true;
+      // Auto-cap the rise near the top (and whenever speed-dropping) so a held
+      // jump can't fly off the world.
+      if (this.y < GROUND_Y - JUMP.autoCapRise || this.speedDrop) this.endJump();
       if (this.y < JUMP.ceilingY) {
         this.y = JUMP.ceilingY;
         if (this.velocity < 0) this.velocity = 0;
       }
+
       if (this.y >= GROUND_Y) {
         this.y = GROUND_Y;
         this.velocity = 0;
         this.jumpCount += 1;
         this.status = this.duckHeld ? 'ducking' : 'running';
         this.speedDrop = false;
+        this.reachedMinHeight = false;
       }
     }
 
@@ -148,8 +171,10 @@ export class Runner {
     }
   }
 
-  /** The sprite + render box for the current state. Ducking renders the short
-   *  sprite dropped to the baseline; everything else renders upright at `y`. */
+  /** The sprite + render box for the current state. The duck frame is a full
+   *  44/59-wide sprite with the dino already crouched low in the art, so it
+   *  renders at the same standing `y` (its feet still land on the baseline);
+   *  only the width widens to the duck width. */
   frame(): RunnerFrame {
     switch (this.status) {
       case 'waiting':
@@ -162,9 +187,9 @@ export class Runner {
         return {
           sprite: this.duckFrame === 0 ? 'runner-duck-1' : 'runner-duck-2',
           x: this.x,
-          y: this.y + DUCK_RENDER_OFFSET,
+          y: this.y,
           width: RUNNER.widthDuck,
-          height: RUNNER.heightDuck,
+          height: RUNNER.height,
         };
       case 'running':
       default:

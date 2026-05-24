@@ -167,6 +167,8 @@ export function runDinoRunner(opts: GameOptions): () => void {
   }
   function onKeyUp(e: KeyboardEvent): void {
     if (e.code === 'ArrowDown' || e.code === 'KeyS') duck(false);
+    // Releasing the jump key cuts the jump short (variable jump).
+    else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') runner.endJump();
   }
   function onStagePointer(e: PointerEvent): void {
     // Pointer/tap on the field jumps mid-run; start + restart go through the
@@ -180,10 +182,14 @@ export function runDinoRunner(opts: GameOptions): () => void {
   doc.addEventListener('keydown', onKeyDown);
   doc.addEventListener('keyup', onKeyUp);
   stage.addEventListener('pointerdown', onStagePointer);
+  // A short tap ends the jump early; holding keeps the full arc.
+  stage.addEventListener('pointerup', () => runner.endJump());
   touch.jump.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     if (status === 'running') runner.startJump(speed);
   });
+  touch.jump.addEventListener('pointerup', () => runner.endJump());
+  touch.jump.addEventListener('pointercancel', () => runner.endJump());
   touch.duck.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     duck(true);

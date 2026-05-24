@@ -58,3 +58,7 @@ sprite inlined as a data URI, per the Caputchin game bundle constraint.
 ## License
 
 MIT, see [LICENSE](../../LICENSE).
+
+The sprite art is traced from the Chromium open-source "t-rex runner" offline
+game and is used under its BSD-3-Clause license; see
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

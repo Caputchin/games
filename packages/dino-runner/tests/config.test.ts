@@ -13,7 +13,7 @@ describe('resolveDinoConfig', () => {
     expect(c.birdsEnabled).toBe(true);
     // jump_velocity is exposed positive in the manifest; the engine wants an
     // upward (negative) velocity.
-    expect(c.initialJumpVelocity).toBe(-8.5);
+    expect(c.initialJumpVelocity).toBe(-10);
   });
 
   it('applies config overrides and negates jump_velocity', () => {

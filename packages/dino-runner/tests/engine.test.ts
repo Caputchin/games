@@ -35,17 +35,41 @@ describe('Runner jump arc', () => {
     r.startJump(6);
     expect(r.status).toBe('waiting');
   });
+
+  it('a released (tapped) jump peaks lower than a held jump (variable jump)', () => {
+    function apexHeight(release: boolean): number {
+      const r = newRunner();
+      r.startJump(6);
+      let minY = r.y;
+      let released = false;
+      let frames = 0;
+      while (r.status === 'jumping' && frames < 600) {
+        r.update(MS_PER_FRAME, 6);
+        if (release && !released && r.y <= RUNNER_GROUND_Y - 30) {
+          r.endJump();
+          released = true;
+        }
+        minY = Math.min(minY, r.y);
+        frames += 1;
+      }
+      return RUNNER_GROUND_Y - minY;
+    }
+    expect(apexHeight(true)).toBeLessThan(apexHeight(false));
+  });
 });
 
 describe('Runner duck', () => {
-  it('switches to the duck pose + short box on the ground', () => {
+  it('switches to the duck pose on the ground', () => {
     const r = newRunner();
     r.setDuck(true);
     expect(r.status).toBe('ducking');
     expect(r.ducking).toBe(true);
     const f = r.frame();
-    expect(f.height).toBe(RUNNER.heightDuck);
-    expect(f.y).toBe(RUNNER_GROUND_Y + (RUNNER.height - RUNNER.heightDuck));
+    // Duck renders the full-frame sprite (dino crouched in the art) at the
+    // standing y, just wider.
+    expect(f.width).toBe(RUNNER.widthDuck);
+    expect(f.height).toBe(RUNNER.height);
+    expect(f.y).toBe(RUNNER_GROUND_Y);
     r.setDuck(false);
     expect(r.status).toBe('running');
   });

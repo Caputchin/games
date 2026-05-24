@@ -1,16 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 47" fill="currentColor" shape-rendering="crispEdges">
-  <!-- same body; eye is a shut slit (dead) instead of an open square -->
-  <path fill-rule="evenodd" d="M26 2 H44 V13 H40 V18 H26 Z M37 6 H41 V8 H37 Z M30 14 H38 V16 H30 Z"/>
-  <rect x="20" y="9" width="8" height="10"/>
-  <rect x="0" y="11" width="4" height="2"/>
-  <rect x="0" y="13" width="8" height="3"/>
-  <rect x="3" y="16" width="10" height="4"/>
-  <rect x="9" y="14" width="14" height="4"/>
-  <rect x="5" y="18" width="22" height="13"/>
-  <rect x="3" y="22" width="4" height="7"/>
-  <rect x="23" y="22" width="6" height="3"/>
-  <rect x="9" y="31" width="6" height="13"/>
-  <rect x="7" y="44" width="10" height="3"/>
-  <rect x="18" y="31" width="6" height="13"/>
-  <rect x="16" y="44" width="10" height="3"/>
+  <rect x="24" y="2" width="16" height="13"/>
+  <rect x="22" y="4" width="2" height="41"/>
+  <rect x="40" y="4" width="2" height="11"/>
+  <rect x="24" y="15" width="14" height="2"/>
+  <rect x="2" y="17" width="2" height="12"/>
+  <rect x="20" y="17" width="2" height="22"/>
+  <rect x="24" y="17" width="6" height="13"/>
+  <rect x="17" y="19" width="3" height="18"/>
+  <rect x="4" y="21" width="2" height="10"/>
+  <rect x="14" y="21" width="3" height="18"/>
+  <rect x="30" y="21" width="4" height="2"/>
+  <rect x="6" y="23" width="2" height="10"/>
+  <rect x="12" y="23" width="2" height="22"/>
+  <rect x="32" y="23" width="2" height="2"/>
+  <rect x="8" y="25" width="4" height="10"/>
+  <rect x="24" y="30" width="4" height="3"/>
+  <rect x="24" y="33" width="2" height="2"/>
+  <rect x="10" y="35" width="2" height="2"/>
+  <rect x="17" y="37" width="1" height="2"/>
+  <rect x="14" y="39" width="2" height="2"/>
+  <rect x="14" y="43" width="2" height="2"/>
+  <rect x="24" y="43" width="2" height="2"/>
 </svg>

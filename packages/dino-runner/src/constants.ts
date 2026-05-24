@@ -21,25 +21,35 @@ export const WORLD_HEIGHT = 150;
 export const BOTTOM_PAD = 10;
 export const GROUND_LINE_HEIGHT = 12;
 
-/** Runner (T-rex) box dimensions in logical units. */
+/** Runner (T-rex) box dimensions in logical units. The duck frame renders at
+ *  the full `height` (the dino is crouched within the art); its narrower
+ *  collision footprint lives as a verbatim box in collision.ts. */
 export const RUNNER = {
   width: 44,
   height: 47,
   widthDuck: 59,
-  heightDuck: 25,
   startX: 50,
 } as const;
 
-/** Vertical-motion tuning for the jump arc. Unlike the original (which hard-
- *  clamps the apex), the apex here emerges from projectile physics
- *  (apex = v^2 / 2g) so the manifest's `jump_velocity` + `gravity` knobs both
- *  change feel. `initialVelocity` is the negated default `jump_velocity`;
- *  `speedDropCoefficient` multiplies gravity for the duck-to-fast-fall move.
- *  `ceilingY` keeps a very high jump from leaving the top of the world. */
+/** Vertical-motion tuning for the jump arc, ported verbatim from the original
+ *  Chrome `Trex.updateJump`. The dino rises under `initialVelocity` decaying
+ *  by `gravity` each frame (a tall ~65px hop, not a clamped one):
+ *   - past `minJumpRise` of lift the player may cut the jump short by
+ *     releasing (the `endJump` velocity cap to `dropVelocity`) — tap vs hold.
+ *   - at `autoCapRise` of lift the rise auto-caps to `dropVelocity` so a held
+ *     jump can't fly off the top (the original reused config.maxJumpHeight as
+ *     an absolute y; with this world's ground at 93 that equals ~63px lift).
+ *   - ducking mid-air sets a fast fall: velocity flips down and is multiplied
+ *     by `speedDropCoefficient`.
+ *  `ceilingY` is a final safety so a tuned-up `jump_velocity` can't escape the
+ *  world top. */
 export const JUMP = {
   gravity: 0.6,
-  initialVelocity: -8.5,
+  initialVelocity: -10,
+  dropVelocity: -5,
   speedDropCoefficient: 3,
+  minJumpRise: 30,
+  autoCapRise: 63,
   ceilingY: 4,
 } as const;
 

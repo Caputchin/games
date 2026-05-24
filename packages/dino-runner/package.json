@@ -12,7 +12,7 @@
   "license": "MIT",
   "private": false,
   "type": "module",
-  "files": ["dist", "caputchin.json"],
+  "files": ["dist", "caputchin.json", "THIRD-PARTY-NOTICES.md"],
   "sideEffects": ["./dist/dino-runner.js"],
   "scripts": {
     "build": "tsup",
