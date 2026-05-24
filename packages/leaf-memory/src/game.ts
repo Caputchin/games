@@ -22,6 +22,7 @@ import {
   renderLossScreen,
 } from './screens.js';
 import { buildStrings, type StringKey } from './strings.js';
+import { cjkFontStack } from './fonts.js';
 import { resolveLeafSvgs } from './leaves.js';
 
 // Skin color keys consumed as CSS custom properties. Each `foo_bar` key
@@ -110,6 +111,16 @@ export function runLeafMemory(opts: GameOptions): () => void {
   const root = doc.createElement('div');
   root.className = 'lm-root';
   if (strings.direction === 'rtl') root.setAttribute('dir', 'rtl');
+  // Publish the resolved language to the engine: drives Han-unification
+  // glyph selection (the right regional CJK shape) and the screen-reader
+  // voice for the aria-labels / live-region announcements.
+  root.setAttribute('lang', strings.iso);
+  // CJK locales also need explicit native UI fonts: the bundle ships no
+  // font (iframe CSP allows only `font-src data:`) so glyphs come from the
+  // visitor's OS. `--lm-cjk` is appended to the base font-family in
+  // styles.ts; non-CJK locales keep its bundled `sans-serif` default.
+  const cjkStack = cjkFontStack(strings.iso);
+  if (cjkStack) root.style.setProperty('--lm-cjk', cjkStack);
   // Apply the resolved skin palette as CSS custom properties on the root
   // so every styles.ts rule that binds `var(--lm-<key>)` flips together.
   // Color keys only — leaf assets are decoded separately and threaded
