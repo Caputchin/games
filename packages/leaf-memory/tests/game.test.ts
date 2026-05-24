@@ -4,7 +4,7 @@ import type { Bridge, GameContext, ResolvedLocale } from '@caputchin/game-sdk';
 
 function ctxWithLocale(iso: string, direction: 'ltr' | 'rtl' = 'ltr'): GameContext {
   return {
-    locale: { _lang: iso, _direction: direction } as ResolvedLocale,
+    locale: { _lang: iso, _direction: direction } as unknown as ResolvedLocale,
     skin: null,
     config: null,
   };
