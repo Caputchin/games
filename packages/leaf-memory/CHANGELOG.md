@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/Caputchin/games/compare/leaf-memory-v0.2.0...leaf-memory-v0.3.0) (2026-05-24)
+
+
+### Features
+
+* **leaf-memory:** localize to the 11 official languages ([78692f9](https://github.com/Caputchin/games/commit/78692f97e77e75400e40e0560e4ffd19964349ef))
+* **leaf-memory:** publish resolved lang attribute and per-locale CJK font stack ([f9366a3](https://github.com/Caputchin/games/commit/f9366a3548cc0a1ed3bfcbeee116248741a1b264))
+
 ## [0.2.0](https://github.com/Caputchin/games/compare/leaf-memory-v0.1.0...leaf-memory-v0.2.0) (2026-05-23)
 
 

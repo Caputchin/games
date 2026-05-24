@@ -1,8 +1,15 @@
 {
   "name": "@caputchin/game-dino-runner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Jump the cactus, duck the birds, survive the endless run. A Caputchin first-party game.",
-  "keywords": ["caputchin", "caputchin-game", "captcha", "runner", "dino", "game"],
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "runner",
+    "dino",
+    "game"
+  ],
   "homepage": "https://github.com/Caputchin/caputchin-games#readme",
   "repository": {
     "type": "git",
@@ -12,8 +19,14 @@
   "license": "MIT",
   "private": false,
   "type": "module",
-  "files": ["dist", "caputchin.json", "THIRD-PARTY-NOTICES.md"],
-  "sideEffects": ["./dist/dino-runner.js"],
+  "files": [
+    "dist",
+    "caputchin.json",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": [
+    "./dist/dino-runner.js"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
