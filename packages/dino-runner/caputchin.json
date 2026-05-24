@@ -585,7 +585,7 @@
         "max_speed": 13,
         "acceleration": 0.001,
         "gravity": 0.6,
-        "jump_velocity": 8.5,
+        "jump_velocity": 10,
         "gap_coefficient": 0.6,
         "pass_score": 100,
         "night_mode": true,
