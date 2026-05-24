@@ -1,8 +1,8 @@
 // Accessibility helpers: an aria-live announcement region + a reduced-motion
 // query. game.ts surfaces run-started / game-over / new-best events to screen
 // readers through the announcer, and consults prefersReducedMotion to drop
-// decorative motion (parallax clouds, day/night cross-fade) while keeping the
-// core gameplay intact.
+// decorative motion (parallax clouds, moon, stars) while keeping the core
+// gameplay intact.
 
 export interface Announcer {
   say(message: string): void;

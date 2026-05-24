@@ -20,17 +20,21 @@ import { buildStrings } from './strings.js';
 import { cjkFontStack } from './fonts.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
 import { toScore, evaluatePass } from './scoring.js';
+import { advanceSpeed } from './progression.js';
+import { createSfx } from './audio.js';
+import { SOUND_CLIPS } from './sounds.js';
 import { STYLES } from './styles.js';
 import { WORLD_WIDTH, WORLD_HEIGHT, MS_PER_FRAME } from './constants.js';
 import { renderStartScreen, renderGameOverScreen } from './screens.js';
+
+/** Score interval between milestone chimes. */
+const SCORE_MILESTONE = 100;
 
 // Skin color keys consumed as CSS custom properties: each `foo_bar` becomes
 // `--dr-foo-bar`. Asset (sprite_*) keys are handled by resolveSprites.
 const SKIN_COLOR_KEYS: readonly string[] = [
   'bg',
   'fg',
-  'bg_night',
-  'fg_night',
   'button_bg',
   'button_text',
   'button_hover',
@@ -66,6 +70,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   const sprites = resolveSprites(ctx?.skin ?? null);
   const cfg = resolveDinoConfig(ctx);
   const reducedMotion = prefersReducedMotion(view);
+  const sfx = createSfx(view, cfg.sound, SOUND_CLIPS);
 
   if (!doc.getElementById('dr-styles')) {
     const style = doc.createElement('style');
@@ -80,7 +85,11 @@ export function runDinoRunner(opts: GameOptions): () => void {
   root.setAttribute('role', 'application');
   root.setAttribute('aria-label', strings.t('ariaGame'));
   if (strings.direction === 'rtl') root.setAttribute('dir', 'rtl');
-  root.dataset['phase'] = 'day';
+  // Light vs dark is a fixed skin choice for the session, not an in-game
+  // cycle. The dark skin also shows a night sky (moon + stars).
+  const skinTheme = ctx?.skin?._theme === 'dark' ? 'dark' : 'light';
+  const nightSky = skinTheme === 'dark';
+  root.dataset['theme'] = skinTheme;
   applySkin(root, ctx);
   const cjk = cjkFontStack(strings.lang);
   if (cjk) root.style.setProperty('--dr-cjk', cjk);
@@ -117,6 +126,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   let bestScore = 0;
   let bestPassed = -1;
   let runElapsedMs = 0;
+  let lastMilestone = 0;
   let lastTs: number | null = null;
   let rafHandle = 0;
   let disposed = false;
@@ -125,10 +135,13 @@ export function runDinoRunner(opts: GameOptions): () => void {
   const obstacleEls = new Map<ActiveObstacle, HTMLElement>();
   const cloudEls: HTMLElement[] = [];
   const starEls: HTMLElement[] = [];
-  const moonEl = scenerySprite('moon');
-  moonEl.classList.add('dr-moon');
-  sizeEntity(moonEl, 20, 40);
-  skyNight.appendChild(moonEl);
+  // Moon only exists in the dark skin's night sky.
+  const moonEl = nightSky ? scenerySprite('moon') : null;
+  if (moonEl) {
+    moonEl.classList.add('dr-moon');
+    sizeEntity(moonEl, 20, 40);
+    skyNight.appendChild(moonEl);
+  }
 
   // ---- responsiveness --------------------------------------------------
   function recomputeScale(): void {
@@ -147,12 +160,20 @@ export function runDinoRunner(opts: GameOptions): () => void {
   recomputeScale();
 
   // ---- input -----------------------------------------------------------
+  // The first input is the user gesture that unlocks the AudioContext.
   function jumpPressed(): void {
+    sfx.resume();
     if (status === 'waiting') startRun();
-    else if (status === 'running') runner.startJump(speed);
+    else if (status === 'running') doJump();
     else if (status === 'crashed') restart();
   }
+  function doJump(): void {
+    if (status !== 'running') return;
+    runner.startJump(speed);
+    sfx.jump();
+  }
   function duck(down: boolean): void {
+    if (down) sfx.resume();
     if (status === 'running') runner.setDuck(down);
   }
 
@@ -173,9 +194,10 @@ export function runDinoRunner(opts: GameOptions): () => void {
   function onStagePointer(e: PointerEvent): void {
     // Pointer/tap on the field jumps mid-run; start + restart go through the
     // overlay buttons so a tap can't skip them.
+    sfx.resume();
     if (status === 'running') {
       e.preventDefault();
-      runner.startJump(speed);
+      doJump();
     }
   }
 
@@ -186,7 +208,8 @@ export function runDinoRunner(opts: GameOptions): () => void {
   stage.addEventListener('pointerup', () => runner.endJump());
   touch.jump.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (status === 'running') runner.startJump(speed);
+    sfx.resume();
+    doJump();
   });
   touch.jump.addEventListener('pointerup', () => runner.endJump());
   touch.jump.addEventListener('pointercancel', () => runner.endJump());
@@ -209,6 +232,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
     status = 'running';
     runner.start();
     runElapsedMs = 0;
+    lastMilestone = 0;
     touch.root.dataset['active'] = 'true';
     announcer.say(strings.t('announceStart'));
   }
@@ -221,13 +245,13 @@ export function runDinoRunner(opts: GameOptions): () => void {
     obstacleEls.clear();
     speed = cfg.startSpeed;
     distanceRan = 0;
-    setPhase('day');
     startRun();
   }
 
   function gameOver(): void {
     status = 'crashed';
     runner.crash();
+    sfx.hit();
     touch.root.dataset['active'] = 'false';
     const score = toScore(distanceRan);
     const isNewBest = score > bestScore;
@@ -258,10 +282,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
     focusOverlayButton();
   }
 
-  function setPhase(phase: 'day' | 'night'): void {
-    root.dataset['phase'] = phase;
-  }
-
   function focusOverlayButton(): void {
     const btn = overlay.querySelector('button');
     if (btn instanceof HTMLButtonElement) btn.focus();
@@ -272,30 +292,26 @@ export function runDinoRunner(opts: GameOptions): () => void {
     runElapsedMs += dtMs;
     const frames = dtMs / MS_PER_FRAME;
     distanceRan += speed * frames;
-    if (speed < cfg.maxSpeed) speed = Math.min(cfg.maxSpeed, speed + cfg.acceleration * frames);
+    speed = advanceSpeed(speed, cfg.maxSpeed, cfg.acceleration, frames);
 
     runner.update(dtMs, speed);
     obstacles.update(dtMs, speed, cfg);
     horizon.update(dtMs, speed, reducedMotion);
 
-    updatePhase();
-
     const score = toScore(distanceRan);
     if (score > bestScore) bestScore = score;
+    // Milestone chime every SCORE_MILESTONE points.
+    const milestone = Math.floor(score / SCORE_MILESTONE);
+    if (milestone > lastMilestone) {
+      lastMilestone = milestone;
+      sfx.score();
+    }
 
     if (hasCollision()) {
       gameOver();
     }
   }
 
-  function updatePhase(): void {
-    if (!cfg.nightMode) {
-      setPhase('day');
-      return;
-    }
-    const cycle = Math.floor(distanceRan / cfg.nightDistance);
-    setPhase(cycle % 2 === 1 ? 'night' : 'day');
-  }
 
   function hasCollision(): boolean {
     const origin = runnerCollisionOrigin(runner);
@@ -366,14 +382,17 @@ export function runDinoRunner(opts: GameOptions): () => void {
       return node;
     });
     horizon.clouds.forEach((c, i) => translate(cloudEls[i]!, c.x, c.y));
-    syncPool(starEls, horizon.stars.length, () => {
-      const node = scenerySprite('star');
-      sizeEntity(node, 9, 9);
-      skyNight.appendChild(node);
-      return node;
-    });
-    horizon.stars.forEach((s, i) => translate(starEls[i]!, s.x, s.y));
-    translate(moonEl, horizon.moon.x, horizon.moon.y);
+    // Stars + moon only render in the dark skin's night sky.
+    if (nightSky) {
+      syncPool(starEls, horizon.stars.length, () => {
+        const node = scenerySprite('star');
+        sizeEntity(node, 9, 9);
+        skyNight.appendChild(node);
+        return node;
+      });
+      horizon.stars.forEach((s, i) => translate(starEls[i]!, s.x, s.y));
+      if (moonEl) translate(moonEl, horizon.moon.x, horizon.moon.y);
+    }
   }
 
   function renderHud(): void {
@@ -483,6 +502,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
       resizeObserver.disconnect();
       resizeObserver = null;
     }
+    sfx.dispose();
     root.remove();
   };
 }

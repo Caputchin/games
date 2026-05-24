@@ -75,7 +75,10 @@ export const OBSTACLE_TYPES: Record<ObstacleTypeId, ObstacleType> = {
     height: 40,
     yPos: [100, 75, 50],
     minGap: 150,
-    minSpeed: 8.5,
+    // The bird's speed gate is the configurable `bird_min_speed` (applied in
+    // pickType), NOT a hardcoded floor — keeping a second number here would
+    // silently override the config knob. 0 means "no extra floor".
+    minSpeed: 0,
     groupable: false,
     groupSpeed: Infinity,
     boxes: [

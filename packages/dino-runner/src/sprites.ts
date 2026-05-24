@@ -1,7 +1,7 @@
 // Sprite art lives as editable pixel-art SVG files under src/assets/sprites/.
 // The tsup build inlines each one as a `data:image/svg+xml;base64,…` URI; the
 // game decodes those URIs back to SVG markup at runtime so the source
-// `fill="currentColor"` keeps inheriting the skin's active day / night color
+// `fill="currentColor"` keeps inheriting the skin's foreground color
 // through CSS (an `<img src>` would NOT inherit). Each sprite is also exposed
 // as a skin asset key in caputchin.json so a customer skin can swap the art
 // (e.g. a monkey reskin) without touching code.

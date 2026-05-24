@@ -1,17 +1,23 @@
 # Third-party notices
 
-## Sprite art (Dino Runner)
+## Sprite art + sound effects (Dino Runner)
 
-The pixel-art sprites in `src/assets/sprites/` (the runner, cacti, pterodactyl,
-and cloud) are recreated from the Chromium open-source "t-rex runner" offline
-game sprite sheet. The shapes are traced from that asset and re-emitted as
-`currentColor` SVGs; the original artwork is:
+Two sets of assets come from the Chromium open-source "t-rex runner" offline
+game:
+
+- **Sprites** (`src/assets/sprites/`): the runner, cacti, pterodactyl, and
+  cloud, traced from the offline sprite sheet and re-emitted as `currentColor`
+  SVGs.
+- **Sound effects** (`src/assets/sounds/`): the jump, score-milestone, and
+  crash clips, the original Ogg/Vorbis files used verbatim.
+
+Both originate from:
 
 > Copyright The Chromium Authors
 
-and is distributed under the BSD-3-Clause license below. This notice satisfies
+and are distributed under the BSD-3-Clause license below. This notice satisfies
 the license's source- and binary-redistribution attribution requirement; the
-sprites are inlined into the built bundle (`dist/dino-runner.js`).
+assets are inlined into the built bundle (`dist/dino-runner.js`).
 
 The rest of this package (game engine, layout, configuration, localization,
 and all other code) is original work under this repository's MIT license.

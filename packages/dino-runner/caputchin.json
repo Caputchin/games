@@ -9,7 +9,7 @@
       "touch": true,
       "keyboard": true,
       "screenReader": true,
-      "audio": "none"
+      "audio": "optional"
     }
   },
   "npm": "@caputchin/game-dino-runner",
@@ -316,23 +316,13 @@
     "schema": {
       "bg": {
         "type": "color",
-        "name": "Background (day)",
-        "description": "Stage background during the day phase; full-bleed behind the scene."
+        "name": "Background",
+        "description": "Stage background; full-bleed behind the scene."
       },
       "fg": {
         "type": "color",
-        "name": "Foreground (day)",
-        "description": "currentColor for every sprite, the ground, and the header text during the day phase."
-      },
-      "bg_night": {
-        "type": "color",
-        "name": "Background (night)",
-        "description": "Stage background during the night phase (the day/night inversion cross-fades to this)."
-      },
-      "fg_night": {
-        "type": "color",
-        "name": "Foreground (night)",
-        "description": "currentColor for sprites, ground, and text during the night phase."
+        "name": "Foreground",
+        "description": "currentColor for every sprite, the ground, and the header text."
       },
       "button_bg": {
         "type": "color",
@@ -427,17 +417,17 @@
       "sprite_cloud": {
         "type": "image",
         "name": "Scenery: cloud",
-        "description": "Decorative parallax cloud (day phase)."
+        "description": "Decorative parallax cloud (shown in both skins)."
       },
       "sprite_moon": {
         "type": "image",
         "name": "Scenery: moon",
-        "description": "Decorative moon (night phase)."
+        "description": "Decorative moon (dark skin only)."
       },
       "sprite_star": {
         "type": "image",
         "name": "Scenery: star",
-        "description": "Decorative star (night phase)."
+        "description": "Decorative star (dark skin only)."
       },
       "sprite_ground": {
         "type": "image",
@@ -456,8 +446,6 @@
         "_default": true,
         "bg": "#F7F7F7",
         "fg": "#535353",
-        "bg_night": "#1B1B1B",
-        "fg_night": "#F7F7F7",
         "button_bg": "#535353",
         "button_text": "#F7F7F7",
         "button_hover": "#333333",
@@ -469,17 +457,15 @@
       "dark": {
         "_theme": "dark",
         "_default": true,
-        "bg": "#202124",
-        "fg": "#C7C7C7",
-        "bg_night": "#0C0C0D",
-        "fg_night": "#E8E8E8",
-        "button_bg": "#C7C7C7",
-        "button_text": "#202124",
-        "button_hover": "#E8E8E8",
-        "button_secondary_text": "#C7C7C7",
-        "button_secondary_border": "#7A7A7A",
-        "button_secondary_hover_bg": "#33353A",
-        "focus_ring": "#C7C7C7"
+        "bg": "#1B1B1B",
+        "fg": "#F7F7F7",
+        "button_bg": "#F7F7F7",
+        "button_text": "#1B1B1B",
+        "button_hover": "#D9D9D9",
+        "button_secondary_text": "#F7F7F7",
+        "button_secondary_border": "#8A8A8A",
+        "button_secondary_hover_bg": "#2E2E2E",
+        "focus_ring": "#F7F7F7"
       }
     }
   },
@@ -541,19 +527,6 @@
         "name": "Pass score",
         "description": "Score a run must reach to count as a pass. The first qualifying crash (and each new best after) reports success."
       },
-      "night_mode": {
-        "type": "boolean",
-        "name": "Day / night cycle",
-        "description": "Invert the palette to a night phase at intervals during a long run."
-      },
-      "night_distance": {
-        "type": "range",
-        "min": 200,
-        "max": 3000,
-        "step": 50,
-        "name": "Day / night interval",
-        "description": "Distance between day <-> night inversions."
-      },
       "birds_enabled": {
         "type": "boolean",
         "name": "Flying obstacles",
@@ -576,6 +549,11 @@
         "type": "boolean",
         "name": "Show best score",
         "description": "Display the session-best score in the header."
+      },
+      "sound": {
+        "type": "boolean",
+        "name": "Sound effects",
+        "description": "Play the jump / milestone / crash sound effects (starts after the first interaction)."
       }
     },
     "presets": {
@@ -583,17 +561,21 @@
         "_default": true,
         "start_speed": 6,
         "max_speed": 13,
-        "acceleration": 0.001,
+        "acceleration": 0.0022,
         "gravity": 0.6,
         "jump_velocity": 10,
         "gap_coefficient": 0.6,
         "pass_score": 100,
-        "night_mode": true,
-        "night_distance": 700,
         "birds_enabled": true,
-        "bird_min_speed": 8.5,
+        "bird_min_speed": 7,
         "show_score": true,
-        "show_best": true
+        "show_best": true,
+        "sound": true
+      },
+      "classic": {
+        "_extends": "default",
+        "acceleration": 0.001,
+        "bird_min_speed": 8.5
       },
       "casual": {
         "_extends": "default",
@@ -614,8 +596,8 @@
       },
       "calm": {
         "_extends": "default",
-        "night_mode": false,
         "birds_enabled": false,
+        "sound": false,
         "pass_score": 60
       }
     }

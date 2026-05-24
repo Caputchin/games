@@ -9,8 +9,8 @@ describe('resolveDinoConfig', () => {
     expect(c.maxSpeed).toBe(13);
     expect(c.gapCoefficient).toBe(0.6);
     expect(c.passScore).toBe(100);
-    expect(c.nightMode).toBe(true);
     expect(c.birdsEnabled).toBe(true);
+    expect(c.sound).toBe(true);
     // jump_velocity is exposed positive in the manifest; the engine wants an
     // upward (negative) velocity.
     expect(c.initialJumpVelocity).toBe(-10);
@@ -20,12 +20,12 @@ describe('resolveDinoConfig', () => {
     const ctx = {
       locale: null,
       skin: null,
-      config: { start_speed: 4, jump_velocity: 12, night_mode: false, birds_enabled: false },
+      config: { start_speed: 4, jump_velocity: 12, sound: false, birds_enabled: false },
     } as unknown as GameContext;
     const c = resolveDinoConfig(ctx);
     expect(c.startSpeed).toBe(4);
     expect(c.initialJumpVelocity).toBe(-12);
-    expect(c.nightMode).toBe(false);
+    expect(c.sound).toBe(false);
     expect(c.birdsEnabled).toBe(false);
     // untouched keys still come from the default preset
     expect(c.maxSpeed).toBe(13);
@@ -35,10 +35,10 @@ describe('resolveDinoConfig', () => {
     const ctx = {
       locale: null,
       skin: null,
-      config: { start_speed: 'fast', night_mode: 'yes' },
+      config: { start_speed: 'fast', sound: 'yes' },
     } as unknown as GameContext;
     const c = resolveDinoConfig(ctx);
     expect(c.startSpeed).toBe(6);
-    expect(c.nightMode).toBe(true);
+    expect(c.sound).toBe(true);
   });
 });
