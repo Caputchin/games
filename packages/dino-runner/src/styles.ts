@@ -123,6 +123,24 @@ html, body, #cpt-root {
 .dr-hud-best[data-hidden="true"],
 .dr-hud-score[data-hidden="true"] { display: none; }
 
+/* In-game sound toggle, top-left (mirrors the HUD top-right). Icon-only,
+   inherits the foreground color via currentColor. */
+.dr-sound {
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dr-fg);
+  cursor: pointer;
+  line-height: 0;
+}
+.dr-sound svg { display: block; width: 100%; height: 100%; }
+.dr-sound:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring); border-radius: 3px; }
+
 .dr-overlay {
   position: absolute;
   inset: 0;

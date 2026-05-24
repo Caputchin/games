@@ -19,6 +19,8 @@ export interface Sfx {
   score(): void;
   /** Crash. */
   hit(): void;
+  /** Runtime mute toggle (the in-game sound button). */
+  setMuted(muted: boolean): void;
   dispose(): void;
 }
 
@@ -27,6 +29,7 @@ const SILENT: Sfx = {
   jump() {},
   score() {},
   hit() {},
+  setMuted() {},
   dispose() {},
 };
 
@@ -83,9 +86,11 @@ export function createSfx(view: Window, enabled: boolean, clips: SoundClips): Sf
     }
   });
 
+  let muted = false;
+
   function play(name: ClipName): void {
     const buffer = buffers[name];
-    if (!buffer || ctx.state === 'closed') return;
+    if (muted || !buffer || ctx.state === 'closed') return;
     try {
       const source = ctx.createBufferSource();
       source.buffer = buffer;
@@ -108,6 +113,9 @@ export function createSfx(view: Window, enabled: boolean, clips: SoundClips): Sf
     },
     hit() {
       play('hit');
+    },
+    setMuted(next: boolean) {
+      muted = next;
     },
     dispose() {
       try {

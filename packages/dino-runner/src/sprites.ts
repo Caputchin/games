@@ -27,6 +27,8 @@ import moon from './assets/sprites/moon.svg';
 import star from './assets/sprites/star.svg';
 import ground from './assets/sprites/ground.svg';
 import restart from './assets/sprites/restart.svg';
+import soundOn from './assets/sprites/sound-on.svg';
+import soundOff from './assets/sprites/sound-off.svg';
 
 export type SpriteId =
   | 'runner-idle'
@@ -44,7 +46,9 @@ export type SpriteId =
   | 'moon'
   | 'star'
   | 'ground'
-  | 'restart';
+  | 'restart'
+  | 'sound-on'
+  | 'sound-off';
 
 export const SPRITE_IDS: readonly SpriteId[] = [
   'runner-idle',
@@ -63,6 +67,8 @@ export const SPRITE_IDS: readonly SpriteId[] = [
   'star',
   'ground',
   'restart',
+  'sound-on',
+  'sound-off',
 ];
 
 /** Skin asset key for each sprite, exactly matching the `skins.schema` keys
@@ -84,6 +90,8 @@ export const SPRITE_ASSET_KEY: Record<SpriteId, string> = {
   star: 'sprite_star',
   ground: 'sprite_ground',
   restart: 'sprite_restart',
+  'sound-on': 'sprite_sound_on',
+  'sound-off': 'sprite_sound_off',
 };
 
 /** Bundled default data URI per sprite. Used when `ctx.skin` is null or when
@@ -106,6 +114,8 @@ export const DEFAULT_SPRITE_URIS: Record<SpriteId, string> = {
   star,
   ground,
   restart,
+  'sound-on': soundOn,
+  'sound-off': soundOff,
 };
 
 /** Decode a `data:image/svg+xml` URI back into raw SVG markup so it can be

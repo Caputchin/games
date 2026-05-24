@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- speaker body -->
+  <path d="M3 9 H7 L13 4 V20 L7 15 H3 Z"/>
+  <!-- muted: an x where the waves would be -->
+  <path d="M16 9 L22 15 M22 9 L16 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

@@ -19,7 +19,10 @@ export interface ScenerySprite {
 }
 
 const CLOUD_WIDTH = 46;
-const MOON_WIDTH = 20;
+// Must equal the moon's render-box width in game.ts (sizeEntity(moonEl,...));
+// this is the off-screen wrap threshold, so a mismatch makes the moon pop back
+// to the right edge while still partly visible. Repo pattern: box == wrap width.
+const MOON_WIDTH = 40;
 const STAR_WIDTH = 9;
 const STAR_COUNT = 6;
 
