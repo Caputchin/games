@@ -12,6 +12,27 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/dino-runner:
+    devDependencies:
+      '@caputchin/game-sdk':
+        specifier: ^2.0.0
+        version: 2.0.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      happy-dom:
+        specifier: ^15.0.0
+        version: 15.11.7
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.14)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
+
   packages/leaf-memory:
     devDependencies:
       '@caputchin/game-sdk':
