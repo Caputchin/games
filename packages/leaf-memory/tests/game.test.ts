@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runLeafMemory } from '../src/game';
-import type { Bridge } from '@caputchin/game-sdk';
+import type { Bridge, GameContext, ResolvedLocale } from '@caputchin/game-sdk';
+
+function ctxWithLocale(iso: string, direction: 'ltr' | 'rtl' = 'ltr'): GameContext {
+  return {
+    locale: { _iso: iso, _direction: direction } as ResolvedLocale,
+    skin: null,
+    config: null,
+  };
+}
 
 function makeBridge() {
   return {
@@ -272,5 +280,39 @@ describe('runLeafMemory state machine', () => {
     expect(container.querySelector('.lm-screen--loss')).not.toBeNull();
     const buttons = Array.from(container.querySelectorAll('.lm-screen button')).map((b) => b.textContent);
     expect(buttons).toEqual(['Retry']);
+  });
+});
+
+describe('runLeafMemory locale rendering (lang + CJK font)', () => {
+  function root(container: HTMLElement): HTMLElement {
+    return container.querySelector('.lm-root') as HTMLElement;
+  }
+
+  it('publishes the resolved language on the root lang attribute', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    runLeafMemory({ container, bridge: makeBridge(), ctx: ctxWithLocale('fr') });
+    expect(root(container).getAttribute('lang')).toBe('fr');
+  });
+
+  it('defaults the lang attribute to en when no locale resolves', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    runLeafMemory({ container, bridge: makeBridge() });
+    expect(root(container).getAttribute('lang')).toBe('en');
+  });
+
+  it('sets the --lm-cjk font stack for a CJK locale', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    runLeafMemory({ container, bridge: makeBridge(), ctx: ctxWithLocale('ja') });
+    expect(root(container).style.getPropertyValue('--lm-cjk')).toContain('Hiragino Sans');
+  });
+
+  it('leaves --lm-cjk unset (stylesheet default wins) for a non-CJK locale', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    runLeafMemory({ container, bridge: makeBridge(), ctx: ctxWithLocale('en') });
+    expect(root(container).style.getPropertyValue('--lm-cjk')).toBe('');
   });
 });

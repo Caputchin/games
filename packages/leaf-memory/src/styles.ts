@@ -1,5 +1,8 @@
 // Scoped CSS for Leaf Memory. Injected into the iframe document on first
 // render. No external font fetches (CSP blocks them); system font stack.
+// CJK locales extend the stack via the `--lm-cjk` custom property, which
+// game.ts sets from the resolved locale (see fonts.ts); non-CJK locales
+// keep the bare `sans-serif` default below.
 //
 // Every visual surface (text + colors + borders) binds to a `--lm-*` CSS
 // custom property that game.ts writes onto the root element from the
@@ -79,7 +82,12 @@ html, body, #cpt-root {
   --lm-focus-ring: #2F6640;
   --lm-cell-size: ${CELL_DEFAULT_PX}px;
   --lm-cell-gap: ${CELL_GAP_PX}px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* CJK locales override --lm-cjk with native CJK UI fonts (game.ts via
+     fonts.ts). Non-CJK locales keep this sans-serif default, so the base
+     stack is unchanged. The var carries its own sans-serif tail, so
+     font-family stays valid whether or not game.ts overrides it. */
+  --lm-cjk: sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, var(--lm-cjk);
   color: var(--lm-text);
 }
 
