@@ -44,4 +44,39 @@ describe('leaf-memory caputchin.json — schema / presets parity', () => {
       }
     }
   });
+
+  // Localization-rule gates (mirror the translator agent + docs/supported-languages.md)
+  // so the rules hold even for a contributor who never reads them.
+
+  it('uses no em-dash in any preset value (public-source rule)', () => {
+    const EM_DASH = String.fromCharCode(0x2014); // em-dash, built at runtime so this file holds no literal
+    for (const name of presetNames) {
+      for (const [key, value] of Object.entries(presets[name] ?? {})) {
+        if (METADATA_KEYS.has(key) || typeof value !== 'string') continue;
+        expect(value.includes(EM_DASH), `preset "${name}" key "${key}" contains an em-dash`).toBe(false);
+      }
+    }
+  });
+
+  it('covers the official supported-language set (docs/supported-languages.md)', () => {
+    const OFFICIAL_LANGS = ['en', 'zh-Hans', 'es', 'ar', 'pt', 'fr', 'de', 'ru', 'ja', 'ko', 'id'];
+    const declared = new Set(
+      presetNames.map((n) => presets[n]?.['_lang']).filter((v): v is string => typeof v === 'string'),
+    );
+    for (const lang of OFFICIAL_LANGS) {
+      expect(declared.has(lang), `missing required locale preset for _lang="${lang}"`).toBe(true);
+    }
+  });
+
+  it('uses no undeclared {token} in any preset value', () => {
+    for (const name of presetNames) {
+      for (const [key, value] of Object.entries(presets[name] ?? {})) {
+        if (METADATA_KEYS.has(key) || typeof value !== 'string') continue;
+        const declared = new Set(schema[key]?.tokens ?? []);
+        for (const match of value.matchAll(/\{(\w+)\}/g)) {
+          expect(declared.has(match[1]!), `preset "${name}" key "${key}" uses undeclared token {${match[1]}}`).toBe(true);
+        }
+      }
+    }
+  });
 });
