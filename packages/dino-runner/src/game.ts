@@ -139,7 +139,8 @@ export function runDinoRunner(opts: GameOptions): () => void {
   const moonEl = nightSky ? scenerySprite('moon') : null;
   if (moonEl) {
     moonEl.classList.add('dr-moon');
-    sizeEntity(moonEl, 20, 40);
+    // Square box so the disc stays circular (not stretched into an ellipse).
+    sizeEntity(moonEl, 20, 20);
     skyNight.appendChild(moonEl);
   }
 

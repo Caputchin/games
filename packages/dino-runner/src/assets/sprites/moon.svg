@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 40" fill="currentColor" shape-rendering="crispEdges">
-  <!-- crescent: a filled disc with an offset disc carved out (evenodd) -->
-  <path fill-rule="evenodd" d="M14 2 a18 18 0 1 0 0 36 a22 22 0 0 1 0 -36 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+  <!-- Full moon: a clean disc that fills its (square) viewBox, so it never
+       clips. Rendered square by game.ts so it stays circular. -->
+  <circle cx="10" cy="10" r="10"/>
 </svg>
