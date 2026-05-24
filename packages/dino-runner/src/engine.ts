@@ -1,0 +1,187 @@
+// The runner (T-rex) physics + pose state. Pure logic over logical world
+// units: given a per-frame delta and the current run speed, it advances the
+// jump arc, tracks the duck pose, and reports which sprite frame + render box
+// to draw and which collision origin to test. No DOM, no timers of its own —
+// game.ts drives it from the rAF loop, which keeps the physics deterministic
+// and unit-testable.
+
+import {
+  WORLD_HEIGHT,
+  BOTTOM_PAD,
+  MS_PER_FRAME,
+  RUNNER,
+  JUMP,
+  ANIM_MS,
+} from './constants.js';
+import type { DinoConfig } from './config.js';
+import type { SpriteId } from './sprites.js';
+
+export type RunnerStatus = 'waiting' | 'running' | 'jumping' | 'ducking' | 'crashed';
+
+export interface RunnerFrame {
+  sprite: SpriteId;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Standing top-left Y when grounded: feet rest on the baseline. */
+const GROUND_Y = WORLD_HEIGHT - RUNNER.height - BOTTOM_PAD;
+/** Vertical drop applied to the (shorter) duck sprite so its feet still land
+ *  on the baseline while the collision origin stays the standing top. */
+const DUCK_RENDER_OFFSET = RUNNER.height - RUNNER.heightDuck;
+
+export class Runner {
+  /** Fixed horizontal position; the world scrolls past, the runner doesn't. */
+  readonly x = RUNNER.startX;
+  /** Standing top-left Y (collision origin). Decreases during a jump. */
+  y = GROUND_Y;
+  status: RunnerStatus = 'waiting';
+
+  private velocity = 0;
+  private duckHeld = false;
+  private speedDrop = false;
+  private runTimer = 0;
+  private runFrame = 0;
+  private duckTimer = 0;
+  private duckFrame = 0;
+  /** Count of completed jumps; the loop uses it to know the first input has
+   *  happened (start the run on the first jump). */
+  jumpCount = 0;
+
+  constructor(private readonly cfg: DinoConfig) {}
+
+  get grounded(): boolean {
+    return this.y >= GROUND_Y;
+  }
+
+  /** Collision pose: ducking uses the long flat box, everything else the
+   *  upright box set. */
+  get ducking(): boolean {
+    return this.status === 'ducking';
+  }
+
+  /** Move from the idle/start pose into the run. */
+  start(): void {
+    if (this.status === 'waiting') this.status = 'running';
+  }
+
+  startJump(speed: number): void {
+    if (this.status !== 'running' && this.status !== 'ducking') return;
+    this.status = 'jumping';
+    this.speedDrop = false;
+    // Faster runs get a touch more lift, matching the original's feel.
+    this.velocity = this.cfg.initialJumpVelocity - speed / 10;
+  }
+
+  /** Press / release the duck control. While airborne, holding down turns the
+   *  jump into a fast fall (speed drop) instead of a pose change. */
+  setDuck(down: boolean): void {
+    this.duckHeld = down;
+    if (down) {
+      if (this.status === 'jumping') this.speedDrop = true;
+      else if (this.status === 'running') this.status = 'ducking';
+    } else {
+      this.speedDrop = false;
+      if (this.status === 'ducking') this.status = 'running';
+    }
+  }
+
+  crash(): void {
+    this.status = 'crashed';
+    this.velocity = 0;
+  }
+
+  /** Return to the idle start pose for a fresh run (same config). */
+  reset(): void {
+    this.y = GROUND_Y;
+    this.status = 'waiting';
+    this.velocity = 0;
+    this.duckHeld = false;
+    this.speedDrop = false;
+    this.runTimer = 0;
+    this.runFrame = 0;
+    this.duckTimer = 0;
+    this.duckFrame = 0;
+    this.jumpCount = 0;
+  }
+
+  /** Advance the runner by `dtMs` of game time at the current `speed`. */
+  update(dtMs: number, speed: number): void {
+    const frames = dtMs / MS_PER_FRAME;
+
+    if (this.status === 'jumping') {
+      const g = this.cfg.gravity * (this.speedDrop ? JUMP.speedDropCoefficient : 1);
+      this.y += this.velocity * frames;
+      this.velocity += g * frames;
+      // Don't let a very high jump leave the top of the world.
+      if (this.y < JUMP.ceilingY) {
+        this.y = JUMP.ceilingY;
+        if (this.velocity < 0) this.velocity = 0;
+      }
+      if (this.y >= GROUND_Y) {
+        this.y = GROUND_Y;
+        this.velocity = 0;
+        this.jumpCount += 1;
+        this.status = this.duckHeld ? 'ducking' : 'running';
+        this.speedDrop = false;
+      }
+    }
+
+    this.advanceAnimation(dtMs);
+  }
+
+  private advanceAnimation(dtMs: number): void {
+    if (this.status === 'running') {
+      this.runTimer += dtMs;
+      if (this.runTimer >= ANIM_MS.run) {
+        this.runTimer = 0;
+        this.runFrame ^= 1;
+      }
+    } else if (this.status === 'ducking') {
+      this.duckTimer += dtMs;
+      if (this.duckTimer >= ANIM_MS.duck) {
+        this.duckTimer = 0;
+        this.duckFrame ^= 1;
+      }
+    }
+  }
+
+  /** The sprite + render box for the current state. Ducking renders the short
+   *  sprite dropped to the baseline; everything else renders upright at `y`. */
+  frame(): RunnerFrame {
+    switch (this.status) {
+      case 'waiting':
+        return this.upright('runner-idle');
+      case 'crashed':
+        return this.upright('runner-crash');
+      case 'jumping':
+        return this.upright('runner-jump');
+      case 'ducking':
+        return {
+          sprite: this.duckFrame === 0 ? 'runner-duck-1' : 'runner-duck-2',
+          x: this.x,
+          y: this.y + DUCK_RENDER_OFFSET,
+          width: RUNNER.widthDuck,
+          height: RUNNER.heightDuck,
+        };
+      case 'running':
+      default:
+        return this.upright(this.runFrame === 0 ? 'runner-run-1' : 'runner-run-2');
+    }
+  }
+
+  private upright(sprite: SpriteId): RunnerFrame {
+    return { sprite, x: this.x, y: this.y, width: RUNNER.width, height: RUNNER.height };
+  }
+}
+
+/** Re-exported for collision wiring + tests: the runner's collision origin is
+ *  always the standing top-left (never the dropped duck render position). */
+export function runnerCollisionOrigin(runner: Runner): { x: number; y: number; ducking: boolean } {
+  return { x: runner.x, y: runner.y, ducking: runner.ducking };
+}
+
+/** The grounded standing-top Y, exported for tests asserting jump apex. */
+export const RUNNER_GROUND_Y = GROUND_Y;

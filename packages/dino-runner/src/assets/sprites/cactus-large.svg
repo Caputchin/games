@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 50" fill="currentColor" shape-rendering="crispEdges">
+  <!-- thick central trunk -->
+  <rect x="9" y="0" width="7" height="50"/>
+  <!-- left arm -->
+  <rect x="0" y="14" width="4" height="16"/>
+  <rect x="3" y="24" width="7" height="4"/>
+  <!-- right arm -->
+  <rect x="21" y="8" width="4" height="18"/>
+  <rect x="15" y="20" width="7" height="4"/>
+</svg>

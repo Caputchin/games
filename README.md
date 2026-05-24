@@ -7,6 +7,7 @@ The official first-party game pack for the [Caputchin](https://caputchin.com) ma
 | Game | What it is |
 |---|---|
 | [Leaf Memory](packages/leaf-memory/) | Match pairs of tropical leaves before the timer runs out. |
+| [Dino Runner](packages/dino-runner/) | Jump the cactus, duck the birds, and run as far as you can. |
 
 More games land here over time. Each one is browsable and embeddable on its own from the [Caputchin marketplace](https://caputchin.com/marketplace).
 
