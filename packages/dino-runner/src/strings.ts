@@ -21,6 +21,7 @@ const FALLBACK = {
   restartButton: 'Restart',
   ariaJump: 'Jump',
   ariaDuck: 'Duck',
+  ariaSound: 'Sound',
   announceStart: 'Go',
   announceGameOver: 'Game over. You scored {score}.',
   announceNewBest: 'New best score: {score}.',

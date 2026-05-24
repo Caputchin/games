@@ -74,6 +74,10 @@
         "name": "Duck control label",
         "description": "Screen-reader / touch-button label for the duck action."
       },
+      "ariaSound": {
+        "name": "Sound toggle label",
+        "description": "Accessible label for the in-game button that turns sound on / off."
+      },
       "announceStart": {
         "name": "Announcer: run started",
         "description": "Live-region message when the run begins."
@@ -106,6 +110,7 @@
         "restartButton": "Restart",
         "ariaJump": "Jump",
         "ariaDuck": "Duck",
+        "ariaSound": "Sound",
         "announceStart": "Go",
         "announceGameOver": "Game over. You scored {score}.",
         "announceNewBest": "New best score: {score}."
@@ -126,6 +131,7 @@
         "restartButton": "重新开始",
         "ariaJump": "跳跃",
         "ariaDuck": "下蹲",
+        "ariaSound": "声音",
         "announceStart": "出发",
         "announceGameOver": "游戏结束。你得了 {score} 分。",
         "announceNewBest": "新的最佳成绩：{score}。"
@@ -146,6 +152,7 @@
         "restartButton": "Reiniciar",
         "ariaJump": "Saltar",
         "ariaDuck": "Agacharse",
+        "ariaSound": "Sonido",
         "announceStart": "¡Ya!",
         "announceGameOver": "Fin del juego. Hiciste {score} puntos.",
         "announceNewBest": "Nueva mejor puntuación: {score}."
@@ -166,6 +173,7 @@
         "restartButton": "أعد المحاولة",
         "ariaJump": "اقفز",
         "ariaDuck": "انحنِ",
+        "ariaSound": "الصوت",
         "announceStart": "انطلق",
         "announceGameOver": "انتهت اللعبة. حصلت على {score} نقطة.",
         "announceNewBest": "أفضل نتيجة جديدة: {score}."
@@ -186,6 +194,7 @@
         "restartButton": "Reiniciar",
         "ariaJump": "Pular",
         "ariaDuck": "Abaixar",
+        "ariaSound": "Som",
         "announceStart": "Já!",
         "announceGameOver": "Fim de jogo. Você fez {score} pontos.",
         "announceNewBest": "Novo recorde: {score}."
@@ -206,6 +215,7 @@
         "restartButton": "Recommencer",
         "ariaJump": "Sauter",
         "ariaDuck": "Se baisser",
+        "ariaSound": "Son",
         "announceStart": "Partez !",
         "announceGameOver": "Partie terminée. Vous avez fait {score}.",
         "announceNewBest": "Nouveau record : {score}."
@@ -226,6 +236,7 @@
         "restartButton": "Neustart",
         "ariaJump": "Springen",
         "ariaDuck": "Ducken",
+        "ariaSound": "Ton",
         "announceStart": "Los",
         "announceGameOver": "Spiel vorbei. Du hast {score} Punkte erreicht.",
         "announceNewBest": "Neuer Rekord: {score}."
@@ -246,6 +257,7 @@
         "restartButton": "Заново",
         "ariaJump": "Прыжок",
         "ariaDuck": "Пригнуться",
+        "ariaSound": "Звук",
         "announceStart": "Вперёд",
         "announceGameOver": "Игра окончена. Ваш счёт: {score}.",
         "announceNewBest": "Новый рекорд: {score}."
@@ -266,6 +278,7 @@
         "restartButton": "もう一度",
         "ariaJump": "ジャンプ",
         "ariaDuck": "しゃがむ",
+        "ariaSound": "サウンド",
         "announceStart": "スタート",
         "announceGameOver": "ゲームオーバー。スコアは {score} でした。",
         "announceNewBest": "自己ベスト更新：{score}。"
@@ -286,6 +299,7 @@
         "restartButton": "다시 하기",
         "ariaJump": "점프",
         "ariaDuck": "숙이기",
+        "ariaSound": "소리",
         "announceStart": "출발",
         "announceGameOver": "게임 오버. 점수는 {score}점이에요.",
         "announceNewBest": "최고 기록 경신: {score}."
@@ -306,6 +320,7 @@
         "restartButton": "Ulangi",
         "ariaJump": "Lompat",
         "ariaDuck": "Menunduk",
+        "ariaSound": "Suara",
         "announceStart": "Lari!",
         "announceGameOver": "Permainan selesai. Skor kamu {score}.",
         "announceNewBest": "Rekor baru: {score}."
@@ -438,6 +453,16 @@
         "type": "image",
         "name": "Restart icon",
         "description": "Reload icon shown on the restart button."
+      },
+      "sprite_sound_on": {
+        "type": "image",
+        "name": "Sound-on icon",
+        "description": "Speaker icon shown on the sound toggle when sound is on."
+      },
+      "sprite_sound_off": {
+        "type": "image",
+        "name": "Sound-off icon",
+        "description": "Muted-speaker icon shown on the sound toggle when sound is off."
       }
     },
     "presets": {

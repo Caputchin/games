@@ -105,10 +105,23 @@ export function runDinoRunner(opts: GameOptions): () => void {
   const obstacleLayer = el('div', 'dr-obstacle-layer');
   const runnerEl = el('div', 'dr-entity dr-runner');
   const hud = buildHud();
+  // The in-game sound toggle only exists when sound is enabled by config.
+  const soundBtn = cfg.sound ? buildSoundButton() : null;
   const overlay = el('div', 'dr-overlay-host');
 
-  world.append(skyNight, skyDay, groundLayer, obstacleLayer, runnerEl, hud.root, overlay);
-  stage.appendChild(world);
+  world.append(skyNight, skyDay, groundLayer, obstacleLayer, runnerEl, hud.root);
+  // The overlay (start / game-over screen) lives on the STAGE, not the World:
+  // the World is letterboxed + scaled to a fixed 600x150 box, so an overlay
+  // inside it would only cover the game rect, not the full iframe when the
+  // embed's aspect differs (e.g. full-width). On the stage it always fills the
+  // embed. `.dr-overlay` (inset:0) resolves against the positioned stage.
+  // Invariant: `.dr-overlay-host` must stay UNpositioned (no CSS position) so
+  // the containing-block walk passes through it to the stage; giving it a
+  // position would silently re-scope the overlay to the host's box.
+  stage.append(world, overlay);
+  // Sound toggle is appended to the stage AFTER the overlay, so it stays
+  // visible + clickable on top of the start / game-over screen (always on top).
+  if (soundBtn) stage.appendChild(soundBtn);
 
   const touch = buildTouchControls();
 
@@ -125,6 +138,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   let distanceRan = 0;
   let bestScore = 0;
   let bestPassed = -1;
+  let muted = false;
   let runElapsedMs = 0;
   let lastMilestone = 0;
   let lastTs: number | null = null;
@@ -139,8 +153,10 @@ export function runDinoRunner(opts: GameOptions): () => void {
   const moonEl = nightSky ? scenerySprite('moon') : null;
   if (moonEl) {
     moonEl.classList.add('dr-moon');
-    // Square box so the disc stays circular (not stretched into an ellipse).
-    sizeEntity(moonEl, 20, 20);
+    // Square box (matches the moon's square viewBox so the crescent isn't
+    // distorted); sized well above the 9px stars so the moon clearly reads as
+    // the dominant night-sky element.
+    sizeEntity(moonEl, 40, 40);
     skyNight.appendChild(moonEl);
   }
 
@@ -460,6 +476,27 @@ export function runDinoRunner(opts: GameOptions): () => void {
     const score = el('span', 'dr-hud-score');
     rootEl.append(best, score);
     return { root: rootEl, best, score };
+  }
+  // In-game sound toggle: an accessible switch that mutes / unmutes the audio
+  // engine at runtime. aria-checked = sound ON.
+  function buildSoundButton(): HTMLButtonElement {
+    const btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dr-sound';
+    btn.setAttribute('role', 'switch');
+    btn.setAttribute('aria-checked', 'true');
+    btn.setAttribute('aria-label', strings.t('ariaSound'));
+    btn.innerHTML = sprites['sound-on'];
+    // Keep a tap on the toggle from bubbling to the stage's jump handler.
+    btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    btn.addEventListener('click', () => {
+      muted = !muted;
+      sfx.resume();
+      sfx.setMuted(muted);
+      btn.innerHTML = sprites[muted ? 'sound-off' : 'sound-on'];
+      btn.setAttribute('aria-checked', muted ? 'false' : 'true');
+    });
+    return btn;
   }
   function buildTouchControls(): { root: HTMLElement; jump: HTMLButtonElement; duck: HTMLButtonElement } {
     const rootEl = el('div', 'dr-touch');
