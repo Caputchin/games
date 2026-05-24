@@ -167,7 +167,7 @@
     },
     "presets": {
       "English": {
-        "_iso": "en",
+        "_lang": "en",
         "_default": true,
         "headerBest": "Best",
         "headerLevel": "Level",
@@ -203,7 +203,7 @@
         "lossEasier": "Try easier"
       },
       "Arabic": {
-        "_iso": "ar",
+        "_lang": "ar",
         "_default": true,
         "headerBest": "الأفضل",
         "headerLevel": "المستوى",
