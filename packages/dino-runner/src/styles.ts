@@ -123,6 +123,10 @@ html, body, #cpt-root {
 .dr-hud-best[data-hidden="true"],
 .dr-hud-score[data-hidden="true"] { display: none; }
 
+/* "Verified" badge: shown in the HUD once the run clears the pass threshold. */
+.dr-badge { font-weight: 700; letter-spacing: 1px; }
+.dr-badge[data-hidden="true"] { display: none; }
+
 /* In-game sound toggle, top-left (mirrors the HUD top-right). Icon-only,
    inherits the foreground color via currentColor. */
 .dr-sound {

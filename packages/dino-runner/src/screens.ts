@@ -55,6 +55,9 @@ export function renderStartScreen(doc: Document, strings: Strings, onStart: () =
 }
 
 export interface GameOverOptions {
+  /** True once the run cleared the pass threshold: frames the end screen as a
+   *  success ("Verified") rather than a plain "Game over". */
+  won: boolean;
   score: number;
   best: number;
   showBest: boolean;
@@ -69,12 +72,12 @@ export function renderGameOverScreen(
   opts: GameOverOptions,
 ): HTMLElement {
   const root = doc.createElement('div');
-  root.className = 'dr-overlay dr-overlay--gameover';
+  root.className = `dr-overlay dr-overlay--gameover${opts.won ? ' dr-overlay--won' : ''}`;
   root.setAttribute('role', 'group');
 
   const title = doc.createElement('h2');
   title.className = 'dr-title';
-  title.textContent = strings.t('gameOverTitle');
+  title.textContent = strings.t(opts.won ? 'verifiedTitle' : 'gameOverTitle');
 
   const score = doc.createElement('p');
   score.className = 'dr-line dr-line--score';
