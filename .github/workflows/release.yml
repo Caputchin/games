@@ -17,6 +17,7 @@ jobs:
       leaf_memory_released: ${{ steps.release.outputs['packages/leaf-memory--release_created'] }}
       dino_runner_released: ${{ steps.release.outputs['packages/dino-runner--release_created'] }}
       fruit_slash_released: ${{ steps.release.outputs['packages/fruit-slash--release_created'] }}
+      whack_a_monkey_released: ${{ steps.release.outputs['packages/whack-a-monkey--release_created'] }}
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
@@ -71,3 +72,7 @@ jobs:
       - name: Publish @caputchin/game-fruit-slash
         if: ${{ needs.release-please.outputs.fruit_slash_released == 'true' }}
         run: pnpm --filter @caputchin/game-fruit-slash publish --access public --no-git-checks
+
+      - name: Publish @caputchin/game-whack-a-monkey
+        if: ${{ needs.release-please.outputs.whack_a_monkey_released == 'true' }}
+        run: pnpm --filter @caputchin/game-whack-a-monkey publish --access public --no-git-checks

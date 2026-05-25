@@ -17,6 +17,10 @@
     "packages/fruit-slash": {
       "component": "fruit-slash",
       "package-name": "@caputchin/game-fruit-slash"
+    },
+    "packages/whack-a-monkey": {
+      "component": "whack-a-monkey",
+      "package-name": "@caputchin/game-whack-a-monkey"
     }
   }
 }

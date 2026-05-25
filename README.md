@@ -9,6 +9,7 @@ The official first-party game pack for the [Caputchin](https://caputchin.com) ma
 | [Leaf Memory](packages/leaf-memory/) | Match pairs of tropical leaves before the timer runs out. |
 | [Dino Runner](packages/dino-runner/) | Jump the cactus, duck the birds, and run as far as you can. |
 | [Fruit Slash](packages/fruit-slash/) | Swipe to slice the flying fruit, avoid the bombs. |
+| [Whack-a-Monkey](packages/whack-a-monkey/) | Tap the monkeys as they peek out, leave the jungle animals alone. |
 
 More games land here over time. Each one is browsable and embeddable on its own from the [Caputchin marketplace](https://caputchin.com/marketplace).
 
