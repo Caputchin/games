@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Caputchin/games/compare/dino-runner-v0.2.0...dino-runner-v0.3.0) (2026-05-25)
+
+
+### Features
+
+* **dino-runner:** report pass at threshold then resend final score (mirror fruit-slash) ([a0f3200](https://github.com/Caputchin/games/commit/a0f32008fabf8a8cd604029d851e67d85e2a6fa6))
+
 ## [0.2.0](https://github.com/Caputchin/games/compare/dino-runner-v0.1.0...dino-runner-v0.2.0) (2026-05-24)
 
 

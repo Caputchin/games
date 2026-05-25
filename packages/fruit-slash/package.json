@@ -1,8 +1,16 @@
 {
   "name": "@caputchin/game-fruit-slash",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Slice the flying fruit, dodge the bombs. A Caputchin first-party game.",
-  "keywords": ["caputchin", "caputchin-game", "captcha", "slice", "fruit", "arcade", "game"],
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "slice",
+    "fruit",
+    "arcade",
+    "game"
+  ],
   "homepage": "https://github.com/Caputchin/caputchin-games#readme",
   "repository": {
     "type": "git",
@@ -12,8 +20,14 @@
   "license": "MIT",
   "private": false,
   "type": "module",
-  "files": ["dist", "caputchin.json", "THIRD-PARTY-NOTICES.md"],
-  "sideEffects": ["./dist/fruit-slash.js"],
+  "files": [
+    "dist",
+    "caputchin.json",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": [
+    "./dist/fruit-slash.js"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
