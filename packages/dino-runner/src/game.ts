@@ -3,11 +3,13 @@
 // -> crashed -> running). Physics live in engine.ts / obstacles.ts /
 // horizon.ts; this module is the glue + rendering + the pass gate.
 //
-// The game is endless, so the pass gate is evaluated at crash time
-// (scoring.ts): the first crash that clears `passScore` reports success via
-// bridge.pass, and so does every later run that sets a new best. Best score
-// is in-memory only — the iframe is sandbox="allow-scripts" (opaque origin),
-// so localStorage is unavailable.
+// Pass gate (mirrors fruit-slash): bridge.pass fires the moment the live
+// score reaches `passScore` mid-run (markVerified, once per session) so the
+// captcha is satisfied immediately and the visitor can keep running for a
+// higher score. It fires again at crash time for any run that beats the best
+// score already passed (scoring.evaluatePass). Best score and the `verified`
+// latch are in-memory only (the iframe is sandbox="allow-scripts", an opaque
+// origin), so localStorage is unavailable.
 
 import type { Bridge, GameContext } from '@caputchin/game-sdk';
 import { Runner, runnerCollisionOrigin } from './engine.js';
@@ -138,6 +140,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   let distanceRan = 0;
   let bestScore = 0;
   let bestPassed = -1;
+  let verified = false; // pass threshold reached; bridge.pass fired once
   let muted = false;
   let runElapsedMs = 0;
   let lastMilestone = 0;
@@ -265,6 +268,18 @@ export function runDinoRunner(opts: GameOptions): () => void {
     startRun();
   }
 
+  // Report success once the live score reaches the pass threshold, then keep
+  // running. A Verified badge shows in the HUD; gameOver() resends the final
+  // score if it beats this. `verified` is a session latch (the badge persists
+  // across restarts), since a Dino session is one continuous endless run set.
+  function markVerified(score: number): void {
+    verified = true;
+    bestPassed = score; // first pass; high-water mark for the crash resend
+    bridge.pass({ score, durationMs: Math.round(runElapsedMs) });
+    announcer.say(strings.t('announceVerified', { score }));
+    renderHud();
+  }
+
   function gameOver(): void {
     status = 'crashed';
     runner.crash();
@@ -274,6 +289,9 @@ export function runDinoRunner(opts: GameOptions): () => void {
     const isNewBest = score > bestScore;
     if (isNewBest) bestScore = score;
 
+    // Resend the final score if this run beat the best already passed (the
+    // mid-run verify reported the threshold score; the visitor may have run
+    // further since). The widget keeps the highest score reached.
     const decision = evaluatePass(score, cfg.passScore, bestPassed);
     if (decision.pass) {
       bestPassed = decision.bestPassed;
@@ -288,6 +306,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
 
     overlay.replaceChildren(
       renderGameOverScreen(doc, strings, {
+        won: verified,
         score,
         best: bestScore,
         showBest: cfg.showBest,
@@ -323,6 +342,8 @@ export function runDinoRunner(opts: GameOptions): () => void {
       lastMilestone = milestone;
       sfx.score();
     }
+    // Captcha is satisfied the instant the run reaches the pass threshold.
+    if (!verified && score >= cfg.passScore) markVerified(score);
 
     if (hasCollision()) {
       gameOver();
@@ -413,6 +434,8 @@ export function runDinoRunner(opts: GameOptions): () => void {
   }
 
   function renderHud(): void {
+    hud.badge.dataset['hidden'] = verified ? 'false' : 'true';
+    if (verified) hud.badge.textContent = `✓ ${strings.t('verifiedBadge')}`;
     hud.best.dataset['hidden'] = cfg.showBest ? 'false' : 'true';
     hud.score.dataset['hidden'] = cfg.showScore ? 'false' : 'true';
     if (cfg.showBest) {
@@ -470,12 +493,14 @@ export function runDinoRunner(opts: GameOptions): () => void {
     while (pool.length < len) pool.push(create());
     while (pool.length > len) pool.pop()!.remove();
   }
-  function buildHud(): { root: HTMLElement; best: HTMLElement; score: HTMLElement } {
+  function buildHud(): { root: HTMLElement; best: HTMLElement; score: HTMLElement; badge: HTMLElement } {
     const rootEl = el('div', 'dr-hud');
+    const badge = el('span', 'dr-badge');
+    badge.dataset['hidden'] = 'true';
     const best = el('span', 'dr-hud-best');
     const score = el('span', 'dr-hud-score');
-    rootEl.append(best, score);
-    return { root: rootEl, best, score };
+    rootEl.append(badge, best, score);
+    return { root: rootEl, best, score, badge };
   }
   // In-game sound toggle: an accessible switch that mutes / unmutes the audio
   // engine at runtime. aria-checked = sound ON.
