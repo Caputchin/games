@@ -13,6 +13,10 @@
     "packages/dino-runner": {
       "component": "dino-runner",
       "package-name": "@caputchin/game-dino-runner"
+    },
+    "packages/fruit-slash": {
+      "component": "fruit-slash",
+      "package-name": "@caputchin/game-fruit-slash"
     }
   }
 }
