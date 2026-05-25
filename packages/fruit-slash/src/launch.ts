@@ -65,10 +65,11 @@ export function horizontalSpan(s: LaunchState, gravity: number): { minX: number;
  *  [sideMargin, width - sideMargin]. Deterministic given `rng`. */
 export function deriveLaunch(rng: Rng, b: LaunchBounds): LaunchState {
   const y0 = b.height + b.radius; // spawn just below the bottom border
-  // Apex center range: highest allowed keeps the top edge below apexMarginTop;
-  // lowest still rises well into view.
-  const apexMin = b.apexMarginTop + b.radius;
-  const apexMax = b.height * 0.55;
+  // Apex center range. Top clearance scales down on short fields so the range
+  // stays valid (apexMin < apexMax) and a fruit can still arc into view.
+  const topClear = Math.min(b.apexMarginTop, b.height * 0.25);
+  const apexMin = topClear + b.radius; // highest point (top edge >= topClear)
+  const apexMax = Math.max(apexMin + 10, b.height * 0.62); // lowest apex, still rises into view
   const apexCenter = apexMin + rng() * (apexMax - apexMin);
   const rise = y0 - apexCenter; // > 0
   const vy = -Math.sqrt(2 * b.gravity * rise); // upward (negative)

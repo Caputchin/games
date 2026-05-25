@@ -27,7 +27,7 @@ import { renderStartScreen, renderGameOverScreen } from './screens.js';
 import { STYLES } from './styles.js';
 import { difficultyAt } from './progression.js';
 import { createSfx } from './audio.js';
-import { launchBounds, WORLD_WIDTH, WORLD_HEIGHT, MAX_DT, TARGET_RADIUS, HIT_PAD, BLADE_TRAIL_S, SPLATTER, MAX_CONCURRENT } from './constants.js';
+import { launchBounds, WORLD_WIDTH, WORLD_HEIGHT, WORLD_HEIGHT_MIN, WORLD_HEIGHT_MAX, MAX_DT, TARGET_RADIUS, HIT_PAD, BLADE_TRAIL_S, SPLATTER, MAX_CONCURRENT } from './constants.js';
 
 const SKIN_COLOR_KEYS: readonly string[] = [
   'bg', 'fg', 'button_bg', 'button_text', 'button_hover', 'focus_ring',
@@ -80,7 +80,8 @@ export function runFruitSlash(opts: GameOptions): () => void {
   const cfg = resolveFruitSlashConfig(ctx);
   const palette: Palette = resolvePalette(ctx?.skin ?? null);
   const reducedMotion = prefersReducedMotion(view);
-  const bounds = launchBounds(cfg.gravity);
+  let worldHeight = WORLD_HEIGHT; // adapts to the container aspect on resize
+  let bounds = launchBounds(cfg.gravity, worldHeight);
   const sfx = createSfx(view, cfg.sound);
   let soundOn = cfg.sound; // live mute state; the in-game toggle flips it
   const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
@@ -159,9 +160,23 @@ export function runFruitSlash(opts: GameOptions): () => void {
     const dpr = Math.min(view.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
-    scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / WORLD_HEIGHT);
+    // World height tracks the container aspect (clamped) so the scene is
+    // width-driven: targets keep a sensible size on short embeds instead of
+    // being crushed to fit a fixed tall world.
+    worldHeight = Math.max(WORLD_HEIGHT_MIN, Math.min(WORLD_HEIGHT_MAX, (WORLD_WIDTH * rect.height) / rect.width));
+    // Keep the live spawner's bounds in sync (mutate the shared object, since
+    // the spawner captured this reference) so spawn/cull math and the render
+    // transform always agree, even on a mid-round resize.
+    bounds.height = worldHeight;
+    scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / worldHeight);
     offX = (canvas.width - WORLD_WIDTH * scale) / 2;
-    offY = (canvas.height - WORLD_HEIGHT * scale) / 2;
+    offY = (canvas.height - worldHeight * scale) / 2;
+    // Tier the overlay chrome by available height so the start / end screens
+    // simplify (drop body, then hint) instead of overflowing on short embeds.
+    const h = rect.height;
+    // lg: full. md: drop the long body, keep the (tiny, useful) hint. xs: drop
+    // body + hint, just title + button.
+    root.dataset['size'] = h >= 420 ? 'lg' : h >= 150 ? 'md' : 'xs';
   }
   let resizeObserver: ResizeObserver | null = null;
   if (typeof view.ResizeObserver === 'function') {
@@ -259,6 +274,7 @@ export function runFruitSlash(opts: GameOptions): () => void {
   }
   function start(): void {
     overlay.replaceChildren();
+    bounds = launchBounds(cfg.gravity, worldHeight); // current adapted height
     spawner = new Spawner(rng, bounds, { spawnRate: cfg.spawnRate, hazardChance: cfg.hazardChance, maxConcurrent: MAX_CONCURRENT });
     round = { sliced: 0, lives: cfg.lives, passScore: cfg.passScore };
     particles = [];
