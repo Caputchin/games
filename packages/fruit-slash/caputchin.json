@@ -16,7 +16,7 @@
   "entry": "dist/fruit-slash.js",
   "preferred": {
     "width": 800,
-    "height": 600
+    "height": 420
   },
   "locales": {
     "schema": {

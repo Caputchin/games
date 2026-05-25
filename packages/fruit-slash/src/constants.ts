@@ -11,7 +11,16 @@ import type { LaunchBounds } from './launch.js';
  *  the scene is scaled to fit; entities live in these units so physics never
  *  needs to know the pixel size. */
 export const WORLD_WIDTH = 800;
-export const WORLD_HEIGHT = 600;
+/** Default / reference world height, and the manifest `preferred` height. The
+ *  LIVE height adapts to the container's aspect ratio at runtime (game.ts), so
+ *  the scene is width-driven (targets keep a sensible size on short embeds
+ *  instead of being crushed to fit a fixed tall world). This constant is the
+ *  fallback + what the preferred-footprint test asserts against. */
+export const WORLD_HEIGHT = 420;
+/** Clamp range for the runtime-adaptive world height, so an extreme embed
+ *  aspect still leaves a fruit room to arc. */
+export const WORLD_HEIGHT_MIN = 160;
+export const WORLD_HEIGHT_MAX = 1200;
 
 /** Largest simulation step honored in one frame (seconds). After a tab-stall or
  *  breakpoint the real delta can be huge; clamping keeps the world from
@@ -43,10 +52,10 @@ export const MAX_CONCURRENT = 7;
  *  from the bottom border, arcs up with its apex kept below the top border,
  *  and falls back out the bottom — never crossing a side or the top.
  *  `sideMargin` exceeds `TARGET_RADIUS` so the fruit stays fully on screen. */
-export function launchBounds(gravity: number): LaunchBounds {
+export function launchBounds(gravity: number, worldHeight: number = WORLD_HEIGHT): LaunchBounds {
   return {
     width: WORLD_WIDTH,
-    height: WORLD_HEIGHT,
+    height: worldHeight,
     gravity,
     radius: TARGET_RADIUS,
     apexMarginTop: 80,

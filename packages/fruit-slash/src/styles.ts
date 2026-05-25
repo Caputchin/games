@@ -112,6 +112,7 @@ html, body, #cpt-root {
   box-sizing: border-box;
   background: color-mix(in srgb, var(--fs-bg) 80%, transparent);
   backdrop-filter: blur(2px);
+  overflow: auto;
 }
 .fs-title { margin: 0; font-size: 28px; font-weight: 700; }
 .fs-line { margin: 0; font-size: 15px; max-width: 36ch; line-height: 1.45; opacity: 0.92; }
@@ -171,4 +172,17 @@ html, body, #cpt-root {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Responsive overlay chrome: as the available height shrinks (game.ts sets
+   data-size on .fs-root from the stage height), progressively simplify the
+   start / end screens so they never overflow a short embed. */
+.fs-root[data-size="md"] .fs-overlay { gap: 8px; padding: 14px; }
+.fs-root[data-size="md"] .fs-title { font-size: 22px; }
+.fs-root[data-size="md"] .fs-overlay .fs-line { display: none; }
+
+.fs-root[data-size="xs"] .fs-overlay { gap: 6px; padding: 8px; }
+.fs-root[data-size="xs"] .fs-title { font-size: 17px; }
+.fs-root[data-size="xs"] .fs-overlay .fs-line,
+.fs-root[data-size="xs"] .fs-overlay .fs-hint { display: none; }
+.fs-root[data-size="xs"] .fs-button { padding: 7px 15px; font-size: 14px; }
 `;
