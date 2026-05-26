@@ -1,6 +1,6 @@
 // Accessibility helpers: aria-live announcement region + reduced-motion
-// query. Used by board.ts to surface match / no-match / round-passed /
-// out-of-time events to screen readers.
+// query. Used by game.ts to announce match / round-passed / out-of-time
+// events to screen readers.
 
 export interface Announcer {
   say(message: string): void;

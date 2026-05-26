@@ -75,7 +75,7 @@ describe('resolveLeafMemoryConfig — null ctx (no configurations block)', () =>
   });
 
   it('preserves the static difficulty ladder values when no overrides apply', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: null });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: null });
     for (let i = 0; i < DIFFICULTY_LADDER.length; i++) {
       expect(out.levels[i]?.peekMs).toBe(DIFFICULTY_LADDER[i]?.peekMs);
       expect(out.levels[i]?.timeSec).toBe(DIFFICULTY_LADDER[i]?.timeSec);
@@ -86,27 +86,27 @@ describe('resolveLeafMemoryConfig — null ctx (no configurations block)', () =>
 
 describe('resolveLeafMemoryConfig — start_level', () => {
   it('translates start_level=1 to startIndex=0', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { start_level: 1 } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 1 } });
     expect(out.startIndex).toBe(0);
   });
   it('translates start_level=3 to startIndex=2', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { start_level: 3 } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 3 } });
     expect(out.startIndex).toBe(2);
   });
   it('translates start_level=4 to startIndex=3 (top of ladder)', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { start_level: 4 } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 4 } });
     expect(out.startIndex).toBe(3);
   });
   it('clamps start_level=99 to the top of the ladder', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { start_level: 99 } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 99 } });
     expect(out.startIndex).toBe(MAX_LEVEL - 1);
   });
   it('clamps start_level=0 to the bottom', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { start_level: 0 } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 0 } });
     expect(out.startIndex).toBe(0);
   });
   it('rounds non-integer start_level (1.7 -> 2 -> index 1)', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { start_level: 1.7 } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 1.7 } });
     expect(out.startIndex).toBe(1);
   });
 });
@@ -114,6 +114,7 @@ describe('resolveLeafMemoryConfig — start_level', () => {
 describe('resolveLeafMemoryConfig — per-level timing overrides', () => {
   it('applies memorize_seconds_level_2 (seconds -> peekMs)', () => {
     const out = resolveLeafMemoryConfig({
+      seed: null,
       locale: null,
       skin: null,
       config: { memorize_seconds_level_2: 2 },
@@ -126,6 +127,7 @@ describe('resolveLeafMemoryConfig — per-level timing overrides', () => {
 
   it('applies solve_seconds_level_3 directly (already seconds)', () => {
     const out = resolveLeafMemoryConfig({
+      seed: null,
       locale: null,
       skin: null,
       config: { solve_seconds_level_3: 45 },
@@ -136,6 +138,7 @@ describe('resolveLeafMemoryConfig — per-level timing overrides', () => {
 
   it('preserves layout fields (pairs/cols/rows) under timing override', () => {
     const out = resolveLeafMemoryConfig({
+      seed: null,
       locale: null,
       skin: null,
       config: { solve_seconds_level_1: 1 },
@@ -148,11 +151,11 @@ describe('resolveLeafMemoryConfig — per-level timing overrides', () => {
 
 describe('resolveLeafMemoryConfig — boolean toggles', () => {
   it('show_high_score=false propagates', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { show_high_score: false } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { show_high_score: false } });
     expect(out.showHighScore).toBe(false);
   });
   it('show_level_indicator=false propagates', () => {
-    const out = resolveLeafMemoryConfig({ locale: null, skin: null, config: { show_level_indicator: false } });
+    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { show_level_indicator: false } });
     expect(out.showLevelIndicator).toBe(false);
   });
 });
@@ -160,6 +163,7 @@ describe('resolveLeafMemoryConfig — boolean toggles', () => {
 describe('resolveLeafMemoryConfig — type guards (defensive)', () => {
   it('ignores string-form numbers and falls back to defaults', () => {
     const out = resolveLeafMemoryConfig({
+      seed: null,
       locale: null,
       skin: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,6 +174,7 @@ describe('resolveLeafMemoryConfig — type guards (defensive)', () => {
   });
   it('ignores string-form booleans', () => {
     const out = resolveLeafMemoryConfig({
+      seed: null,
       locale: null,
       skin: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -182,6 +187,7 @@ describe('resolveLeafMemoryConfig — type guards (defensive)', () => {
 describe('bundled preset behaviors', () => {
   it('start_at_3 preset starts at level 3 with default everything else', () => {
     const out = resolveLeafMemoryConfig({
+      seed: null,
       locale: null,
       skin: null,
       // Use raw preset payload to mirror what the widget resolver hands the game.
@@ -205,7 +211,7 @@ describe('runLeafMemory — start_level threads through Start button', () => {
     runLeafMemory({
       container,
       bridge: makeBridge(),
-      ctx: { locale: null, skin: null, config: { start_level: 3 } },
+      ctx: { seed: null, locale: null, skin: null, config: { start_level: 3 } },
     });
     const startBtn = container.querySelector('.lm-screen button') as HTMLButtonElement | null;
     expect(startBtn).not.toBeNull();
@@ -232,7 +238,7 @@ describe('runLeafMemory — start_level threads through Start button', () => {
     runLeafMemory({
       container,
       bridge: makeBridge(),
-      ctx: { locale: null, skin: null, config: { start_level: 4 } },
+      ctx: { seed: null, locale: null, skin: null, config: { start_level: 4 } },
     });
     const startBtn = container.querySelector('.lm-screen button') as HTMLButtonElement | null;
     startBtn!.click();
@@ -247,7 +253,7 @@ describe('runLeafMemory — header visibility toggles via config', () => {
     runLeafMemory({
       container,
       bridge: makeBridge(),
-      ctx: { locale: null, skin: null, config: { show_high_score: false } },
+      ctx: { seed: null, locale: null, skin: null, config: { show_high_score: false } },
     });
     const bestEl = container.querySelector('.lm-best') as HTMLElement | null;
     expect(bestEl?.style.visibility).toBe('hidden');
@@ -259,7 +265,7 @@ describe('runLeafMemory — header visibility toggles via config', () => {
     runLeafMemory({
       container,
       bridge: makeBridge(),
-      ctx: { locale: null, skin: null, config: { show_level_indicator: false } },
+      ctx: { seed: null, locale: null, skin: null, config: { show_level_indicator: false } },
     });
     const levelEl = container.querySelector('.lm-level') as HTMLElement | null;
     expect(levelEl?.style.visibility).toBe('hidden');

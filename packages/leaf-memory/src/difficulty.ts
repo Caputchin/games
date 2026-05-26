@@ -1,9 +1,15 @@
 // Difficulty ladder for Leaf Memory.
 //
-// Each level binds a pairs count (drives scoring + board sizing) to a
+// Each level binds a pairs count (drives board sizing + score formula) to a
 // cols x rows grid layout. The top-level grid (L4: 3x4) sets the fixed
 // stage footprint in styles.ts; smaller grids center inside it so the
 // iframe never resizes between levels.
+//
+// SINGLE SOURCE: peekMs and timeSec values here are the canonical defaults.
+// caputchin.json `configurations.default` preset mirrors them exactly for
+// the SDK config override path. The drift-guard test in tests/config.test.ts
+// ("DIFFICULTY_LADDER per-level timings match the JSON default preset")
+// enforces parity at CI time.
 
 export interface DifficultyLevel {
   level: 1 | 2 | 3 | 4;

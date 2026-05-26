@@ -1,105 +1,102 @@
-// State machine for Leaf Memory: start, playing, won, lost.
-// Persistent shell (header + stage + actions) keeps the iframe footprint
-// stable across every state and difficulty.
+// Orchestrates Leaf Memory LIVE play (ADR-0069). The authoritative game logic
+// is the headless reducer in sim/engine; this module is the live DRIVER +
+// renderer around it: it builds the DOM shell, runs a FIXED-STEP loop that
+// advances the reducer one logical tick at a time, records each card-pick as
+// the opaque trace, and renders the reducer's view projection. Because the
+// live driver and the server replay run the SAME reducer over the SAME
+// recorded ticks, the live score equals the replayed verdict by construction.
 //
-// bridge.pass is gated: only fires on the first successful round of the
-// session or when the player sets a new session-best score.
+// What lives HERE (render-only, never in the verdict): the DOM grid, CSS
+// flip animations, accessibility announcements, HUD time / best / level
+// display. These may use real time / Math.random freely — they never touch
+// the sim. What crosses to the server is only the recorded card-pick trace;
+// the seed comes from `ctx.seed`.
+//
+// Time model: the wall-clock countdown visible in the HUD is derived from
+// ticksElapsed in the reducer's view projection — never from an independent
+// setInterval. A fixed-step rAF loop advances ticks at FIXED_TIMESTEP_MS per
+// step with the standard accumulator + catch-up clamp pattern.
 
-import type { Bridge, GameContext } from '@caputchin/game-sdk';
-import { createBoard, revealAll, coverAll, type Board } from './board.js';
+import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
+import { encodeTrace, FIXED_TIMESTEP_MS, type TickInput } from '@caputchin/engine-runtime';
+import { engine } from './sim/engine.js';
+import { DEFAULT_SIM_CONFIG, makeSimConfig } from './sim/config.js';
+// engine.view is always defined (see sim/engine.ts). Bind once here so call
+// sites get a non-optional reference without per-call `!` assertions.
+const viewOf: (state: SimState) => SimView = engine.view!;
+import type { SimAction, SimState, SimView, SimConfig } from './sim/types.js';
+import { LEAF_IDS } from './leaves.js';
+import { resolveLeafSvgs } from './leaves.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
-import { isWithinTimeBudget, score as scoreOf } from './scoring.js';
-import { STYLES, CELL_GAP, CELL_MIN, CELL_MAX } from './styles.js';
-import { realClock, type Clock } from './time.js';
-import {
-  MAX_LEVEL,
-  type DifficultyLevel,
-} from './difficulty.js';
+import { buildStrings } from './strings.js';
+import { cjkFontStack } from './fonts.js';
 import { resolveLeafMemoryConfig } from './config.js';
+import { DIFFICULTY_LADDER, type DifficultyLevel } from './difficulty.js';
 import {
   renderStartScreen,
   renderWinScreen,
   renderLossScreen,
 } from './screens.js';
-import { buildStrings, type StringKey } from './strings.js';
-import { cjkFontStack } from './fonts.js';
-import { resolveLeafSvgs } from './leaves.js';
+import { STYLES, CELL_GAP, CELL_MIN, CELL_MAX } from './styles.js';
+import type { StringKey } from './strings.js';
 
 // Skin color keys consumed as CSS custom properties. Each `foo_bar` key
-// resolves to `--lm-foo-bar` via the formula in `applyPaletteVars`, which
-// matches the binding names in styles.ts. Asset keys (leaf_*) are
-// handled separately via `resolveLeafSvgs`.
+// resolves to `--lm-foo-bar` via `applyPaletteVars`, matching styles.ts.
 const SKIN_COLOR_KEYS: readonly string[] = [
-  'bg',
-  'text',
-  'label',
-  'title',
-  'card_back_bg',
-  'card_back_text',
-  'card_front_bg',
-  'card_front_text',
-  'card_border',
-  'card_match_accent',
-  'button_bg',
-  'button_text',
-  'button_hover',
-  'button_secondary_text',
-  'button_secondary_border',
-  'button_secondary_hover_bg',
-  'focus_ring',
+  'bg', 'text', 'label', 'title',
+  'card_back_bg', 'card_back_text',
+  'card_front_bg', 'card_front_text',
+  'card_border', 'card_match_accent',
+  'button_bg', 'button_text', 'button_hover',
+  'button_secondary_text', 'button_secondary_border',
+  'button_secondary_hover_bg', 'focus_ring',
 ];
+
+const WIN_TITLE_KEYS: StringKey[] = [
+  'winTitleLevel1', 'winTitleLevel2', 'winTitleLevel3', 'winTitleLevel4',
+];
+
+const HARDER_KEYS: StringKey[] = [
+  'winLevelUpAfter1', 'winLevelUpAfter2', 'winLevelUpAfter3',
+];
+
+// Real-time clamp: after a tab stall we cap a single frame's real delta so
+// the game pauses (rather than fast-forwarding) through the stall. The
+// recorded trace only holds the ticks that actually ran, so replay
+// reproduces them either way.
+const MAX_FRAME_DT = 0.1; // seconds
+const MAX_STEPS_PER_FRAME = 10;
+
+// Throwaway seed for no-verify mounts (Math.random is driver-side, fine).
+function randomSeed(): Seed {
+  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
+  return [u(), u(), u(), u()];
+}
 
 export interface GameOptions {
   container: HTMLElement;
   bridge: Bridge;
   ctx?: GameContext;
-  clock?: Clock;
-  setIntervalFn?: typeof setInterval;
-  clearIntervalFn?: typeof clearInterval;
-  setTimeoutFn?: typeof setTimeout;
-  clearTimeoutFn?: typeof clearTimeout;
-  /** Override the per-level peek (memorize) phase duration. Tests use
-   *  this to drive the clock without waiting on the real budget. */
+  /** Injectable rAF; tests supply a fake. */
+  raf?: (cb: (ts: number) => void) => number;
+  caf?: (handle: number) => void;
+  now?: () => number;
+  /** Override peek (memorize) duration in ms. Tests use this to drive the
+   *  peek phase without waiting for the real budget. */
   peekMsOverride?: number;
 }
 
-const WIN_TITLE_KEYS: StringKey[] = [
-  'winTitleLevel1',
-  'winTitleLevel2',
-  'winTitleLevel3',
-  'winTitleLevel4',
-];
-
-// Indexed by current level (0-based). The MAX_LEVEL-1 slot has no entry
-// because the level-up button is hidden at the top of the ladder.
-const HARDER_KEYS: StringKey[] = [
-  'winLevelUpAfter1',
-  'winLevelUpAfter2',
-  'winLevelUpAfter3',
-];
-
 export function runLeafMemory(opts: GameOptions): () => void {
-  const {
-    container,
-    bridge,
-    ctx,
-    clock = realClock,
-    setIntervalFn = setInterval,
-    clearIntervalFn = clearInterval,
-    setTimeoutFn = setTimeout,
-    clearTimeoutFn = clearTimeout,
-    peekMsOverride,
-  } = opts;
+  const { container, bridge, ctx, peekMsOverride } = opts;
+  const doc = container.ownerDocument;
+  const view = doc.defaultView ?? window;
+  const raf = opts.raf ?? view.requestAnimationFrame.bind(view);
+  const caf = opts.caf ?? view.cancelAnimationFrame.bind(view);
+  const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
 
   const strings = buildStrings(ctx?.locale);
   const leafSvgs = resolveLeafSvgs(ctx?.skin ?? null);
-  // Customer-tweakable knobs: start level, per-level memorize / solve times,
-  // header chip visibility, mismatch flip-back delay. Falls back to the
-  // bundled `default` preset if the widget passes no config (game manifest
-  // without a configurations block).
   const memoryConfig = resolveLeafMemoryConfig(ctx);
-  const doc = container.ownerDocument;
-  const view = doc.defaultView ?? window;
 
   if (!doc.getElementById('lm-styles')) {
     const style = doc.createElement('style');
@@ -111,22 +108,10 @@ export function runLeafMemory(opts: GameOptions): () => void {
   const root = doc.createElement('div');
   root.className = 'lm-root';
   if (strings.direction === 'rtl') root.setAttribute('dir', 'rtl');
-  // Publish the resolved language to the engine: drives Han-unification
-  // glyph selection (the right regional CJK shape) and the screen-reader
-  // voice for the aria-labels / live-region announcements.
   root.setAttribute('lang', strings.lang);
-  // CJK locales also need explicit native UI fonts: the bundle ships no
-  // font (iframe CSP allows only `font-src data:`) so glyphs come from the
-  // visitor's OS. `--lm-cjk` is appended to the base font-family in
-  // styles.ts; non-CJK locales keep its bundled `sans-serif` default.
   const cjkStack = cjkFontStack(strings.lang);
   if (cjkStack) root.style.setProperty('--lm-cjk', cjkStack);
-  // Apply the resolved skin palette as CSS custom properties on the root
-  // so every styles.ts rule that binds `var(--lm-<key>)` flips together.
-  // Color keys only — leaf assets are decoded separately and threaded
-  // into board.ts via `leafSvgs` above. Adding a new themable surface
-  // means: add it to SKIN_COLOR_KEYS, declare the matching `--lm-<key>`
-  // in styles.ts, and add it to the caputchin.json schema + presets.
+
   const palette = ctx?.skin ?? null;
   if (palette) {
     for (const key of SKIN_COLOR_KEYS) {
@@ -138,6 +123,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     if (palette._theme) root.dataset.skinTheme = palette._theme;
   }
 
+  // ---- HUD ---------------------------------------------------------------
   const header = doc.createElement('div');
   header.className = 'lm-header';
   const bestEl = doc.createElement('span');
@@ -146,14 +132,9 @@ export function runLeafMemory(opts: GameOptions): () => void {
   levelEl.className = 'lm-level';
   const timeEl = doc.createElement('span');
   timeEl.className = 'lm-time';
-  header.appendChild(bestEl);
-  header.appendChild(levelEl);
-  header.appendChild(timeEl);
+  header.append(bestEl, levelEl, timeEl);
   root.appendChild(header);
 
-  // Config-driven header chip visibility. `visibility: hidden` keeps the
-  // grid layout balanced (3 cells) so the Time chip stays right-aligned
-  // even when Best / Level are configured off.
   if (!memoryConfig.showHighScore) bestEl.style.visibility = 'hidden';
   if (!memoryConfig.showLevelIndicator) levelEl.style.visibility = 'hidden';
 
@@ -170,21 +151,9 @@ export function runLeafMemory(opts: GameOptions): () => void {
 
   container.appendChild(root);
 
-  let bestScore: number | null = null;
-  let currentIndex = memoryConfig.startIndex;
+  // ---- responsive cell sizing -------------------------------------------
   let currentLevel: DifficultyLevel | null = null;
-  let board: Board | null = null;
-  let tickTimer: ReturnType<typeof setInterval> | null = null;
-  let peekTimer: ReturnType<typeof setTimeout> | null = null;
-  let startedAt = 0;
-  let active = false;
-  let disposed = false;
 
-  // Responsive cell sizing: compute cell px from the live stage rect and
-  // the current level's cols/rows. Clamp to [CELL_MIN, CELL_MAX] so the
-  // board stays playable on small iframes and doesn't blow up on huge
-  // ones. A ResizeObserver re-runs this whenever the iframe (and thus
-  // .lm-board-area) reflows.
   function applyCellSize(): void {
     if (!currentLevel) return;
     const rect = stage.getBoundingClientRect();
@@ -200,17 +169,31 @@ export function runLeafMemory(opts: GameOptions): () => void {
   let resizeObserver: ResizeObserver | null = null;
   if (typeof view.ResizeObserver === 'function') {
     resizeObserver = new view.ResizeObserver(() => {
-      if (disposed) return;
-      applyCellSize();
+      if (!disposed) applyCellSize();
     });
     resizeObserver.observe(stage);
   }
 
+  // ---- driver state -------------------------------------------------------
+  type Status = 'waiting' | 'peeking' | 'playing' | 'over';
+  let status: Status = 'waiting';
+  let simState: SimState = engine.init({ seed: [0, 0, 0, 0], config: DEFAULT_SIM_CONFIG });
+  let recorded: TickInput<SimAction>[] = [];
+  let logicalTick = 0;
+  let acc = 0;
+  let lastMs: number | null = null;
+  let rafHandle = 0;
+  let disposed = false;
+  let bestScore: number | null = null;
+  let currentIndex = memoryConfig.startIndex;
+  // Rendered grid DOM nodes, indexed by card index.
+  let cells: HTMLButtonElement[] = [];
+  let peekTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const seed: Seed = ctx?.seed ?? randomSeed();
+
+  // ---- HUD render ---------------------------------------------------------
   function renderBest(): void {
-    // Skip when the chip is configured hidden: no point computing the label
-    // string + writing innerHTML against a visibility:hidden node nobody
-    // sees. bestScore tracking still updates via `onRoundCleared`; the
-    // value is just never rendered.
     if (!memoryConfig.showHighScore) return;
     const value = bestScore === null ? strings.t('bestEmpty') : String(bestScore);
     bestEl.innerHTML = `<span class="label">${strings.t('headerBest')}</span>${value}`;
@@ -224,81 +207,225 @@ export function runLeafMemory(opts: GameOptions): () => void {
       return;
     }
     levelEl.dataset['hidden'] = 'false';
-    const value = strings.t('levelDisplay', { current: level.level, max: MAX_LEVEL });
-    levelEl.innerHTML = `<span class="label">${strings.t('headerLevel')}</span>${value}`;
+    levelEl.innerHTML =
+      `<span class="label">${strings.t('headerLevel')}</span>` +
+      strings.t('levelDisplay', { current: level.level, max: DIFFICULTY_LADDER.length });
   }
 
-  function renderTime(remainingSec: number | null): void {
-    if (remainingSec === null) {
+  function renderTime(v: SimView | null): void {
+    if (v === null) {
       timeEl.dataset['hidden'] = 'true';
       timeEl.textContent = '';
       return;
     }
     timeEl.dataset['hidden'] = 'false';
-    const value = strings.t('timeDisplay', { seconds: Math.ceil(remainingSec) });
-    timeEl.innerHTML = `<span class="label">${strings.t('headerTime')}</span>${value}`;
+    const remainingMs = Math.max(0, (v.budgetTicks - v.ticksElapsed) * FIXED_TIMESTEP_MS);
+    const remainingSec = Math.ceil(remainingMs / 1000);
+    timeEl.innerHTML =
+      `<span class="label">${strings.t('headerTime')}</span>` +
+      strings.t('timeDisplay', { seconds: remainingSec });
   }
 
-  function elapsedSec(): number {
-    return (clock.now() - startedAt) / 1000;
+  // ---- board DOM ----------------------------------------------------------
+  /** Build (or rebuild) the board DOM from the current sim state. */
+  function buildBoard(simCfg: SimConfig): void {
+    // Remove old grid.
+    const existing = stage.querySelector('.lm-grid');
+    if (existing) existing.remove();
+
+    const level = memoryConfig.levels[currentIndex]!;
+    const grid = doc.createElement('div');
+    grid.className = 'lm-grid';
+    grid.style.gridTemplateColumns = `repeat(${level.cols}, max-content)`;
+    grid.setAttribute('role', 'grid');
+    grid.setAttribute('aria-label', strings.t('ariaBoard'));
+
+    cells = [];
+    const cardCount = simCfg.pairs * 2;
+    for (let i = 0; i < cardCount; i++) {
+      const cell = doc.createElement('button');
+      cell.type = 'button';
+      cell.className = 'lm-cell';
+      cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('aria-label', strings.t('ariaCard', { index: i + 1 }));
+      cell.setAttribute('aria-pressed', 'false');
+      cell.dataset['flipped'] = 'false';
+      cell.dataset['matched'] = 'false';
+      cell.dataset['index'] = String(i);
+      // Front face SVG is determined by the card's leaf kind from simState.
+      const kind = simState.cards[i]?.kind ?? 0;
+      const leafId = LEAF_IDS[kind] ?? LEAF_IDS[0]!;
+      const svg = leafSvgs[leafId] ?? '';
+      cell.innerHTML =
+        `<span class="lm-face lm-back" aria-hidden="true">?</span>` +
+        `<span class="lm-face lm-front" aria-hidden="true">${svg}</span>`;
+      grid.appendChild(cell);
+      cells.push(cell);
+    }
+
+    grid.addEventListener('click', onGridClick);
+    grid.addEventListener('keydown', onGridKeyDown);
+    stage.appendChild(grid);
+    applyCellSize();
   }
 
-  function stopTimer(): void {
-    if (tickTimer !== null) {
-      clearIntervalFn(tickTimer);
-      tickTimer = null;
+  function syncCellsToView(v: SimView): void {
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      if (!cell) continue;
+      const card = v.cards[i];
+      if (!card) continue;
+      const flipped =
+        card.matched ||
+        i === v.firstPick ||
+        i === v.secondPick;
+      cell.dataset['flipped'] = String(flipped);
+      cell.dataset['matched'] = String(card.matched);
+      cell.setAttribute('aria-pressed', String(flipped));
+      cell.disabled = card.matched;
     }
   }
 
+  function revealAllCells(): void {
+    for (const cell of cells) {
+      cell.dataset['flipped'] = 'true';
+      cell.setAttribute('aria-pressed', 'true');
+    }
+  }
+
+  function coverUnmatchedCells(): void {
+    const v = viewOf(simState);
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      if (!cell) continue;
+      const card = v.cards[i];
+      if (!card || card.matched) continue;
+      cell.dataset['flipped'] = 'false';
+      cell.setAttribute('aria-pressed', 'false');
+    }
+  }
+
+  // ---- input --------------------------------------------------------------
+  function onGridClick(e: MouseEvent): void {
+    if (status !== 'playing') return;
+    const target = (e.target as HTMLElement | null)?.closest('button.lm-cell') as HTMLButtonElement | null;
+    if (!target) return;
+    const idx = Number(target.dataset['index']);
+    if (!Number.isFinite(idx)) return;
+    // The reducer's step() ignores the click if the board is busy (flip-back
+    // countdown > 0) or the card is already matched/firstPick. We still push
+    // the input and record it — the reducer is the authority on whether it
+    // causes a state change.
+    inputQueue.push({ cardIndex: idx });
+  }
+
+  function focusNeighbor(from: number, delta: number): void {
+    const next = (from + delta + cells.length) % cells.length;
+    cells[next]?.focus();
+  }
+
+  function onGridKeyDown(e: KeyboardEvent): void {
+    const target = e.target as HTMLElement | null;
+    const idx = Number(target?.dataset?.['index']);
+    if (!Number.isFinite(idx)) return;
+    const level = memoryConfig.levels[currentIndex];
+    if (!level) return;
+    switch (e.key) {
+      case 'ArrowRight': e.preventDefault(); focusNeighbor(idx, 1); break;
+      case 'ArrowLeft':  e.preventDefault(); focusNeighbor(idx, -1); break;
+      case 'ArrowDown':  e.preventDefault(); focusNeighbor(idx, level.cols); break;
+      case 'ArrowUp':    e.preventDefault(); focusNeighbor(idx, -level.cols); break;
+    }
+  }
+
+  let inputQueue: SimAction[] = [];
+
+  // ---- fixed-step loop ----------------------------------------------------
+  function advanceOneTick(): void {
+    const acts = inputQueue;
+    inputQueue = [];
+    for (const a of acts) {
+      simState = engine.step(simState, a);
+      recorded.push({ tick: logicalTick, action: a });
+    }
+    simState = engine.tick(simState);
+    logicalTick++;
+
+    const v = viewOf(simState);
+    syncCellsToView(v);
+    renderTime(v);
+
+    if (v.allMatched) {
+      onRoundCleared(v);
+    } else if (v.timedOut) {
+      onTimeout();
+    }
+  }
+
+  function frame(): void {
+    if (disposed) return;
+    const tMs = now();
+    let dt = lastMs === null ? 0 : (tMs - lastMs) / 1000;
+    lastMs = tMs;
+    if (dt > MAX_FRAME_DT) dt = MAX_FRAME_DT;
+
+    if (status === 'playing') {
+      acc += dt;
+      let steps = 0;
+      while (acc >= FIXED_TIMESTEP_MS / 1000 && steps < MAX_STEPS_PER_FRAME && status === 'playing') {
+        advanceOneTick();
+        acc -= FIXED_TIMESTEP_MS / 1000;
+        steps++;
+      }
+      if (steps === MAX_STEPS_PER_FRAME) acc = 0; // drop backlog after stall
+    }
+
+    rafHandle = raf(frame);
+  }
+
+  // ---- state transitions --------------------------------------------------
   function clearStage(): void {
-    if (board) {
-      board.destroy();
-      board.element.remove();
-      board = null;
+    // Stop any pending peek timeout.
+    if (peekTimeoutId !== null) {
+      clearTimeout(peekTimeoutId);
+      peekTimeoutId = null;
     }
-    if (peekTimer !== null) {
-      clearTimeoutFn(peekTimer);
-      peekTimer = null;
-    }
-    stopTimer();
     while (stage.firstChild) stage.removeChild(stage.firstChild);
     while (actions.firstChild) actions.removeChild(actions.firstChild);
+    cells = [];
+    inputQueue = [];
   }
 
   function showStart(): void {
+    status = 'waiting';
     clearStage();
-    active = false;
     currentLevel = null;
     renderLevel(null);
     renderTime(null);
     renderBest();
+
     const screen = renderStartScreen(doc, strings, () => {
-      // Reset to the configured start level (not hardcoded 0). This matters
-      // when the customer ships a `start_level` config OR after a session
-      // where the player advanced past level 1: the start screen re-render
-      // (e.g. after a layout glitch) should land them back at the original
-      // configured start point, not arbitrary index 0.
       currentIndex = memoryConfig.startIndex;
       startRound();
     });
     stage.appendChild(screen);
-    const startBtn = screen.querySelector('button');
-    if (startBtn instanceof HTMLButtonElement) startBtn.focus();
+    const btn = screen.querySelector('button');
+    if (btn instanceof HTMLButtonElement) btn.focus();
   }
 
   function showWin(score: number, newBest: boolean): void {
+    status = 'over';
     clearStage();
     renderTime(null);
     renderBest();
+
     const onHarder =
       currentIndex < memoryConfig.levels.length - 1
-        ? () => {
-            currentIndex += 1;
-            startRound();
-          }
+        ? () => { currentIndex += 1; startRound(); }
         : null;
     const titleKey = WIN_TITLE_KEYS[currentIndex] ?? 'winTitleLevel1';
     const harderKey = onHarder ? HARDER_KEYS[currentIndex] ?? 'winLevelUpDefault' : undefined;
+
     const screen = renderWinScreen(doc, strings, {
       title: strings.t(titleKey),
       score,
@@ -308,144 +435,134 @@ export function runLeafMemory(opts: GameOptions): () => void {
       harderLabel: harderKey ? strings.t(harderKey) : undefined,
     });
     stage.appendChild(screen);
-    const firstBtn = screen.querySelector('button');
-    if (firstBtn instanceof HTMLButtonElement) firstBtn.focus();
+    const btn = screen.querySelector('button');
+    if (btn instanceof HTMLButtonElement) btn.focus();
   }
 
   function showLoss(): void {
+    status = 'over';
     clearStage();
     renderTime(null);
     renderBest();
+
     const onEasier =
       currentIndex > 0
-        ? () => {
-            currentIndex -= 1;
-            startRound();
-          }
+        ? () => { currentIndex -= 1; startRound(); }
         : null;
+
     const screen = renderLossScreen(doc, strings, {
       onRetry: () => startRound(),
       onEasier,
     });
     stage.appendChild(screen);
-    const firstBtn = screen.querySelector('button');
-    if (firstBtn instanceof HTMLButtonElement) firstBtn.focus();
+    const btn = screen.querySelector('button');
+    if (btn instanceof HTMLButtonElement) btn.focus();
   }
 
   function startRound(): void {
     clearStage();
     const level = memoryConfig.levels[currentIndex]!;
     currentLevel = level;
-    const budget = level.timeSec;
-    const peek = peekMsOverride ?? level.peekMs;
+
+    // Build the SimConfig from this level's difficulty knobs.
+    const simCfg: SimConfig = makeSimConfig(
+      level.pairs,
+      level.timeSec,
+      memoryConfig.mismatchFlipBackMs,
+    );
+
+    // Init the reducer with the server seed + resolved config.
+    simState = engine.init({ seed, config: simCfg });
+    recorded = [];
+    logicalTick = 0;
+    acc = 0;
+    lastMs = null;
+    inputQueue = [];
+
     renderLevel(level);
-    renderTime(budget);
+    renderTime(viewOf(simState));
     renderBest();
 
-    const newBoard = createBoard({
-      pairs: level.pairs,
-      cols: level.cols,
-      doc,
-      announcer,
-      strings,
-      leafSvgs,
-      flipBackDelayMs: memoryConfig.mismatchFlipBackMs,
-      setTimeoutFn,
-      clearTimeoutFn,
-      callbacks: {
-        onMatch: () => {},
-        onMismatch: () => {},
-        onRoundCleared: () => onRoundCleared(level),
-      },
-    });
-    board = newBoard;
-    stage.appendChild(newBoard.element);
-    applyCellSize();
+    // Build board DOM from initial simState (cards are face-down).
+    buildBoard(simCfg);
 
-    function startTimer(): void {
-      startedAt = clock.now();
-      renderTime(budget);
-      tickTimer = setIntervalFn(() => {
-        if (disposed) return;
-        const e = elapsedSec();
-        const remaining = Math.max(0, budget - e);
-        renderTime(remaining);
-        if (!isWithinTimeBudget(budget, e)) {
-          onTimeout();
-        }
-      }, 250);
-    }
-
-    if (prefersReducedMotion(view)) {
+    const peekMs = peekMsOverride ?? level.peekMs;
+    const reducedMotion = prefersReducedMotion(view);
+    if (reducedMotion || peekMs <= 0) {
+      // Skip the peek phase: go directly to playing.
       announcer.say(strings.t('announceRoundStarted'));
-      active = true;
-      startTimer();
+      status = 'playing';
       return;
     }
 
-    revealAll(newBoard);
+    // Peek (memorize) phase: reveal all cards, wait peekMs, then cover.
+    status = 'peeking';
+    revealAllCells();
     announcer.say(strings.t('announceMemorize'));
 
-    // Skippable peek: any click on the board ends the memorize phase
-    // immediately and starts the timer. The click itself doesn't count
-    // as a pick (board.pick early-returns while cards are still flipped
-    // from revealAll), so the player's first real pick happens after
-    // the board flips face-down.
     function endPeek(): void {
-      if (peekTimer === null) return;
-      clearTimeoutFn(peekTimer);
-      peekTimer = null;
+      if (peekTimeoutId === null) return; // already ended
+      clearTimeout(peekTimeoutId);
+      peekTimeoutId = null;
       if (disposed) return;
-      newBoard.element.removeEventListener('click', endPeek);
-      coverAll(newBoard);
+      const grid = stage.querySelector('.lm-grid');
+      if (grid) grid.removeEventListener('click', endPeekOnClick);
+      coverUnmatchedCells();
       announcer.say(strings.t('announceRoundStarted'));
-      active = true;
-      startTimer();
+      status = 'playing';
     }
 
-    newBoard.element.addEventListener('click', endPeek);
-    peekTimer = setTimeoutFn(endPeek, peek);
+    function endPeekOnClick(): void {
+      endPeek();
+    }
+
+    const grid = stage.querySelector('.lm-grid');
+    if (grid) grid.addEventListener('click', endPeekOnClick);
+    peekTimeoutId = setTimeout(endPeek, peekMs);
   }
 
-  function onTimeout(): void {
-    if (!active) return;
-    active = false;
-    stopTimer();
-    announcer.say(strings.t('announceOutOfTime'));
-    showLoss();
-  }
+  function onRoundCleared(v: SimView): void {
+    if (status !== 'playing') return;
+    status = 'over';
+    const level = memoryConfig.levels[currentIndex]!;
+    // Score: difficulty × remaining seconds. difficulty = pairs / 2.
+    const difficulty = level.pairs / 2;
+    const remainingSec = Math.max(0, (v.budgetTicks - v.ticksElapsed) * FIXED_TIMESTEP_MS / 1000);
+    const s = Math.round(difficulty * remainingSec);
 
-  function onRoundCleared(level: DifficultyLevel): void {
-    if (!active) return;
-    active = false;
-    stopTimer();
-    const e = elapsedSec();
-    const s = Math.round(scoreOf(level.pairs, level.timeSec, e));
-    const isFirstPass = bestScore === null;
     const isNewBest = bestScore === null || s > bestScore;
-    if (isFirstPass || isNewBest) {
+    if (isNewBest) {
       bestScore = s;
-      bridge.pass({ score: s, durationMs: Math.round(e * 1000) });
+      bridge.pass({ trace: encodeTrace(recorded) });
     }
     announcer.say(strings.t('announceRoundPassed'));
     showWin(s, isNewBest);
   }
 
-  showStart();
+  function onTimeout(): void {
+    if (status !== 'playing') return;
+    status = 'over';
+    announcer.say(strings.t('announceOutOfTime'));
+    showLoss();
+  }
 
+  // ---- boot ---------------------------------------------------------------
+  showStart();
+  renderBest();
+  rafHandle = raf(frame);
+
+  // ---- cleanup ------------------------------------------------------------
   return function cleanup(): void {
     disposed = true;
-    active = false;
-    stopTimer();
-    if (peekTimer !== null) {
-      clearTimeoutFn(peekTimer);
-      peekTimer = null;
+    caf(rafHandle);
+    if (peekTimeoutId !== null) {
+      clearTimeout(peekTimeoutId);
+      peekTimeoutId = null;
     }
     if (resizeObserver) {
       resizeObserver.disconnect();
       resizeObserver = null;
     }
-    board?.destroy();
     root.remove();
   };
 }

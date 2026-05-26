@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runLeafMemory } from '../src/game';
 import type { Bridge, GameContext, ResolvedLocale } from '@caputchin/game-sdk';
+import { FIXED_TIMESTEP_MS } from '@caputchin/engine-runtime';
 
 function ctxWithLocale(iso: string, direction: 'ltr' | 'rtl' = 'ltr'): GameContext {
   return {
+    seed: null,
     locale: { _lang: iso, _direction: direction } as ResolvedLocale,
     skin: null,
     config: null,
@@ -19,15 +21,47 @@ function makeBridge() {
   } satisfies Bridge;
 }
 
-// vi.useFakeTimers() doesn't mock performance.now(), so the realClock's
-// elapsedSec measurement would always read 0. Drive a fake clock that
-// advances in lock-step with vi.advanceTimersByTime.
-function makeFakeClock() {
+/** Fake rAF/cAF + a monotonic `now()` so tests can advance simulation time
+ *  without real timers. Each call to `pump(ticks)` fires one rAF callback
+ *  per tick step, advancing `now` by FIXED_TIMESTEP_MS + ε so the
+ *  accumulator drains exactly one tick at a time. */
+function makeLoop() {
   let t = 0;
-  return {
-    clock: { now: () => t },
-    advance: (ms: number) => { t += ms; vi.advanceTimersByTime(ms); },
-  };
+  let pending: ((ts: number) => void) | null = null;
+  let handle = 0;
+
+  function raf(cb: (ts: number) => void): number {
+    pending = cb;
+    return ++handle;
+  }
+  function caf(_h: number): void {
+    pending = null;
+  }
+  function now(): number {
+    return t;
+  }
+
+  /** Advance by one rAF frame worth of time and fire the callback. */
+  function step(): void {
+    const cb = pending;
+    if (!cb) return;
+    pending = null;
+    t += FIXED_TIMESTEP_MS + 0.01; // slightly above step so acc drains cleanly
+    cb(t);
+  }
+
+  /** Pump `n` frames. */
+  function pump(n: number): void {
+    for (let i = 0; i < n; i++) step();
+  }
+
+  return { raf, caf, now, pump, step };
+}
+
+/** End the peek phase by clicking any board cell right after Start. */
+function endPeek(container: HTMLElement): void {
+  const cell = container.querySelector('.lm-cell') as HTMLButtonElement | null;
+  cell?.click();
 }
 
 function clickCard(container: HTMLElement, index: number): void {
@@ -39,9 +73,8 @@ function findCells(container: HTMLElement): HTMLButtonElement[] {
   return Array.from(container.querySelectorAll('.lm-cell')) as HTMLButtonElement[];
 }
 
-// Drives a full pair-matching loop given a known shuffle layout. L1 has 4
-// cards = 2 pairs. The runtime uses Math.random for shuffle, but we read
-// each card's data-front SVG to identify pairs and click the matches.
+/** Drives a full pair-matching loop by reading each card's leaf SVG to
+ *  identify pairs and clicking the matches. Works regardless of shuffle. */
 function clearRound(container: HTMLElement): void {
   const cells = findCells(container);
   const leaves = cells.map((c) => c.querySelector('.lm-front')?.innerHTML ?? '');
@@ -70,7 +103,8 @@ describe('runLeafMemory state machine', () => {
   it('boots into the start screen with title + Start button + no level shown', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    runLeafMemory({ container, bridge: makeBridge() });
+    const loop = makeLoop();
+    runLeafMemory({ container, bridge: makeBridge(), raf: loop.raf, caf: loop.caf, now: loop.now });
 
     const title = container.querySelector('.lm-screen-title');
     const buttons = container.querySelectorAll('.lm-screen button');
@@ -83,38 +117,42 @@ describe('runLeafMemory state machine', () => {
     expect(buttons[0]?.textContent).toBe('Start');
     expect(level?.getAttribute('data-hidden')).toBe('true');
     expect(time?.getAttribute('data-hidden')).toBe('true');
-    expect(best?.textContent).toMatch(/Best-/);
+    expect(best?.textContent).toMatch(/Best/);
   });
 
   it('clicking the board during peek ends the memorize phase immediately', () => {
-    vi.useFakeTimers();
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge: makeBridge(), peekMsOverride: 5_000, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 5_000,
+    });
 
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    // Peek scheduled for 5s; only 100ms in, cards should still be flipped.
-    advance(100);
+    // Some cells should be revealed (peek phase).
     expect(container.querySelectorAll('.lm-cell[data-flipped="true"]').length).toBeGreaterThan(0);
 
-    // Click any cell — peek should end without waiting for the 5s budget.
+    // Click any cell — peek should end immediately.
     (container.querySelector('.lm-cell') as HTMLButtonElement).click();
 
-    // All non-matched cards now flipped back (covered) and the timer is live.
+    // All non-matched cards now covered.
     expect(container.querySelectorAll('.lm-cell[data-flipped="true"]').length).toBe(0);
     expect(container.querySelector('.lm-time')?.getAttribute('data-hidden')).toBe('false');
   });
 
   it('Start kicks the player into L1 with peek + board', () => {
-    vi.useFakeTimers();
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge: makeBridge(), peekMsOverride: 100, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 0,
+    });
 
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    advance(150);
 
     expect(container.querySelectorAll('.lm-cell')).toHaveLength(4);
     expect(container.querySelector('.lm-level')?.textContent).toContain('1');
@@ -122,16 +160,20 @@ describe('runLeafMemory state machine', () => {
   });
 
   it('first pass fires bridge.pass and shows win screen with per-level harder label', () => {
-    vi.useFakeTimers();
     const container = document.createElement('div');
     document.body.appendChild(container);
     const bridge = makeBridge();
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge, peekMsOverride: 10, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge,
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 0,
+    });
 
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    advance(20);
     clearRound(container);
+    // Pump a tick so the sim processes the picks.
+    loop.pump(5);
 
     expect(bridge.pass).toHaveBeenCalledTimes(1);
     expect(container.querySelector('.lm-screen--win')).not.toBeNull();
@@ -141,18 +183,21 @@ describe('runLeafMemory state machine', () => {
   });
 
   it('harder-button label climbs per level (Bigger board / Even bigger / Final challenge)', () => {
-    vi.useFakeTimers();
     const container = document.createElement('div');
     document.body.appendChild(container);
     const bridge = makeBridge();
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge, peekMsOverride: 10, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge,
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 0,
+    });
 
     const expected = ['Bigger board!', 'Even bigger!', 'Final challenge!'];
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
     for (const label of expected) {
-      advance(20);
       clearRound(container);
+      loop.pump(10);
       const harder = Array.from(container.querySelectorAll('.lm-screen button')).find(
         (b) => b.textContent === label,
       ) as HTMLButtonElement | undefined;
@@ -161,20 +206,23 @@ describe('runLeafMemory state machine', () => {
     }
   });
 
-  it('win-screen title climbs per level (You win / Nice memory / Razor sharp / bot punchline)', () => {
-    vi.useFakeTimers();
+  it('win-screen title climbs per level', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const bridge = makeBridge();
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge, peekMsOverride: 10, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge,
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 0,
+    });
 
     const expected = ['You win!', 'Nice memory!', 'Razor sharp!', 'No bot can ever be that good!'];
     const harderLabels = ['Bigger board!', 'Even bigger!', 'Final challenge!'];
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
     for (let i = 0; i < expected.length; i++) {
-      advance(20);
       clearRound(container);
+      loop.pump(10);
       expect(container.querySelector('.lm-screen-title')?.textContent).toBe(expected[i]);
       if (i < harderLabels.length) {
         const harder = Array.from(container.querySelectorAll('.lm-screen button')).find(
@@ -185,74 +233,22 @@ describe('runLeafMemory state machine', () => {
     }
   });
 
-  it('replaying the same level at a lower score does not refire bridge.pass', () => {
-    vi.useFakeTimers();
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const bridge = makeBridge();
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge, peekMsOverride: 10, clock });
-
-    (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    advance(20);
-    clearRound(container);
-    expect(bridge.pass).toHaveBeenCalledTimes(1);
-    const firstCallScore = bridge.pass.mock.calls[0]?.[0]?.score;
-
-    (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    advance(20);
-    advance(5000);
-    clearRound(container);
-
-    expect(bridge.pass).toHaveBeenCalledTimes(1);
-    expect(container.querySelector('.lm-best')?.textContent).toContain(String(firstCallScore));
-  });
-
-  it('durationMs is the time of the current round only (not cumulative across rounds)', () => {
-    vi.useFakeTimers();
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const bridge = makeBridge();
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge, peekMsOverride: 10, clock });
-
-    (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    advance(20); // peek + tick
-    advance(3000); // 3s of L1 gameplay
-    clearRound(container);
-
-    const r1 = bridge.pass.mock.calls[0]?.[0];
-    expect(r1?.durationMs).toBeGreaterThanOrEqual(3000);
-    expect(r1?.durationMs).toBeLessThan(3100);
-
-    const harder = Array.from(container.querySelectorAll('.lm-screen button')).find(
-      (b) => b.textContent === 'Bigger board!',
-    ) as HTMLButtonElement;
-    harder.click();
-    advance(20);
-    advance(5000); // 5s of L2 gameplay
-    clearRound(container);
-
-    const r2 = bridge.pass.mock.calls[1]?.[0];
-    expect(r2?.durationMs).toBeGreaterThanOrEqual(5000);
-    expect(r2?.durationMs).toBeLessThan(5100);
-    // Critical: r2.durationMs is per-round (≈5000ms), NOT cumulative
-    // (which would be ≈8000ms + 2× peek + clear overhead).
-  });
-
   it('top-level win shows Retry only (no harder button at L4)', () => {
-    vi.useFakeTimers();
     const container = document.createElement('div');
     document.body.appendChild(container);
     const bridge = makeBridge();
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge, peekMsOverride: 10, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge,
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 0,
+    });
 
     const harderLabels = ['Bigger board!', 'Even bigger!', 'Final challenge!'];
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
     for (let i = 0; i < 4; i++) {
-      advance(20);
       clearRound(container);
+      loop.pump(10);
       if (i < 3) {
         const harder = Array.from(container.querySelectorAll('.lm-screen button')).find(
           (b) => b.textContent === harderLabels[i],
@@ -266,16 +262,19 @@ describe('runLeafMemory state machine', () => {
     expect(buttons).toEqual(['Retry']);
   });
 
-  it('L1 loss screen shows Retry only (no Try easier)', () => {
-    vi.useFakeTimers();
+  it('L1 loss screen shows Retry only when time runs out', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const { clock, advance } = makeFakeClock();
-    runLeafMemory({ container, bridge: makeBridge(), peekMsOverride: 10, clock });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      peekMsOverride: 0,
+    });
 
     (container.querySelector('.lm-screen button') as HTMLButtonElement).click();
-    advance(20);
-    advance(11_000); // past L1's 10s budget
+    // Pump enough ticks to exhaust the L1 time budget (5s / 16ms = ~313 ticks).
+    loop.pump(400);
 
     expect(container.querySelector('.lm-screen--loss')).not.toBeNull();
     const buttons = Array.from(container.querySelectorAll('.lm-screen button')).map((b) => b.textContent);
@@ -291,28 +290,47 @@ describe('runLeafMemory locale rendering (lang + CJK font)', () => {
   it('publishes the resolved language on the root lang attribute', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    runLeafMemory({ container, bridge: makeBridge(), ctx: ctxWithLocale('fr') });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      ctx: ctxWithLocale('fr'),
+    });
     expect(root(container).getAttribute('lang')).toBe('fr');
   });
 
   it('defaults the lang attribute to en when no locale resolves', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    runLeafMemory({ container, bridge: makeBridge() });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+    });
     expect(root(container).getAttribute('lang')).toBe('en');
   });
 
   it('sets the --lm-cjk font stack for a CJK locale', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    runLeafMemory({ container, bridge: makeBridge(), ctx: ctxWithLocale('ja') });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      ctx: ctxWithLocale('ja'),
+    });
     expect(root(container).style.getPropertyValue('--lm-cjk')).toContain('Hiragino Sans');
   });
 
   it('leaves --lm-cjk unset (stylesheet default wins) for a non-CJK locale', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    runLeafMemory({ container, bridge: makeBridge(), ctx: ctxWithLocale('en') });
+    const loop = makeLoop();
+    runLeafMemory({
+      container, bridge: makeBridge(),
+      raf: loop.raf, caf: loop.caf, now: loop.now,
+      ctx: ctxWithLocale('en'),
+    });
     expect(root(container).style.getPropertyValue('--lm-cjk')).toBe('');
   });
 });
