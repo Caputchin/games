@@ -1,55 +1,51 @@
-// Orchestrates Whack-a-Monkey: builds the DOM shell + canvas, runs an OWN
-// requestAnimationFrame loop driven by real elapsed time, maps a tap to the
-// monkey at the tapped spawn point, and drives the state machine
-// (waiting -> playing -> over -> playing). Pure spring lifecycle lives in
-// mole.ts, grid spawn in spawner.ts, tap geometry in geometry.ts, the ladder in
-// levels.ts, the pass gate + scoring in scoring.ts; this module is the glue +
-// the jungle scene render.
+// Orchestrates Whack-a-Monkey LIVE play (ADR-0069). The authoritative game
+// logic is the headless reducer in sim/engine; this module is the live DRIVER
+// + renderer around it: it builds the DOM shell, runs a FIXED-STEP loop that
+// advances the reducer one logical tick at a time (STEP_S seconds), records
+// the tap input as the opaque trace, and renders the reducer's view
+// projection. Because the live driver and the server replay run the SAME
+// reducer over the SAME recorded ticks, the live score equals the replayed
+// verdict by construction.
 //
-// Frame-rate independence is the core requirement: every step is scaled by real
-// `dt` seconds (clamped to MAX_DT), and update + render run every frame at the
-// native refresh. No fixed-60 stepping, no per-frame constant (locked by
-// tests/frame-rate.test.ts).
-//
-// Anti-scrape: holes/moles are all drawn on the canvas, never in the DOM or the
-// a11y tree, and the spawn cells are HIDDEN behind a continuous foliage hedge,
-// so neither a scraper nor a player can tell where a monkey will pop until it
-// peeks out.
+// What lives HERE (render-only, never in the verdict): the canvas + DOM chrome,
+// hit particles, score popups, audio, and accessibility announcements. These
+// may use real time / Math.random freely — they never touch the sim. What
+// crosses to the server is only the recorded tap trace; the seed comes from
+// `ctx.seed`.
 
-import type { Bridge, GameContext } from '@caputchin/game-sdk';
+import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
+import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
+import { engine } from './sim/engine.js';
+import { DEFAULT_SIM_CONFIG } from './sim/config.js';
+import {
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
+  STEP_S,
+  MOLE_RADIUS,
+  MOLE_HIT_PAD,
+  MIN_HIT_SCALE,
+  GRID_COLS,
+  GRID_ROWS,
+  HOLE_COUNT,
+  GRID_MARGIN,
+} from './sim/constants.js';
+import type { SimAction, SimState, SimView } from './sim/types.js';
 import { buildStrings } from './strings.js';
 import { resolveWhackConfig } from './config.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
-import { computeHoleCenters, pointInCircle, type Vec } from './geometry.js';
-import { initRound, onGoodHit, onDecoyHit, isPass, type RoundState } from './scoring.js';
-import { Spawner } from './spawner.js';
-import { isTappable, timingFraction, hitScale, type Mole } from './mole.js';
-import { buildLadder, type LevelParams } from './levels.js';
+import { pointInCircle, type Vec } from './geometry.js';
 import { resolvePalette, type Palette } from './palette.js';
 import { loadSprites, loadScenery, type SpriteMap, type SpriteKey, type SceneryArt } from './art.js';
 import { renderStartScreen, renderEndScreen } from './screens.js';
 import { STYLES } from './styles.js';
 import { createSfx } from './audio.js';
-import { makeRng } from './rng.js';
 import {
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
-  WORLD_HEIGHT_MIN,
-  WORLD_HEIGHT_MAX,
-  MAX_DT,
-  MOLE_RADIUS,
-  MOLE_HIT_PAD,
-  HOLE_COUNT,
-  GRID_COLS,
-  GRID_ROWS,
-  HIT_PARTICLES,
-  PARTICLE_GRAVITY,
-  DECOY_FLASH_S,
-  DECOY_TIME_PENALTY_S,
   POPUP_TTL,
   POPUP_RISE,
   POPUP_FONT,
-  LEVEL_COUNT,
+  HIT_PARTICLES,
+  PARTICLE_GRAVITY,
+  DECOY_FLASH_S,
 } from './constants.js';
 
 const SKIN_COLOR_KEYS: readonly string[] = [
@@ -61,6 +57,12 @@ const SOUND_ON =
 const SOUND_OFF =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
 
+// Real-time clamp + catch-up bound: after a tab stall we cap one frame's real
+// delta and the logical ticks it spends, so the game pauses rather than
+// fast-forwarding. The recorded trace only holds ticks that actually ran.
+const MAX_FRAME_DT = 0.1;
+const MAX_STEPS_PER_FRAME = 10;
+
 type Status = 'waiting' | 'playing' | 'over';
 
 interface Particle {
@@ -68,6 +70,36 @@ interface Particle {
 }
 interface ScorePopup {
   x: number; y: number; vy: number; text: string; color: string; ttl: number;
+}
+
+/** Fixed hole centers for the grid, in world units. */
+function computeHoleCenters(): Vec[] {
+  const marginX = WORLD_WIDTH * GRID_MARGIN;
+  const marginY = WORLD_HEIGHT * GRID_MARGIN;
+  const usableW = WORLD_WIDTH - marginX * 2;
+  const usableH = WORLD_HEIGHT - marginY * 2;
+  const cellW = usableW / GRID_COLS;
+  const cellH = usableH / GRID_ROWS;
+  const centers: Vec[] = [];
+  for (let row = 0; row < GRID_ROWS; row++) {
+    for (let col = 0; col < GRID_COLS; col++) {
+      centers.push({
+        x: marginX + (col + 0.5) * cellW,
+        y: marginY + (row + 0.5) * cellH,
+      });
+    }
+  }
+  return centers;
+}
+
+// Hole centers in fixed world coords — shared by driver and renderer.
+const HOLES: readonly Vec[] = computeHoleCenters();
+
+/** Build a throwaway seed for a no-verify mount. This is DRIVER-side (not
+ *  the sim), so Math.random is fine here. */
+function randomSeed(): Seed {
+  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
+  return [u(), u(), u(), u()];
 }
 
 export interface GameOptions {
@@ -88,18 +120,15 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
 
   const strings = buildStrings(ctx?.locale);
-  const cfg = resolveWhackConfig(ctx);
+  // Presentation config (sound + HUD toggles). The SIM runs under
+  // DEFAULT_SIM_CONFIG so live == replay; these values mirror it.
+  const pres = resolveWhackConfig(ctx);
   const palette: Palette = resolvePalette(ctx?.skin ?? null);
   const reducedMotion = prefersReducedMotion(view);
-  const ladder: LevelParams[] = buildLadder({
-    baseUptimeMs: cfg.baseUptimeMs,
-    baseDecoyChance: cfg.baseDecoyChance,
-    passHits: cfg.passHits,
-  });
-  const sfx = createSfx(view, cfg.sound);
-  let soundOn = cfg.sound;
-  const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
-  const rng = makeRng(seed);
+  const sfx = createSfx(view, pres.sound);
+  let soundOn = pres.sound;
+  // Per-round seed: server-issued (replayable) or driver-side random.
+  const seed: Seed = ctx?.seed ?? randomSeed();
 
   if (!doc.getElementById('wm-styles')) {
     const style = doc.createElement('style');
@@ -138,16 +167,11 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   }
   const c2d = context;
 
-  // Animal sprites (bundled defaults + optional skin overrides) and the jungle
-  // foliage (bundled white masks, tinted at draw time). Discs draw until they
-  // resolve; a broken image stays null and the disc remains.
   let sprites: SpriteMap | null = null;
   let scenery: SceneryArt | null = null;
   void loadSprites(doc, ctx?.skin ?? null).then((s) => { if (!disposed) sprites = s; });
   void loadScenery(doc).then((s) => { if (!disposed) scenery = s; });
 
-  // Tinted-foliage cache: white mask + color -> tinted offscreen canvas, built
-  // once per (sprite,color) pair.
   const tintCache = new Map<string, HTMLCanvasElement | null>();
   function tinted(img: CanvasImageSource, key: string, color: string): CanvasImageSource | null {
     const ck = `${key}|${color}`;
@@ -167,25 +191,24 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     return off;
   }
 
-  // ---- state -----------------------------------------------------------
+  // ---- driver state ----------------------------------------------------
   let status: Status = 'waiting';
-  let spawner = newSpawner(0);
-  let round: RoundState = initRound(cfg.passHits);
-  let levelIndex = 0;
-  let hitsInLevel = 0;
+  let simState: SimState = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+  let recorded: TickInput<SimAction>[] = [];
+  let logicalTick = 0;
+  let acc = 0;
+  let lastMs: number | null = null;
+  // Tap actions queued since the last logical tick (real-time arrival order).
+  let inputQueue: SimAction[] = [];
+
+  let verifiedFired = false;
+  let verifiedScore = 0;
   let particles: Particle[] = [];
   let popups: ScorePopup[] = [];
   let decoyFlash = 0;
-  let verified = false;
-  let verifiedScore = 0; // score when the pass latched; final score is resent if it climbs
-  let elapsed = 0;
-  let timeLeft = cfg.seconds; // seconds on the clock; the round is lost at 0
-  let roundStartMs = 0;
   let disposed = false;
 
-  // ---- view transform (world -> device px) -----------------------------
-  let worldHeight = WORLD_HEIGHT;
-  let holes: Vec[] = computeHoleCenters(worldHeight);
+  // ---- view transform (fixed world -> device px, letterboxed) ----------
   let scale = 1;
   let offX = 0;
   let offY = 0;
@@ -195,11 +218,11 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     const dpr = Math.min(view.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
-    worldHeight = Math.max(WORLD_HEIGHT_MIN, Math.min(WORLD_HEIGHT_MAX, (WORLD_WIDTH * rect.height) / rect.width));
-    holes = computeHoleCenters(worldHeight);
-    scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / worldHeight);
+    // Fixed world letterboxed into the canvas — the server has no container,
+    // so the world cannot depend on it.
+    scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / WORLD_HEIGHT);
     offX = (canvas.width - WORLD_WIDTH * scale) / 2;
-    offY = (canvas.height - worldHeight * scale) / 2;
+    offY = (canvas.height - WORLD_HEIGHT * scale) / 2;
     const h = rect.height;
     root.dataset['size'] = h >= 380 ? 'lg' : h >= 180 ? 'md' : 'xs';
   }
@@ -210,18 +233,9 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   }
   recomputeSize();
 
-  function newSpawner(level: number): Spawner {
-    const p = ladder[level]!;
-    return new Spawner(rng, HOLE_COUNT, { spawnRate: p.spawnRate, decoyChance: p.decoyChance, uptimeMs: p.uptimeMs });
-  }
-
-  // Hedge baseline for a row: a little below the row's hole center. The monkey's
-  // bottom anchors here and the foliage hedge is drawn over it so the base is
-  // hidden and only the head/torso peeks out.
-  function rowOf(holeIndex: number): number { return Math.floor(holeIndex / GRID_COLS); }
-  function hedgeBaselineY(rowCenterY: number): number { return rowCenterY + MOLE_RADIUS * 0.55; }
-
-  function toWorld(e: PointerEvent): Vec {
+  /** Map a pointer event to fixed WORLD coordinates. Recorded coords are
+   *  stable across container sizes because the world is fixed. */
+  function toWorld(e: { clientX: number; clientY: number }): Vec {
     const rect = canvas.getBoundingClientRect();
     const sx = rect.width > 0 ? canvas.width / rect.width : 1;
     const sy = rect.height > 0 ? canvas.height / rect.height : 1;
@@ -230,74 +244,24 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     return { x: (deviceX - offX) / scale, y: (deviceY - offY) / scale };
   }
 
-  // ---- input -----------------------------------------------------------
+  // ---- input (queue taps; the fixed-step loop applies + records them) --
   function onPointerDown(e: PointerEvent): void {
     if (status !== 'playing') return;
     e.preventDefault();
     const p = toWorld(e);
-    for (const m of spawner.moles) {
-      if (!isTappable(m)) continue;
-      const center = holes[m.holeIndex]!;
-      const r = MOLE_RADIUS * hitScale(m) + MOLE_HIT_PAD;
-      if (pointInCircle(p.x, p.y, center.x, center.y, r)) {
-        handleTap(m);
-        return;
+    // Pick the hit hole in FIXED world coords. Hit radius scales with scaleY.
+    const v: SimView = engine.view!(simState);
+    for (const m of v.moles) {
+      if (m.phase !== 'up') continue;
+      const center = HOLES[m.holeIndex]!;
+      const hitR = MOLE_RADIUS * Math.max(MIN_HIT_SCALE, m.scaleY) + MOLE_HIT_PAD;
+      if (pointInCircle(p.x, p.y, center.x, center.y, hitR)) {
+        inputQueue.push({ holeIndex: m.holeIndex });
+        return; // one tap per pointer-down
       }
     }
   }
   canvas.addEventListener('pointerdown', onPointerDown);
-
-  function handleTap(mole: Mole): void {
-    const fresh = timingFraction(mole);
-    const center = holes[mole.holeIndex]!;
-    const kind = spawner.tap(mole.holeIndex);
-    if (kind === null) return;
-    if (kind === 'monkey') {
-      sfx.whack();
-      const before = round.score;
-      round = onGoodHit(round, fresh);
-      hitsInLevel += 1;
-      spawnParticles(center.x, center.y, palette.goodTint);
-      pushPopup(center.x, center.y, `+${round.score - before}`, palette.goodTint);
-      announcer.say(strings.t('announceHit', { score: round.score }));
-      advanceDifficulty();
-      renderHud();
-      if (!verified && isPass(round)) markVerified(); // pass, but keep playing for score
-    } else {
-      // Wrong tap: dock points AND burn seconds off the clock (the punishment +
-      // the anti-spray lever). A missed monkey costs nothing but progress.
-      sfx.decoy();
-      const before = round.score;
-      round = onDecoyHit(round);
-      timeLeft = Math.max(0, timeLeft - DECOY_TIME_PENALTY_S);
-      decoyFlash = DECOY_FLASH_S;
-      pushPopup(center.x, center.y, `${round.score - before} · -${DECOY_TIME_PENALTY_S}s`, palette.decoyFlash);
-      updateTime();
-      renderHud();
-      announcer.say(strings.t('announceDecoy'));
-      if (timeLeft <= 0) endRound();
-    }
-  }
-
-  function pushPopup(x: number, y: number, text: string, color: string): void {
-    popups.push({ x, y: y - MOLE_RADIUS * 0.4, vy: reducedMotion ? 0 : -POPUP_RISE, text, color, ttl: POPUP_TTL });
-  }
-
-  // Levels only ramp difficulty now; they do not end the round. The round ends
-  // on a win (goal reached before time) or a loss (the clock hits zero).
-  function advanceDifficulty(): void {
-    if (levelIndex >= LEVEL_COUNT - 1) return; // already at the hardest level
-    if (hitsInLevel < ladder[levelIndex]!.goal) return;
-    levelIndex += 1;
-    hitsInLevel = 0;
-    spawner.setDifficulty({
-      spawnRate: ladder[levelIndex]!.spawnRate,
-      decoyChance: ladder[levelIndex]!.decoyChance,
-      uptimeMs: ladder[levelIndex]!.uptimeMs,
-    });
-    sfx.level();
-    announcer.say(strings.t('announceLevel', { level: levelIndex + 1 }));
-  }
 
   // ---- state transitions ----------------------------------------------
   function showStart(): void {
@@ -307,87 +271,133 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   }
   function start(): void {
     overlay.replaceChildren();
-    levelIndex = 0;
-    hitsInLevel = 0;
-    spawner = newSpawner(0);
-    round = initRound(cfg.passHits);
+    simState = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+    recorded = [];
+    logicalTick = 0;
+    acc = 0;
+    lastMs = null;
+    inputQueue = [];
+    verifiedFired = false;
+    verifiedScore = 0;
     particles = [];
     popups = [];
     decoyFlash = 0;
-    verified = false;
-    verifiedScore = 0;
-    elapsed = 0;
-    timeLeft = cfg.seconds;
-    roundStartMs = now();
     status = 'playing';
     renderHud();
     announcer.say(strings.t('announceStart'));
     sfx.resume();
     canvas.focus();
   }
-  // Reaching the goal latches the pass + shows the Verified badge, but the round
-  // keeps running so the player can raise their score (like dino-runner /
-  // fruit-slash). bridge.pass fires once here; endRound resends the final score
-  // if it climbed.
-  function markVerified(): void {
-    if (verified) return;
-    verified = true;
-    verifiedScore = round.score;
-    bridge.pass({ score: round.score, durationMs: Math.round(now() - roundStartMs) });
+  function onVerified(): void {
+    if (verifiedFired) return;
+    verifiedFired = true;
+    verifiedScore = simState.goodHits;
+    // Captcha satisfied: hand the widget the trace SO FAR. The server replays it
+    // to the pass threshold and returns the authoritative verdict. The round
+    // keeps running so the player can raise their score.
+    bridge.pass({ trace: encodeTrace(recorded) });
     sfx.verify();
-    announcer.say(strings.t('announceWin', { score: round.score }));
+    announcer.say(strings.t('announceWin', { score: simState.score }));
     renderHud();
   }
-  // The round ends only when the clock hits zero. Verified players see the
-  // success screen (final score resent if it beat the pass-time score); everyone
-  // else sees time's-up.
-  function endRound(): void {
+  function onRoundOver(): void {
     if (status === 'over') return;
     status = 'over';
-    const won = verified;
-    if (won && round.score > verifiedScore) {
-      bridge.pass({ score: round.score, durationMs: Math.round(now() - roundStartMs) });
+    // If the player beat their verified score after passing, resubmit the longer
+    // trace so the server's replayed score reflects the full round.
+    if (verifiedFired && simState.goodHits > verifiedScore) {
+      bridge.pass({ trace: encodeTrace(recorded) });
     }
-    announcer.say(strings.t(won ? 'announceWin' : 'announceOver', { score: round.score }));
-    overlay.replaceChildren(renderEndScreen(doc, strings, { won, score: round.score, onRetry: start }));
+    announcer.say(strings.t(verifiedFired ? 'announceWin' : 'announceOver', { score: simState.score }));
+    overlay.replaceChildren(
+      renderEndScreen(doc, strings, { won: verifiedFired, score: simState.score, onRetry: start }),
+    );
     focusOverlayButton();
-    renderHud();
   }
   function focusOverlayButton(): void {
     const btn = overlay.querySelector('button');
     if (btn instanceof HTMLButtonElement) btn.focus();
   }
 
-  // ---- simulation ------------------------------------------------------
-  function update(dt: number): void {
-    elapsed += dt;
-    timeLeft -= dt;
-    updateTime();
-    if (timeLeft <= 0) { timeLeft = 0; endRound(); return; }
-    spawner.update(dt); // a monkey that ducks untapped costs nothing, just no progress
+  // ---- fixed-step driver ----------------------------------------------
+  /** Advance the reducer exactly one logical tick: clear last tick's render
+   *  cues, apply + record queued inputs, tick the sim, react to the new state
+   *  (fx, HUD, pass, over). */
+  function advanceOneTick(): void {
+    // Clear before applying actions so step()'s pushFx writes are the ONLY
+    // cues visible after this tick — not a mix of this tick and previous ones.
+    simState.fx = [];
+    const acts = inputQueue;
+    inputQueue = [];
+    for (const a of acts) {
+      simState = engine.step(simState, a);
+      recorded.push({ tick: logicalTick, action: a });
+    }
+    simState = engine.tick(simState);
+    logicalTick++;
+
+    // Consume render cues.
+    const v: SimView = engine.view!(simState);
+    for (const fx of v.fx) {
+      if (fx.kind === 'whack') {
+        sfx.whack();
+        const center = HOLES[fx.holeIndex]!;
+        spawnParticles(center.x, center.y, palette.goodTint);
+        pushPopup(center.x, center.y, `+${fx.delta ?? 0}`, palette.goodTint);
+        announcer.say(strings.t('announceHit', { score: v.score }));
+      } else if (fx.kind === 'decoy') {
+        sfx.decoy();
+        const center = HOLES[fx.holeIndex]!;
+        decoyFlash = DECOY_FLASH_S;
+        pushPopup(center.x, center.y, `${fx.delta ?? 0}`, palette.decoyFlash);
+        announcer.say(strings.t('announceDecoy'));
+      } else if (fx.kind === 'level') {
+        sfx.level();
+        announcer.say(strings.t('announceLevel', { level: v.levelIndex + 1 }));
+      }
+    }
+    renderHud();
+    if (v.verified && !verifiedFired) onVerified();
+    if (engine.isOver(simState)) onRoundOver();
+  }
+
+  function pushPopup(x: number, y: number, text: string, color: string): void {
+    popups.push({
+      x,
+      y: y - MOLE_RADIUS * 0.4,
+      vy: reducedMotion ? 0 : -POPUP_RISE,
+      text,
+      color,
+      ttl: POPUP_TTL,
+    });
+  }
+
+  /** Age render-only particles + popups by real `dt` (cosmetic). */
+  function renderStep(dt: number): void {
     for (const p of particles) {
       p.vy += PARTICLE_GRAVITY * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.ttl -= dt;
     }
-    if (particles.length > 0) particles = particles.filter((p) => p.ttl > 0);
+    particles = particles.filter((p) => p.ttl > 0);
     for (const pop of popups) { pop.y += pop.vy * dt; pop.ttl -= dt; }
-    if (popups.length > 0) popups = popups.filter((p) => p.ttl > 0);
+    popups = popups.filter((p) => p.ttl > 0);
     if (decoyFlash > 0) decoyFlash = Math.max(0, decoyFlash - dt);
   }
 
   // ---- rendering -------------------------------------------------------
   function render(): void {
+    const v: SimView = engine.view!(simState);
     c2d.setTransform(1, 0, 0, 1, 0, 0);
     c2d.clearRect(0, 0, canvas.width, canvas.height);
     c2d.setTransform(scale, 0, 0, scale, offX, offY);
     drawBackdrop();
     drawDistantFoliage();
-    // Rows top to bottom (painter's order): a row's animals, then its hedge,
-    // so the hedge masks that row's monkeys' bases and lower rows sit in front.
     for (let row = 0; row < GRID_ROWS; row++) {
-      for (const m of spawner.moles) if (rowOf(m.holeIndex) === row) drawMole(m);
+      for (const m of v.moles) {
+        if (Math.floor(m.holeIndex / GRID_COLS) === row) drawMole(m);
+      }
       drawHedge(row);
     }
     drawForegroundGrass();
@@ -397,19 +407,18 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   }
 
   function drawBackdrop(): void {
-    const g = c2d.createLinearGradient(0, 0, 0, worldHeight);
+    const g = c2d.createLinearGradient(0, 0, 0, WORLD_HEIGHT);
     g.addColorStop(0, palette.canopyTop);
     g.addColorStop(1, palette.canopyBottom);
     c2d.fillStyle = g;
-    c2d.fillRect(0, 0, WORLD_WIDTH, worldHeight);
+    c2d.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
   }
 
-  // A soft, dark foliage band near the top for depth (does not hide spawns).
   function drawDistantFoliage(): void {
     if (!scenery?.bushA) return;
     const img = tinted(scenery.bushA, 'bushA', palette.foliageDark);
     if (!img) return;
-    const y = worldHeight * 0.1;
+    const y = WORLD_HEIGHT * 0.1;
     const size = MOLE_RADIUS * 2.6;
     for (let x = -size * 0.3; x < WORLD_WIDTH + size; x += size * 0.62) {
       const jx = (frand(x) - 0.5) * size * 0.3;
@@ -417,23 +426,21 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     }
   }
 
-  // A continuous hedge across the whole row width. Because it is continuous (not
-  // a per-cell marker), it hides WHERE in the row a monkey will pop.
   function drawHedge(row: number): void {
     if (!scenery) return;
-    const rowCenterY = holes[row * GRID_COLS]!.y;
-    const baseY = hedgeBaselineY(rowCenterY);
+    const rowCenterY = HOLES[row * GRID_COLS]!.y;
+    const baseY = rowCenterY + MOLE_RADIUS * 0.55;
     const size = MOLE_RADIUS * 1.9;
     const step = size * 0.52;
     let i = 0;
     for (let x = -size * 0.4; x < WORLD_WIDTH + size; x += step, i++) {
-      const seed = row * 97 + i;
-      const src = frand(seed) < 0.5 ? scenery.bushA : scenery.bushB;
+      const seedN = row * 97 + i;
+      const src = frand(seedN) < 0.5 ? scenery.bushA : scenery.bushB;
       if (!src) continue;
-      const img = tinted(src, frand(seed) < 0.5 ? 'bushA' : 'bushB', palette.foliage);
+      const img = tinted(src, frand(seedN) < 0.5 ? 'bushA' : 'bushB', palette.foliage);
       if (!img) continue;
-      const s = size * (0.85 + frand(seed + 13) * 0.4);
-      const jy = (frand(seed + 7) - 0.5) * size * 0.18;
+      const s = size * (0.85 + frand(seedN + 13) * 0.4);
+      const jy = (frand(seedN + 7) - 0.5) * size * 0.18;
       c2d.drawImage(img, x - s / 2, baseY - s * 0.62 + jy, s, s);
     }
   }
@@ -443,42 +450,36 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     const img = tinted(scenery.grass, 'grass', palette.foliage);
     if (!img) return;
     const size = MOLE_RADIUS * 1.5;
-    const y = worldHeight + size * 0.18;
+    const y = WORLD_HEIGHT + size * 0.18;
     for (let x = -size * 0.3, i = 0; x < WORLD_WIDTH + size; x += size * 0.7, i++) {
       const jx = (frand(i * 31 + 5) - 0.5) * size * 0.3;
       c2d.drawImage(img, x + jx - size / 2, y - size, size, size);
     }
   }
 
-  function drawMole(m: Mole): void {
+  function drawMole(m: SimView['moles'][number]): void {
     if (m.scaleY <= 0.01) return;
-    const center = holes[m.holeIndex]!;
-    const baseY = hedgeBaselineY(center.y);
-    const punch = reducedMotion ? 1 : m.punch;
-    const vScale = m.scaleY * punch;
-    const hScale = (reducedMotion ? m.scaleY : Math.sqrt(1 / Math.max(0.05, m.scaleY))) * punch;
+    const center = HOLES[m.holeIndex]!;
+    const baseY = center.y + MOLE_RADIUS * 0.55;
+    const vScale = m.scaleY;
+    const hScale = reducedMotion ? m.scaleY : Math.sqrt(1 / Math.max(0.05, m.scaleY));
     const w = MOLE_RADIUS * 2 * hScale;
     const h = MOLE_RADIUS * 2 * vScale;
     c2d.save();
-    // Only draw above the hedge baseline; the hedge (drawn after) covers the rest.
     c2d.beginPath();
     c2d.rect(center.x - MOLE_RADIUS * 1.6, center.y - MOLE_RADIUS * 2.6, MOLE_RADIUS * 3.2, baseY - (center.y - MOLE_RADIUS * 2.6));
     c2d.clip();
-    const key: SpriteKey = m.kind === 'monkey' ? 'monkey' : (m.species ?? 'frog');
+    const key: SpriteKey = m.kind === 'monkey' ? 'monkey' : 'frog';
     const img = sprites ? sprites[key] : null;
     if (img) {
       c2d.drawImage(img, center.x - w / 2, baseY - h, w, h);
     } else {
-      drawFallbackDisc(center.x, baseY - h / 2, (w + h) / 4, m.kind);
+      c2d.fillStyle = m.kind === 'monkey' ? '#A16639' : '#3FA34D';
+      c2d.beginPath();
+      c2d.arc(center.x, baseY - h / 2, (w + h) / 4, 0, Math.PI * 2);
+      c2d.fill();
     }
     c2d.restore();
-  }
-
-  function drawFallbackDisc(x: number, y: number, r: number, kind: Mole['kind']): void {
-    c2d.fillStyle = kind === 'monkey' ? '#A16639' : '#3FA34D';
-    c2d.beginPath();
-    c2d.arc(x, y, r, 0, Math.PI * 2);
-    c2d.fill();
   }
 
   function drawParticles(): void {
@@ -496,7 +497,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     if (decoyFlash <= 0) return;
     c2d.globalAlpha = Math.min(0.4, (decoyFlash / DECOY_FLASH_S) * 0.4);
     c2d.fillStyle = palette.decoyFlash;
-    c2d.fillRect(0, 0, WORLD_WIDTH, worldHeight);
+    c2d.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     c2d.globalAlpha = 1;
   }
 
@@ -516,8 +517,8 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     c2d.globalAlpha = 1;
   }
 
-  // Deterministic [0,1) hash for stable foliage jitter (does not consume the
-  // gameplay rng, so spawn determinism is untouched).
+  /** Deterministic [0,1) hash for stable foliage jitter. Does not consume the
+   *  gameplay rng, so spawn determinism is untouched. */
   function frand(n: number): number {
     const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
     return x - Math.floor(x);
@@ -526,29 +527,38 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   function spawnParticles(x: number, y: number, color: string): void {
     if (reducedMotion) return;
     for (let i = 0; i < HIT_PARTICLES.count; i++) {
-      const angle = rng() * Math.PI * 2;
-      const speed = rng() * HIT_PARTICLES.speed + 60;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * HIT_PARTICLES.speed + 60;
       particles.push({
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 80,
         ttl: HIT_PARTICLES.ttl,
         color,
-        size: rng() * 4 + 3,
+        size: Math.random() * 4 + 3,
       });
     }
   }
 
   // ---- loop ------------------------------------------------------------
   let rafHandle = 0;
-  let lastMs: number | null = null;
   function frame(): void {
     if (disposed) return;
     const tMs = now();
     let dt = lastMs === null ? 0 : (tMs - lastMs) / 1000;
     lastMs = tMs;
-    if (dt > MAX_DT) dt = MAX_DT;
-    if (status === 'playing' && dt > 0) update(dt);
+    if (dt > MAX_FRAME_DT) dt = MAX_FRAME_DT;
+    if (status === 'playing') {
+      acc += dt;
+      let steps = 0;
+      while (acc >= STEP_S && steps < MAX_STEPS_PER_FRAME && status === 'playing') {
+        advanceOneTick();
+        acc -= STEP_S;
+        steps++;
+      }
+      if (steps === MAX_STEPS_PER_FRAME) acc = 0; // drop backlog after a stall
+    }
+    renderStep(dt);
     render();
     rafHandle = raf(frame);
   }
@@ -561,26 +571,24 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
 
   // ---- HUD + helpers ---------------------------------------------------
   function renderHud(): void {
-    const showCounters = cfg.showScore;
+    const showCounters = pres.showScore;
     hud.goal.dataset['hidden'] = showCounters ? 'false' : 'true';
     hud.level.dataset['hidden'] = showCounters ? 'false' : 'true';
     hud.score.dataset['hidden'] = showCounters ? 'false' : 'true';
     if (showCounters) {
-      // Before passing, show progress toward the goal; after, just the running
-      // count (the round is now open-ended for score), mirroring fruit-slash.
-      const goalText = verified ? `${round.goodHits}` : `${round.goodHits} / ${cfg.passHits}`;
+      const goalText = verifiedFired
+        ? `${simState.goodHits}`
+        : `${simState.goodHits} / ${DEFAULT_SIM_CONFIG.passHits}`;
       hud.goal.innerHTML = `<span class="label">${strings.t('headerGoal')}</span>${goalText}`;
-      hud.level.innerHTML = `<span class="label">${strings.t('headerLevel')}</span>${levelIndex + 1}`;
-      hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${round.score}`;
+      hud.level.innerHTML = `<span class="label">${strings.t('headerLevel')}</span>${simState.levelIndex + 1}`;
+      hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${simState.score}`;
     }
     updateTime();
-    hud.badge.dataset['hidden'] = verified ? 'false' : 'true';
+    hud.badge.dataset['hidden'] = verifiedFired ? 'false' : 'true';
     hud.badge.textContent = `✓ ${strings.t('verifiedBadge')}`;
   }
-  // The clock ticks every frame, so the time node updates on its own each frame
-  // (cheaper than a full renderHud) and turns urgent in the last few seconds.
   function updateTime(): void {
-    const secs = Math.max(0, Math.ceil(timeLeft));
+    const secs = Math.max(0, Math.ceil(simState.timeLeft));
     hud.time.innerHTML = `<span class="label">${strings.t('headerTime')}</span>${secs}`;
     hud.time.dataset['low'] = secs <= 5 && status === 'playing' ? 'true' : 'false';
   }

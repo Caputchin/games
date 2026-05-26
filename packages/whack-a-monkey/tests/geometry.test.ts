@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pointInCircle, pickHoleAt, computeHoleCenters, type HoleCircle } from '../src/geometry.js';
-import { HOLE_COUNT, WORLD_WIDTH } from '../src/constants.js';
+import { HOLE_COUNT, WORLD_WIDTH } from '../src/sim/constants.js';
 
 describe('pointInCircle', () => {
   it('is true inside and at the boundary, false outside', () => {

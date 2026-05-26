@@ -14,6 +14,9 @@
   },
   "npm": "@caputchin/game-whack-a-monkey",
   "entry": "dist/whack-a-monkey.js",
+  "run": {
+    "entry": "dist/run.js"
+  },
   "preferred": {
     "width": 800,
     "height": 450

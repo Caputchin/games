@@ -3,7 +3,7 @@
 // overlap, so at most one hole matches. Dependency-free + side-effect-free so
 // it unit-tests in isolation (tests/geometry.test.ts).
 
-import { GRID_COLS, GRID_ROWS, GRID_MARGIN, WORLD_WIDTH } from './constants.js';
+import { GRID_COLS, GRID_ROWS, GRID_MARGIN, WORLD_WIDTH } from './sim/constants.js';
 
 export interface Vec {
   x: number;

@@ -11,8 +11,8 @@
 // the inline SVG sprites in dino-runner / leaf-memory).
 
 import type { ResolvedSkin } from '@caputchin/game-sdk';
-import type { DecoySpecies } from './constants.js';
-import { DECOY_SPECIES } from './constants.js';
+import type { DecoySpecies } from './sim/constants.js';
+import { DECOY_SPECIES } from './sim/constants.js';
 import monkeyPng from './assets/monkey.png';
 import frogPng from './assets/frog.png';
 import parrotPng from './assets/parrot.png';

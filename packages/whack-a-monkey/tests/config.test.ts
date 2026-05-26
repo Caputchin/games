@@ -3,7 +3,7 @@ import { resolveWhackConfig } from '../src/config.js';
 import type { GameContext } from '@caputchin/game-sdk';
 
 function ctxWith(config: Record<string, unknown> | null): GameContext {
-  return { locale: null, skin: null, config: config as GameContext['config'] };
+  return { locale: null, skin: null, seed: null, config: config as GameContext['config'] };
 }
 
 describe('resolveWhackConfig', () => {
