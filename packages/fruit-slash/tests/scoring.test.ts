@@ -1,42 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { evaluate, onGoodSlice, onLifeLost, type RoundState } from '../src/scoring.js';
+import { evaluate } from '../src/sim/scoring.js';
 
-const base: RoundState = { sliced: 0, lives: 3, passScore: 3 };
-
-describe('scoring', () => {
-  it('onGoodSlice increments and fires pass exactly at the threshold', () => {
-    let s = base;
-    let r = onGoodSlice(s); // 1
-    expect(r.event).toBe('none');
-    s = r.state;
-    r = onGoodSlice(s); // 2
-    expect(r.event).toBe('none');
-    s = r.state;
-    r = onGoodSlice(s); // 3 == passScore
-    expect(r.event).toBe('pass');
-    expect(r.state.sliced).toBe(3);
+// The pass/lives gate the reducer reads. The +1 / -1 counter mutations live
+// inline in engine.ts and are covered end-to-end by engine.test.ts (the
+// live==replay play); this asserts the gate decision itself.
+describe('evaluate', () => {
+  it('is "none" below the pass threshold with lives left', () => {
+    expect(evaluate({ sliced: 2, lives: 3, passScore: 3 })).toBe('none');
   });
 
-  it('stays "pass" after the threshold (orchestrator latch enforces single fire)', () => {
+  it('fires "pass" exactly at the threshold and stays "pass" beyond it', () => {
+    expect(evaluate({ sliced: 3, lives: 3, passScore: 3 })).toBe('pass');
     expect(evaluate({ sliced: 5, lives: 3, passScore: 3 })).toBe('pass');
   });
 
-  it('onLifeLost decrements and fires gameover at zero', () => {
-    let s: RoundState = { sliced: 0, lives: 2, passScore: 8 };
-    let r = onLifeLost(s);
-    expect(r.event).toBe('none');
-    expect(r.state.lives).toBe(1);
-    s = r.state;
-    r = onLifeLost(s);
-    expect(r.event).toBe('gameover');
-    expect(r.state.lives).toBe(0);
+  it('fires "gameover" once lives hit zero', () => {
+    expect(evaluate({ sliced: 0, lives: 0, passScore: 8 })).toBe('gameover');
   });
 
   it('gameover takes precedence over pass when out of lives', () => {
     expect(evaluate({ sliced: 99, lives: 0, passScore: 8 })).toBe('gameover');
-  });
-
-  it('lives floor at zero', () => {
-    expect(onLifeLost({ sliced: 0, lives: 0, passScore: 8 }).state.lives).toBe(0);
   });
 });

@@ -1,7 +1,8 @@
 // Pure slice geometry. The blade is a moving polyline (recent pointer samples);
-// a fruit is a circle. A slice lands when any segment of the swipe passes
-// within the fruit's radius. Dependency-free + side-effect-free so it unit-
-// tests in isolation (tests/geometry.test.ts).
+// a fruit is a circle. A slice lands when any segment of the swipe passes within
+// the fruit's radius. Built only from +,-,*,/ and comparisons (squared distance,
+// never a sqrt) so it is bit-identical across runtimes — safe in the verdict
+// path. Dependency-free + side-effect-free so it unit-tests in isolation.
 
 export interface Vec {
   x: number;
@@ -14,7 +15,7 @@ export interface Circle {
   r: number;
 }
 
-/** Squared distance from point P to segment AB. Squared to avoid a sqrt on the
+/** Squared distance from point P to segment AB. Squared to stay sqrt-free on the
  *  hot path; callers compare against r*r. */
 export function distSqPointToSegment(p: Vec, a: Vec, b: Vec): number {
   const abx = b.x - a.x;

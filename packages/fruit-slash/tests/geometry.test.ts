@@ -3,7 +3,7 @@ import {
   distSqPointToSegment,
   segmentIntersectsCircle,
   swipeHitsCircle,
-} from '../src/geometry.js';
+} from '../src/sim/geometry.js';
 
 describe('distSqPointToSegment', () => {
   it('is zero for a point on the segment', () => {

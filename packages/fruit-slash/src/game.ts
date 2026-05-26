@@ -1,33 +1,32 @@
-// Orchestrates Fruit Slash: builds the DOM shell + canvas, runs an OWN
-// requestAnimationFrame loop driven by real elapsed time, captures the pointer
-// slice, and drives the state machine (waiting -> playing -> won | over ->
-// playing). Pure physics live in launch.ts, slice math in geometry.ts,
-// pass/lives in scoring.ts, spawn lifecycle in spawner.ts; this module is the
-// glue + the pass gate.
+// Orchestrates Fruit Slash LIVE play (ADR-0069). The authoritative game logic is
+// the headless reducer in sim/engine; this module is the live DRIVER + renderer
+// around it: it builds the DOM shell, runs a FIXED-STEP loop that advances the
+// reducer one logical tick at a time, records the pointer input as the opaque
+// trace, and renders the reducer's view projection. Because the live driver and
+// the server replay run the SAME reducer over the SAME recorded ticks, the live
+// score equals the replayed verdict by construction.
 //
-// Frame-rate independence is the core requirement: every simulation step is
-// scaled by real `dt` seconds (clamped to MAX_DT), and update + render run
-// every frame at the native refresh. There is no fixed-60 stepping and no
-// per-frame constant — the same arc plays at the same speed on 60Hz or 240Hz
-// (locked by tests/frame-rate.test.ts).
-//
-// Nothing about the next fruit is written to the DOM or the accessibility
-// tree, so a scraper that reads the page learns nothing about the solution.
+// What lives HERE (render-only, never in the verdict): the canvas + DOM chrome,
+// the blade trail, the slice splatter particles, target spin animation, audio,
+// and accessibility announcements. These may use real time / Math.random freely
+// — they never touch the sim. What crosses to the server is only the recorded
+// pointer trace; the seed comes from `ctx.seed`.
 
-import type { Bridge, GameContext } from '@caputchin/game-sdk';
+import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
+import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
+import { engine } from './sim/engine.js';
+import { DEFAULT_SIM_CONFIG } from './sim/config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, TARGET_RADIUS, STEP_S } from './sim/constants.js';
+import { GOOD, type Fx, type SimAction, type SimState, type SimView } from './sim/types.js';
 import { buildStrings } from './strings.js';
 import { resolveFruitSlashConfig } from './config.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
-import { swipeHitsCircle, type Vec } from './geometry.js';
-import { onGoodSlice, onLifeLost, type RoundState } from './scoring.js';
-import { Spawner, type Target } from './spawner.js';
+import type { Vec } from './sim/geometry.js';
 import { resolvePalette, type Palette } from './palette.js';
 import { loadArt, type TargetArt } from './art.js';
 import { renderStartScreen, renderGameOverScreen } from './screens.js';
 import { STYLES } from './styles.js';
-import { difficultyAt } from './progression.js';
 import { createSfx } from './audio.js';
-import { launchBounds, WORLD_WIDTH, WORLD_HEIGHT, WORLD_HEIGHT_MIN, WORLD_HEIGHT_MAX, MAX_DT, TARGET_RADIUS, HIT_PAD, BLADE_TRAIL_S, SPLATTER, MAX_CONCURRENT } from './constants.js';
 
 const SKIN_COLOR_KEYS: readonly string[] = [
   'bg', 'fg', 'button_bg', 'button_text', 'button_hover', 'focus_ring',
@@ -39,9 +38,16 @@ const SOUND_ON =
 const SOUND_OFF =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
 
-// The captcha is satisfied at the pass threshold (bridge.pass fires once) but
-// the round keeps running so the player can raise their score; it ends only on
-// lives-out. So there is no separate "won" status — just a `verified` flag.
+// Render-only tuning (never affects the verdict).
+const BLADE_TRAIL_S = 0.22;
+const SPLATTER = { count: 10, ttl: 0.45, speed: 280 } as const;
+// Real-time clamp + catch-up bound: after a tab stall we cap one frame's real
+// delta and the logical ticks it spends, so the game pauses through the stall
+// rather than fast-forwarding. The recorded trace only ever holds the ticks that
+// actually ran, so replay reproduces them either way.
+const MAX_FRAME_DT = 0.1;
+const MAX_STEPS_PER_FRAME = 10;
+
 type Status = 'waiting' | 'playing' | 'over';
 
 interface TrailPoint extends Vec {
@@ -68,6 +74,14 @@ export interface GameOptions {
   now?: () => number;
 }
 
+/** Build a throwaway seed for a no-verify mount (no server seed issued). The
+ *  replay never runs without a session, so any seed gives play variety; this is
+ *  DRIVER-side (not the sim), so Math.random is fine here. */
+function randomSeed(): Seed {
+  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
+  return [u(), u(), u(), u()];
+}
+
 export function runFruitSlash(opts: GameOptions): () => void {
   const { container, bridge, ctx } = opts;
   const doc = container.ownerDocument;
@@ -77,21 +91,16 @@ export function runFruitSlash(opts: GameOptions): () => void {
   const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
 
   const strings = buildStrings(ctx?.locale);
-  const cfg = resolveFruitSlashConfig(ctx);
+  // Presentation config (sound + HUD toggles + display thresholds). The SIM runs
+  // under DEFAULT_SIM_CONFIG so live == replay; these displayed values mirror it.
+  const pres = resolveFruitSlashConfig(ctx);
   const palette: Palette = resolvePalette(ctx?.skin ?? null);
   const reducedMotion = prefersReducedMotion(view);
-  let worldHeight = WORLD_HEIGHT; // adapts to the container aspect on resize
-  let bounds = launchBounds(cfg.gravity, worldHeight);
-  const sfx = createSfx(view, cfg.sound);
-  let soundOn = cfg.sound; // live mute state; the in-game toggle flips it
-  const seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
-  let rngState = seed;
-  const rng = (): number => {
-    rngState = (rngState + 0x6d2b79f5) | 0;
-    let t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+  const sfx = createSfx(view, pres.sound);
+  let soundOn = pres.sound;
+  // Per-round seed: server-issued (replayable) or a driver-side random for the
+  // no-verify mount. Reused across retries within this mount.
+  const seed: Seed = ctx?.seed ?? randomSeed();
 
   if (!doc.getElementById('fs-styles')) {
     const style = doc.createElement('style');
@@ -136,21 +145,25 @@ export function runFruitSlash(opts: GameOptions): () => void {
     if (!disposed) art = a;
   });
 
-  // ---- state -----------------------------------------------------------
+  // ---- driver state ----------------------------------------------------
   let status: Status = 'waiting';
-  let spawner = new Spawner(rng, bounds, { spawnRate: cfg.spawnRate, hazardChance: cfg.hazardChance, maxConcurrent: MAX_CONCURRENT });
-  let round: RoundState = { sliced: 0, lives: cfg.lives, passScore: cfg.passScore };
+  let state: SimState = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+  let recorded: TickInput<SimAction>[] = [];
+  let logicalTick = 0;
+  let acc = 0;
+  let lastMs: number | null = null;
+  let renderClock = 0; // monotonic real-time seconds, drives spin + fades
+  // Pointer actions queued since the last logical tick (real-time arrival order).
+  let inputQueue: SimAction[] = [];
+  let isDown = false;
+
+  let verifiedFired = false;
+  let verifiedScore = 0;
   let particles: Particle[] = [];
   let trail: TrailPoint[] = [];
-  let pointerDown = false;
-  let lastPoint: Vec | null = null;
-  let verified = false; // pass threshold reached; bridge.pass fired once
-  let verifiedScore = 0; // score reported at verification; resend if beaten
-  let elapsed = 0; // seconds of play this round, drives the difficulty ramp
-  let roundStartMs = 0;
   let disposed = false;
 
-  // ---- view transform (world -> device px) -----------------------------
+  // ---- view transform (fixed world -> device px, letterboxed) ----------
   let scale = 1;
   let offX = 0;
   let offY = 0;
@@ -160,22 +173,13 @@ export function runFruitSlash(opts: GameOptions): () => void {
     const dpr = Math.min(view.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
-    // World height tracks the container aspect (clamped) so the scene is
-    // width-driven: targets keep a sensible size on short embeds instead of
-    // being crushed to fit a fixed tall world.
-    worldHeight = Math.max(WORLD_HEIGHT_MIN, Math.min(WORLD_HEIGHT_MAX, (WORLD_WIDTH * rect.height) / rect.width));
-    // Keep the live spawner's bounds in sync (mutate the shared object, since
-    // the spawner captured this reference) so spawn/cull math and the render
-    // transform always agree, even on a mid-round resize.
-    bounds.height = worldHeight;
-    scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / worldHeight);
+    // The logical world is FIXED (sim-authoritative); letterbox it into the
+    // canvas. A non-matching container aspect leaves bands, never reshapes the
+    // world — the server has no container, so the world cannot depend on it.
+    scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / WORLD_HEIGHT);
     offX = (canvas.width - WORLD_WIDTH * scale) / 2;
-    offY = (canvas.height - worldHeight * scale) / 2;
-    // Tier the overlay chrome by available height so the start / end screens
-    // simplify (drop body, then hint) instead of overflowing on short embeds.
+    offY = (canvas.height - WORLD_HEIGHT * scale) / 2;
     const h = rect.height;
-    // lg: full. md: drop the long body, keep the (tiny, useful) hint. xs: drop
-    // body + hint, just title + button.
     root.dataset['size'] = h >= 420 ? 'lg' : h >= 150 ? 'md' : 'xs';
   }
   let resizeObserver: ResizeObserver | null = null;
@@ -187,8 +191,9 @@ export function runFruitSlash(opts: GameOptions): () => void {
   }
   recomputeSize();
 
-  /** Map a pointer event to world coordinates (inverse of the render transform). */
-  function toWorld(e: PointerEvent): Vec {
+  /** Map a pointer event to LOGICAL WORLD coordinates (inverse of the render
+   *  transform). Recorded coords are world-space, so replay matches. */
+  function toWorld(e: { clientX: number; clientY: number }): Vec {
     const rect = canvas.getBoundingClientRect();
     const sx = rect.width > 0 ? canvas.width / rect.width : 1;
     const sy = rect.height > 0 ? canvas.height / rect.height : 1;
@@ -197,74 +202,39 @@ export function runFruitSlash(opts: GameOptions): () => void {
     return { x: (deviceX - offX) / scale, y: (deviceY - offY) / scale };
   }
 
-  // ---- input -----------------------------------------------------------
+  // ---- input (queue actions; the fixed-step loop applies + records them) --
   function onPointerDown(e: PointerEvent): void {
     if (status !== 'playing') return;
     e.preventDefault();
     try { canvas.setPointerCapture(e.pointerId); } catch { /* unsupported */ }
-    pointerDown = true;
-    lastPoint = toWorld(e);
-    trail = [{ ...lastPoint, age: 0 }];
+    isDown = true;
+    const p = toWorld(e);
+    inputQueue.push({ k: 0, x: p.x, y: p.y });
+    trail = [{ ...p, age: 0 }];
   }
   function onPointerMove(e: PointerEvent): void {
-    if (!pointerDown || status !== 'playing') return;
-    // Recover dropped samples on a fast flick so the blade tracks the real path.
+    if (!isDown || status !== 'playing') return;
+    // Recover dropped samples on a fast flick so both the slice and the blade
+    // track the real path.
     const coalesced = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
     const samples = coalesced.length ? coalesced : [e];
     for (const ev of samples) {
       const p = toWorld(ev);
-      if (lastPoint) sliceSegment(lastPoint, p);
+      inputQueue.push({ k: 1, x: p.x, y: p.y });
       trail.push({ ...p, age: 0 });
       if (trail.length > 24) trail.shift();
-      lastPoint = p;
     }
   }
   function onPointerUp(e?: PointerEvent): void {
     if (e) { try { canvas.releasePointerCapture(e.pointerId); } catch { /* not captured */ } }
-    pointerDown = false;
-    lastPoint = null;
+    if (!isDown) return;
+    isDown = false;
+    if (status === 'playing') inputQueue.push({ k: 2 });
   }
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
   canvas.addEventListener('pointerup', onPointerUp);
   canvas.addEventListener('pointercancel', onPointerUp);
-
-  // ---- slicing ---------------------------------------------------------
-  function sliceSegment(a: Vec, b: Vec): void {
-    const path = [a, b];
-    for (const t of spawner.live) {
-      if (t.sliced) continue;
-      if (swipeHitsCircle(path, { x: t.state.x, y: t.state.y, r: TARGET_RADIUS + HIT_PAD })) {
-        sliceTarget(t);
-      }
-    }
-  }
-  function sliceTarget(t: Target): void {
-    t.sliced = true;
-    const color = t.kind === 'hazard' ? palette.hazard : palette.good[t.hue] ?? palette.good[0];
-    spawnSplatter(t.state.x, t.state.y, color);
-    if (t.kind === 'hazard') {
-      sfx.bomb();
-      loseLife();
-    } else {
-      sfx.slice();
-      const r = onGoodSlice(round);
-      round = r.state;
-      renderHud();
-      announcer.say(strings.t('announceSlice', { score: round.sliced }));
-      if (r.event === 'pass') markVerified();
-    }
-  }
-  function loseLife(): void {
-    const r = onLifeLost(round);
-    round = r.state;
-    renderHud();
-    if (r.event === 'gameover') {
-      over();
-    } else {
-      announcer.say(strings.t('announceLife', { lives: round.lives }));
-    }
-  }
 
   // ---- state transitions ----------------------------------------------
   function showStart(): void {
@@ -274,44 +244,47 @@ export function runFruitSlash(opts: GameOptions): () => void {
   }
   function start(): void {
     overlay.replaceChildren();
-    bounds = launchBounds(cfg.gravity, worldHeight); // current adapted height
-    spawner = new Spawner(rng, bounds, { spawnRate: cfg.spawnRate, hazardChance: cfg.hazardChance, maxConcurrent: MAX_CONCURRENT });
-    round = { sliced: 0, lives: cfg.lives, passScore: cfg.passScore };
+    state = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+    recorded = [];
+    logicalTick = 0;
+    acc = 0;
+    lastMs = null;
+    inputQueue = [];
+    isDown = false;
+    verifiedFired = false;
+    verifiedScore = 0;
     particles = [];
     trail = [];
-    verified = false;
-    verifiedScore = 0;
-    elapsed = 0;
-    roundStartMs = now();
     status = 'playing';
     renderHud();
     announcer.say(strings.t('announceStart'));
     sfx.resume(); // unlock audio on this user gesture (the Start click)
     canvas.focus();
   }
-  function markVerified(): void {
-    if (verified) return;
-    verified = true;
-    verifiedScore = round.sliced;
-    // Captcha satisfied: report success once. The round keeps running so the
-    // player can raise their score; a Verified badge shows in the HUD.
-    bridge.pass({ score: round.sliced, durationMs: Math.round(now() - roundStartMs) });
+  function onVerified(): void {
+    if (verifiedFired) return;
+    verifiedFired = true;
+    verifiedScore = state.sliced;
+    // Captcha satisfied: hand the widget the trace SO FAR. The server replays it
+    // to the pass threshold and returns the authoritative verdict. The round
+    // keeps running so the player can raise their score.
+    bridge.pass({ trace: encodeTrace(recorded) });
     sfx.verify();
-    announcer.say(strings.t('announceWin', { score: round.sliced }));
+    announcer.say(strings.t('announceWin', { score: state.sliced }));
     renderHud();
   }
-  function over(): void {
+  function onGameOver(): void {
     status = 'over';
-    // Once the round is completely done, resend the final score if the player
-    // beat the score reported at verification. Score is the slice count, which
-    // only increases, so the final tally is the highest. Mirrors dino's
-    // new-best resend; the widget keeps the best score the visitor reached.
-    if (verified && round.sliced > verifiedScore) {
-      bridge.pass({ score: round.sliced, durationMs: Math.round(now() - roundStartMs) });
+    // If the player beat their verified score after passing, resubmit the longer
+    // trace so the server's replayed score reflects the full round (the widget
+    // keeps the best). A never-verified loss submits nothing — local retry only.
+    if (verifiedFired && state.sliced > verifiedScore) {
+      bridge.pass({ trace: encodeTrace(recorded) });
     }
-    announcer.say(strings.t('announceGameOver', { score: round.sliced }));
-    // Verified players see a success-framed end screen; the rest see game over.
-    overlay.replaceChildren(renderGameOverScreen(doc, strings, { won: verified, score: round.sliced, onRetry: start }));
+    announcer.say(strings.t('announceGameOver', { score: state.sliced }));
+    overlay.replaceChildren(
+      renderGameOverScreen(doc, strings, { won: verifiedFired, score: state.sliced, onRetry: start }),
+    );
     focusOverlayButton();
   }
   function focusOverlayButton(): void {
@@ -319,69 +292,96 @@ export function runFruitSlash(opts: GameOptions): () => void {
     if (btn instanceof HTMLButtonElement) btn.focus();
   }
 
-  // ---- simulation ------------------------------------------------------
-  function update(dt: number): void {
-    // Ramp difficulty with elapsed play time (faster spawns, more bombs).
-    elapsed += dt;
-    spawner.setDifficulty(difficultyAt(elapsed, { spawnRate: cfg.spawnRate, hazardChance: cfg.hazardChance }));
-    const { escaped } = spawner.update(dt);
-    for (const t of escaped) {
-      if (t.kind !== 'hazard') {
+  // ---- fixed-step driver ----------------------------------------------
+  /** Advance the reducer exactly one logical tick: clear last tick's render
+   *  cues, apply + record the queued input, tick the sim, then react to the new
+   *  state (fx, HUD, pass / game-over). */
+  function advanceOneTick(): void {
+    state.fx = [];
+    const acts = inputQueue;
+    inputQueue = [];
+    for (const a of acts) {
+      state = engine.step(state, a);
+      recorded.push({ tick: logicalTick, action: a });
+    }
+    state = engine.tick(state);
+    logicalTick++;
+    consumeFx(state.fx);
+    renderHud();
+    if (state.verified && !verifiedFired) onVerified();
+    if (engine.isOver(state)) onGameOver();
+  }
+
+  /** Turn this tick's render cues into splatter + sfx + announcements. */
+  function consumeFx(fx: readonly Fx[]): void {
+    let sliced = false;
+    let missed = false;
+    for (const f of fx) {
+      if (f.kind === 'slice') {
+        sliced = true;
+        sfx.slice();
+        spawnSplatter(f.x, f.y, palette.good[f.hue] ?? palette.good[0]);
+      } else if (f.kind === 'bomb') {
+        sfx.bomb();
+        spawnSplatter(f.x, f.y, palette.hazard);
+      } else {
+        missed = true;
         sfx.life();
-        loseLife();
-        if (status !== 'playing') break; // game over mid-batch
       }
     }
-    // Particles: same gravity, fade by ttl.
+    if (sliced) announcer.say(strings.t('announceSlice', { score: state.sliced }));
+    if (missed && status === 'playing') announcer.say(strings.t('announceLife', { lives: state.lives }));
+  }
+
+  /** Age the render-only particles + blade trail by real `dt` (cosmetic). */
+  function renderStep(dt: number): void {
     for (const p of particles) {
-      p.vy += cfg.gravity * dt;
+      p.vy += DEFAULT_SIM_CONFIG.gravity * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.ttl -= dt;
     }
     particles = particles.filter((p) => p.ttl > 0);
-    // Blade trail fade.
     for (const tp of trail) tp.age += dt;
     trail = trail.filter((tp) => tp.age < BLADE_TRAIL_S);
   }
 
   // ---- rendering -------------------------------------------------------
   function render(): void {
+    const v: SimView = engine.view ? engine.view(state) : (state as unknown as SimView);
     c2d.setTransform(1, 0, 0, 1, 0, 0);
     c2d.clearRect(0, 0, canvas.width, canvas.height);
     c2d.setTransform(scale, 0, 0, scale, offX, offY);
-    for (const t of spawner.live) drawTarget(t);
+    for (const t of v.targets) drawTarget(t);
     drawParticles();
     drawTrail();
   }
 
-  function drawTarget(t: Target): void {
-    const { x, y } = t.state;
+  function drawTarget(t: SimView['targets'][number]): void {
+    const { x, y } = t;
     const r = TARGET_RADIUS;
+    // Spin animates from a render-side clock (cosmetic, never in the verdict).
+    const spin = t.spin + t.spinRate * renderClock;
     c2d.save();
     c2d.translate(x, y);
-    c2d.rotate(t.spin);
-    if (t.kind === 'hazard') {
+    c2d.rotate(spin);
+    if (t.kind !== GOOD) {
       if (art.hazard) {
         c2d.drawImage(art.hazard, -r, -r, r * 2, r * 2);
       } else {
-        // Round bomb body.
         c2d.fillStyle = palette.hazard;
         c2d.strokeStyle = palette.hazardStroke;
         c2d.lineWidth = 3;
         circle(0, 0, r);
         c2d.fill();
         c2d.stroke();
-        // Metallic highlight so it reads as a sphere, not a dark fruit.
         c2d.globalAlpha = 0.22;
         c2d.fillStyle = '#ffffff';
         circle(-r * 0.34, -r * 0.36, r * 0.26);
         c2d.fill();
         c2d.globalAlpha = 1;
-        // Fuse cap on top.
         c2d.fillStyle = palette.hazardStroke;
         c2d.fillRect(-r * 0.18, -r * 1.08, r * 0.36, r * 0.3);
-        // Curved fuse.
         c2d.strokeStyle = '#9A7B3A';
         c2d.lineWidth = Math.max(3, r * 0.12);
         c2d.lineCap = 'round';
@@ -389,7 +389,6 @@ export function runFruitSlash(opts: GameOptions): () => void {
         c2d.moveTo(0, -r * 1.08);
         c2d.quadraticCurveTo(r * 0.55, -r * 1.45, r * 0.45, -r * 1.75);
         c2d.stroke();
-        // Lit spark at the fuse tip (the unmistakable "bomb" cue).
         c2d.fillStyle = '#FFD23F';
         circle(r * 0.45, -r * 1.75, r * 0.17);
         c2d.fill();
@@ -408,13 +407,11 @@ export function runFruitSlash(opts: GameOptions): () => void {
         circle(0, 0, r);
         c2d.fill();
         c2d.stroke();
-        // highlight
         c2d.globalAlpha = 0.3;
         c2d.fillStyle = '#ffffff';
         circle(-r * 0.32, -r * 0.34, r * 0.32);
         c2d.fill();
         c2d.globalAlpha = 1;
-        // leaf
         c2d.fillStyle = palette.good[2];
         c2d.beginPath();
         c2d.ellipse(0, -r, r * 0.28, r * 0.16, 0, 0, Math.PI * 2);
@@ -463,29 +460,39 @@ export function runFruitSlash(opts: GameOptions): () => void {
   function spawnSplatter(x: number, y: number, color: string): void {
     if (reducedMotion) return;
     for (let i = 0; i < SPLATTER.count; i++) {
-      const angle = rng() * Math.PI * 2;
-      const speed = rng() * SPLATTER.speed + 60;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * SPLATTER.speed + 60;
       particles.push({
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 80,
         ttl: SPLATTER.ttl,
         color,
-        size: rng() * 4 + 3,
+        size: Math.random() * 4 + 3,
       });
     }
   }
 
   // ---- loop ------------------------------------------------------------
   let rafHandle = 0;
-  let lastMs: number | null = null;
   function frame(): void {
     if (disposed) return;
     const tMs = now();
     let dt = lastMs === null ? 0 : (tMs - lastMs) / 1000;
     lastMs = tMs;
-    if (dt > MAX_DT) dt = MAX_DT; // clamp after a stall so nothing teleports
-    if (status === 'playing' && dt > 0) update(dt);
+    if (dt > MAX_FRAME_DT) dt = MAX_FRAME_DT; // clamp after a stall
+    if (status === 'playing') {
+      acc += dt;
+      let steps = 0;
+      while (acc >= STEP_S && steps < MAX_STEPS_PER_FRAME && status === 'playing') {
+        advanceOneTick();
+        acc -= STEP_S;
+        steps++;
+      }
+      if (steps === MAX_STEPS_PER_FRAME) acc = 0; // drop backlog after a stall
+    }
+    renderClock += dt;
+    renderStep(dt);
     render();
     rafHandle = raf(frame);
   }
@@ -493,27 +500,24 @@ export function runFruitSlash(opts: GameOptions): () => void {
   // ---- boot ------------------------------------------------------------
   showStart();
   renderHud();
-  // Tell the widget our intrinsic footprint once (explicit escape hatch).
   bridge.setSize(WORLD_WIDTH, WORLD_HEIGHT);
   rafHandle = raf(frame);
 
   // ---- HUD + helpers ---------------------------------------------------
   function renderHud(): void {
-    hud.score.dataset['hidden'] = cfg.showScore ? 'false' : 'true';
-    hud.livesWrap.dataset['hidden'] = cfg.showLives ? 'false' : 'true';
-    hud.badge.dataset['hidden'] = verified ? 'false' : 'true';
+    hud.score.dataset['hidden'] = pres.showScore ? 'false' : 'true';
+    hud.livesWrap.dataset['hidden'] = pres.showLives ? 'false' : 'true';
+    hud.badge.dataset['hidden'] = verifiedFired ? 'false' : 'true';
     hud.badge.textContent = `✓ ${strings.t('verifiedBadge')}`;
-    if (cfg.showScore) {
-      // Before verifying, show progress toward the goal; after, just the tally
-      // (the round is now open-ended for score).
-      const tally = verified ? `${round.sliced}` : `${round.sliced} / ${cfg.passScore}`;
+    if (pres.showScore) {
+      const tally = verifiedFired ? `${state.sliced}` : `${state.sliced} / ${pres.passScore}`;
       hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${tally}`;
     }
-    if (cfg.showLives) {
+    if (pres.showLives) {
       hud.lives.replaceChildren();
-      for (let i = 0; i < cfg.lives; i++) {
+      for (let i = 0; i < pres.lives; i++) {
         const pip = el('span', 'fs-pip');
-        pip.dataset['spent'] = i >= round.lives ? 'true' : 'false';
+        pip.dataset['spent'] = i >= state.lives ? 'true' : 'false';
         hud.lives.appendChild(pip);
       }
     }
@@ -536,9 +540,6 @@ export function runFruitSlash(opts: GameOptions): () => void {
     rootEl.append(score, badge, livesWrap);
     return { root: rootEl, score, badge, lives, livesWrap };
   }
-  // In-game mute toggle: an accessible switch (aria-checked = sound ON) that
-  // enables/disables the sfx at runtime. Shown always so the player can turn
-  // sound on even when the host's config defaults it off.
   function buildSoundButton(): HTMLButtonElement {
     const btn = doc.createElement('button');
     btn.type = 'button';
@@ -547,7 +548,6 @@ export function runFruitSlash(opts: GameOptions): () => void {
     btn.setAttribute('aria-checked', String(soundOn));
     btn.setAttribute('aria-label', strings.t('ariaSound'));
     btn.innerHTML = soundOn ? SOUND_ON : SOUND_OFF;
-    // Keep a tap on the toggle from reaching the canvas slice handler.
     btn.addEventListener('pointerdown', (e) => e.stopPropagation());
     btn.addEventListener('click', () => {
       soundOn = !soundOn;

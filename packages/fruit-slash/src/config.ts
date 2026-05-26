@@ -8,7 +8,7 @@
 
 import type { GameContext } from '@caputchin/game-sdk';
 import manifestJson from '../caputchin.json';
-import { GRAVITY } from './constants.js';
+import { GRAVITY } from './sim/constants.js';
 
 export interface FruitSlashConfig {
   passScore: number;

@@ -1,16 +1,19 @@
-// Pure projectile launch + integration. Real physics, fully contained on
-// screen by construction: a fruit spawns just below the bottom border, is
-// thrown upward, and gravity is the only vertical force. Horizontal velocity
-// is constant (no air resistance). We derive the launch from an on-screen
-// entry-x and exit-x plus an apex capped below the top border, so the parabola
-// enters and exits ONLY through the bottom border, crossing no other edge.
+// Pure projectile launch + integration. Real physics, fully contained on screen
+// by construction: a fruit spawns just below the bottom border, is thrown upward,
+// gravity is the only vertical force, horizontal velocity is constant. The launch
+// is derived from an on-screen entry-x and exit-x plus an apex capped below the
+// top border, so the parabola enters and exits ONLY through the bottom border.
 //
 // `integrate` uses the EXACT closed-form update for constant acceleration
-// (y += vy*dt + 0.5*g*dt^2), which composes exactly across any step size.
-// That is what makes the trajectory identical at 60Hz, 144Hz, or 240Hz, and
-// is asserted to 1e-9 in tests/frame-rate.test.ts.
+// (y += vy*dt + 0.5*g*dt^2), which composes exactly across any step size — the
+// trajectory is identical whatever the timestep.
+//
+// Determinism (ADR-0069): the one transcendental, the launch's `sqrt`, goes
+// through `cap.math.sqrt` (IEEE-754 correctly-rounded, so bit-identical across
+// runtimes). Randomness arrives as an injected `next: () => number` drawn from
+// `cap.rng`, never `Math.random`.
 
-import type { Rng } from './rng.js';
+import { cap } from '@caputchin/engine-runtime';
 
 export interface LaunchState {
   x: number;
@@ -41,44 +44,41 @@ export function integrate(s: LaunchState, gravity: number, dt: number): LaunchSt
   };
 }
 
-/** Peak (minimum-y, i.e. highest) center position of the arc. With vy < 0 the
- *  rise is vy^2/(2g), so apex center y = launchY - vy^2/(2g). */
+/** Peak (minimum-y, highest) center position of the arc. */
 export function apexY(s: LaunchState, gravity: number): number {
   return s.y - (s.vy * s.vy) / (2 * gravity);
 }
 
 /** Total flight time (seconds) from launch back down to the launch Y level. */
 export function flightTime(s: LaunchState, gravity: number): number {
-  // y returns to y0 when vy*T + 0.5*g*T^2 = 0  ->  T = -2*vy/g (vy < 0).
   return (-2 * s.vy) / gravity;
 }
 
-/** Horizontal extent over the whole flight. x is linear (constant vx), so the
- *  span is just the two endpoints. */
+/** Horizontal extent over the whole flight (x is linear, so it is the endpoints). */
 export function horizontalSpan(s: LaunchState, gravity: number): { minX: number; maxX: number } {
   const exitX = s.x + s.vx * flightTime(s, gravity);
   return { minX: Math.min(s.x, exitX), maxX: Math.max(s.x, exitX) };
 }
 
-/** Derive a launch that is guaranteed on-screen: enters from the bottom,
- *  apex stays >= apexMarginTop below the top, horizontal stays within
- *  [sideMargin, width - sideMargin]. Deterministic given `rng`. */
-export function deriveLaunch(rng: Rng, b: LaunchBounds): LaunchState {
+/** Derive a launch guaranteed on-screen: enters from the bottom, apex stays
+ *  >= apexMarginTop below the top, horizontal stays within the side margins.
+ *  Deterministic given `next` (a `cap.rng` draw function). */
+export function deriveLaunch(next: () => number, b: LaunchBounds): LaunchState {
   const y0 = b.height + b.radius; // spawn just below the bottom border
   // Apex center range. Top clearance scales down on short fields so the range
-  // stays valid (apexMin < apexMax) and a fruit can still arc into view.
+  // stays valid (apexMin < apexMax).
   const topClear = Math.min(b.apexMarginTop, b.height * 0.25);
-  const apexMin = topClear + b.radius; // highest point (top edge >= topClear)
-  const apexMax = Math.max(apexMin + 10, b.height * 0.62); // lowest apex, still rises into view
-  const apexCenter = apexMin + rng() * (apexMax - apexMin);
+  const apexMin = topClear + b.radius;
+  const apexMax = Math.max(apexMin + 10, b.height * 0.62);
+  const apexCenter = apexMin + next() * (apexMax - apexMin);
   const rise = y0 - apexCenter; // > 0
-  const vy = -Math.sqrt(2 * b.gravity * rise); // upward (negative)
+  const vy = -cap.math.sqrt(2 * b.gravity * rise); // upward (negative)
   const t = (-2 * vy) / b.gravity; // flight time back to y0
 
   const minX = b.sideMargin;
   const maxX = b.width - b.sideMargin;
-  const entryX = minX + rng() * (maxX - minX);
-  const exitX = minX + rng() * (maxX - minX);
+  const entryX = minX + next() * (maxX - minX);
+  const exitX = minX + next() * (maxX - minX);
   const vx = (exitX - entryX) / t; // constant horizontal velocity
 
   return { x: entryX, y: y0, vx, vy };

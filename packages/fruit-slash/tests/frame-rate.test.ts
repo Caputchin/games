@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { integrate, type LaunchState } from '../src/launch.js';
+import { integrate, type LaunchState } from '../src/sim/launch.js';
 
 // THE REGRESSION GUARD. A prior attempt coupled physics to frame rate and ran
 // ~4x too fast on a 240Hz display. This asserts the trajectory is identical
@@ -44,11 +44,12 @@ describe('frame-rate independence of the integrator', () => {
   });
 
   it('a single clamped step does not teleport (bounded displacement)', () => {
-    // game.ts clamps dt to MAX_DT (1/30s). One clamped step from a fast fruit
-    // must move only a small, bounded amount, never across the whole world.
-    const MAX_DT = 1 / 30;
+    // One step from a fast fruit must move only a small, bounded amount, never
+    // across the whole world. The sim advances at a fixed STEP_S (~16ms); this
+    // uses a deliberately larger 1/30s step as a worst-case upper bound.
+    const BIG_STEP = 1 / 30;
     const fast: LaunchState = { x: 400, y: 300, vx: 0, vy: -1200 };
-    const after = integrate(fast, GRAVITY, MAX_DT);
-    expect(Math.abs(after.y - fast.y)).toBeLessThan(60); // << world height 600
+    const after = integrate(fast, GRAVITY, BIG_STEP);
+    expect(Math.abs(after.y - fast.y)).toBeLessThan(60); // << world height 420
   });
 });

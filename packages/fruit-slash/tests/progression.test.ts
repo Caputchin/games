@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { difficultyAt } from '../src/progression.js';
+import { difficultyAt } from '../src/sim/progression.js';
 
 const base = { spawnRate: 0.9, hazardChance: 0.18 };
 
