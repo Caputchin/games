@@ -1,4 +1,4 @@
-// The headless Fruit Slash reducer (ADR-0069). `defineEngine` declares the pure
+// The headless Fruit Slash reducer. `defineEngine` declares the pure
 // state machine the kit drives both ways: the live driver steps it frame-by-frame
 // (recording the pointer inputs as the opaque trace) and the server replays the
 // SAME ticks over (seed, config, trace). Identical inputs => identical outcome,

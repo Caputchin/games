@@ -1,4 +1,4 @@
-// Types for the Leaf Memory pure reducer (ADR-0069). All state is
+// Types for the Leaf Memory pure reducer. All state is
 // plain-JSON-serializable: no functions, no DOM, no wall-clock references.
 //
 // Time is TICK-counted (ticksElapsed / budgetTicks), never wall-clock.

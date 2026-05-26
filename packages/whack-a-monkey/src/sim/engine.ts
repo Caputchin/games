@@ -1,4 +1,4 @@
-// The headless Whack-a-Monkey reducer (ADR-0069). `defineEngine` declares the
+// The headless Whack-a-Monkey reducer. `defineEngine` declares the
 // pure state machine the kit drives both ways: the live driver steps it
 // tick-by-tick (recording tap inputs as the opaque trace) and the server
 // replays the SAME ticks over (seed, config, trace). Identical inputs =>

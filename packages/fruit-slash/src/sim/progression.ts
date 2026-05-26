@@ -2,7 +2,7 @@
 // bombs) launch more often and bombs grow more frequent. Driven by elapsed PLAY
 // time in seconds so it tracks the fixed-step sim, not the real frame rate.
 //
-// Determinism (ADR-0069): the ramp's `exp` goes through `cap.math.exp` (fdlibm,
+// Determinism: the ramp's `exp` goes through `cap.math.exp` (fdlibm,
 // bit-identical across runtimes). Native `Math.exp` is NOT correctly-rounded by
 // IEEE-754 — its last ULP varies between engines — so it would silently diverge
 // the live play from the server replay. `Math.min` is exact and stays native.

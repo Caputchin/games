@@ -1,4 +1,4 @@
-// The sim's default config (ADR-0069). This is the SINGLE source both the live
+// The sim's default config. This is the SINGLE source both the live
 // driver (engine.init) and the replay run (toRun's defaultConfig) use, so live
 // play and server replay execute under identical gameplay params -> identical
 // verdict. Values mirror the caputchin.json `default` preset; the in-code

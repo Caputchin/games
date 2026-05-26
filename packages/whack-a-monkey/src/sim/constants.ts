@@ -1,4 +1,4 @@
-// Logical world + physics tuning for the headless WAM sim (ADR-0069).
+// Logical world + physics tuning for the headless WAM sim.
 // Everything here is shared by the live driver (game.ts) and the replay run
 // (run.ts). Physics expressed PER SECOND, integrated by a FIXED logical
 // timestep (STEP_S) every tick — never per real frame. Live driver advances

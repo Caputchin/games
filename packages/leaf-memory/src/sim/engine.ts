@@ -1,4 +1,4 @@
-// The headless Leaf Memory reducer (ADR-0069). `defineEngine` declares the
+// The headless Leaf Memory reducer. `defineEngine` declares the
 // pure state machine the kit drives both ways: the live driver steps it
 // tick-by-tick (recording the card-pick inputs as the opaque trace) and
 // the server replays the SAME ticks over (seed, config, trace). Identical

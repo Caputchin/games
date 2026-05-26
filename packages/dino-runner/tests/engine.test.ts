@@ -1,4 +1,4 @@
-// Tests for the headless sim reducer (ADR-0069). The core guarantee: replaying
+// Tests for the headless sim reducer. The core guarantee: replaying
 // the recorded trace (seed, config, actions) produces the same score as the
 // live driver — the live==replay invariant. Also covers the old Runner class
 // unit tests (jump arc, duck, collision origin) against the new sim engine.
@@ -95,7 +95,7 @@ describe('runner duck', () => {
   });
 });
 
-// ---- Reducer determinism (ADR-0069 core guarantee) ----------------------
+// ---- Reducer determinism (core guarantee) --------------------------------
 
 describe('reducer determinism', () => {
   it('replaying the same (seed, config, actions) is bit-identical', () => {
@@ -113,7 +113,7 @@ describe('reducer determinism', () => {
   });
 });
 
-describe('live == replay (ADR-0069 core guarantee)', () => {
+describe('live == replay (core guarantee)', () => {
   it('the live final score equals the replayed verdict score', () => {
     const live = play(SEED, CFG, { maxTicks: MAX });
     const out = replay(engine, { seed: SEED, config: CFG, actions: live.recorded, maxTicks: MAX });

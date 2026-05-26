@@ -8,7 +8,7 @@
 // (y += vy*dt + 0.5*g*dt^2), which composes exactly across any step size — the
 // trajectory is identical whatever the timestep.
 //
-// Determinism (ADR-0069): the one transcendental, the launch's `sqrt`, goes
+// Determinism: the one transcendental, the launch's `sqrt`, goes
 // through `cap.math.sqrt` (IEEE-754 correctly-rounded, so bit-identical across
 // runtimes). Randomness arrives as an injected `next: () => number` drawn from
 // `cap.rng`, never `Math.random`.

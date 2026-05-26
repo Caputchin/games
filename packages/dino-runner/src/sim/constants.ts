@@ -1,4 +1,4 @@
-// Logical world + physics tuning for the headless sim (ADR-0069). Shared by
+// Logical world + physics tuning for the headless sim. Shared by
 // the live driver (game.ts) and the replay run (run.ts); MUST stay deterministic
 // and free of any render/DOM concern.
 //

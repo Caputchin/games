@@ -2,7 +2,7 @@
 // It runs the SAME loop the kit's `replay` runs (apply this tick's actions, then
 // tick once) and records the discrete jump/duck inputs — exactly what the real
 // driver does, minus the DOM. Replaying the recorded trace must reproduce the
-// live score; that equivalence is the ADR-0069 guarantee these tests assert.
+// live score; that equivalence is the core guarantee these tests assert.
 
 import { engine } from '../src/sim/engine.js';
 import type { SimAction, SimConfig } from '../src/sim/types.js';

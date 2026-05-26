@@ -31,7 +31,7 @@ describe('reducer determinism', () => {
   });
 });
 
-describe('live == replay (ADR-0069 core guarantee)', () => {
+describe('live == replay (core guarantee)', () => {
   it('the live final score equals the replayed verdict score', () => {
     const live = play(SEED, CFG, { maxTicks: MAX_TICKS });
     const out = replay(engine, { seed: SEED, config: CFG, actions: live.recorded, maxTicks: MAX_TICKS });

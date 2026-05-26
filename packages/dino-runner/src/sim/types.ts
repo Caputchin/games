@@ -1,4 +1,4 @@
-// Shapes for the headless Dino Runner sim (ADR-0069). Everything here is plain
+// Shapes for the headless Dino Runner sim. Everything here is plain
 // JSON-serializable: the sim state is threaded linearly through the kit's reducer
 // (init -> step* -> tick)* and must never carry a closure, a Date, a DOM node, or
 // a reference to the renderer. Determinism is the whole point — identical
@@ -47,7 +47,7 @@ export interface SimObstacle {
   animTimer: number;
 }
 
-/** Discrete input actions (ADR-0069). Jump and duck are the two possible
+/** Discrete input actions. Jump and duck are the two possible
  *  inputs; each is a press (start) or release (end). Tick-stamped when
  *  recorded so the exact logical tick is preserved. */
 export type SimAction =

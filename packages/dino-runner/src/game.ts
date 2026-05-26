@@ -1,4 +1,4 @@
-// Orchestrates Dino Runner LIVE play (ADR-0069). The authoritative game logic
+// Orchestrates Dino Runner LIVE play. The authoritative game logic
 // is the headless reducer in sim/engine; this module is the live DRIVER +
 // renderer around it: it builds the DOM shell, runs a FIXED-STEP accumulator
 // loop that advances the reducer one logical tick at a time, records jump/duck

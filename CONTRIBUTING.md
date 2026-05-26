@@ -28,7 +28,7 @@ versioned and published. Mirror an existing game (`packages/leaf-memory/` or
 ## Game design constraints (non-negotiable)
 
 - **Bundle is single-file**, IIFE format. No code splitting, no dynamic `import()`, no `Worker(url)`, no external `fetch`. All assets inline as data URLs. See [game-distribution](https://github.com/Caputchin/caputchin-platform/blob/main/docs/features/game-distribution.md#bundle-constraint).
-- **`bridge.pass` is success-only.** Call it when the user passes the round. If the user fails or abandons, do not call it; silence is the failure signal. See [ADR-0030](https://github.com/Caputchin/caputchin-platform/blob/main/docs/adr/0030-bridge-pass-not-complete.md).
+- **`bridge.pass` is success-only.** Call it when the user passes the round. If the user fails or abandons, do not call it; silence is the failure signal.
 - **Score is your own scale.** Any number. The platform records it verbatim. Scores compare within a single game; cross-game comparison is not a goal. See [game-sdk docs](https://github.com/Caputchin/caputchin-sdk/blob/main/packages/game-sdk/README.md).
 - **Responsive, touch, accessible by default.** First-party games set the bar: `support.responsive`, `support.touch`, `support.accessible` should all be `true`.
 - **Honor `prefers-reduced-motion`.** Skip non-essential animations when set.

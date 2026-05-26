@@ -1,4 +1,4 @@
-// The headless Dino Runner reducer (ADR-0069). `defineEngine` declares the pure
+// The headless Dino Runner reducer. `defineEngine` declares the pure
 // state machine the kit drives both ways: the live driver advances it one
 // logical tick at a time (recording jump/duck actions tick-stamped) and the
 // server replays the SAME ticks over (seed, config, trace). Identical inputs =>

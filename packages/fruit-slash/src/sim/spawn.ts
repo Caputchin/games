@@ -1,5 +1,5 @@
-// Pure spawn helpers. The old game kept a stateful Spawner class; under ADR-0069
-// the spawn bookkeeping lives in the serializable SimState and these pure
+// Pure spawn helpers. The old game kept a stateful Spawner class; spawn
+// bookkeeping now lives in the serializable SimState and these pure
 // functions do the work, driven by an injected `next: () => number` (a `cap.rng`
 // draw). No class, no closure over rng — the reducer reconstructs the rng from
 // state each tick, calls these, then captures the rng state back.

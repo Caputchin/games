@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsup';
 
-// Two artifacts (ADR-0069):
+// Two artifacts:
 //   1. dist/whack-a-monkey.js — the LIVE bundle the widget loads in the game
 //      iframe. IIFE, registers the game via side-effect, carries the full
 //      renderer + DOM.

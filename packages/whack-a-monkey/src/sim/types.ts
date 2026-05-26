@@ -1,4 +1,4 @@
-// Shapes for the headless Whack-a-Monkey sim (ADR-0069). Everything here is
+// Shapes for the headless Whack-a-Monkey sim. Everything here is
 // plain JSON-serializable: the sim state is threaded linearly through the kit's
 // reducer (init -> step* -> tick)* and must never carry a closure, a Date, a
 // DOM node, or a reference to the renderer. Determinism is the whole point —
