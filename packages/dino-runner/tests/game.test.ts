@@ -70,7 +70,8 @@ describe('runDinoRunner', () => {
 
     expect(bridge.pass).toHaveBeenCalledTimes(1);
     const arg = (bridge.pass as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-    expect(arg.score).toBeGreaterThanOrEqual(1);
+    expect(typeof arg.trace).toBe('string');
+    expect(arg.trace.length).toBeGreaterThan(0);
     // Verified badge is shown and the run is still going (not crashed).
     expect(container.querySelector('.dr-badge')?.getAttribute('data-hidden')).toBe('false');
     expect(container.querySelector('.dr-overlay--gameover')).toBeNull();

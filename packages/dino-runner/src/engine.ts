@@ -43,8 +43,11 @@ export class Runner {
    *  velocity cap (see endJump). */
   private reachedMinHeight = false;
   private runTimer = 0;
+  /** Current run animation frame index (0 or 1). Exposed via setter so the
+   *  live driver can sync from the sim view without casting private fields. */
   private runFrame = 0;
   private duckTimer = 0;
+  /** Current duck animation frame index (0 or 1). Exposed via setter. */
   private duckFrame = 0;
   /** Count of completed jumps; the loop uses it to know the first input has
    *  happened (start the run on the first jump). */
@@ -123,35 +126,16 @@ export class Runner {
     this.jumpCount = 0;
   }
 
-  /** Advance the runner by `dtMs` of game time at the current `speed`. */
-  update(dtMs: number, speed: number): void {
-    const frames = dtMs / MS_PER_FRAME;
+  /** Sync the animation frame index from the sim view (live driver only).
+   *  Avoids casting private fields in game.ts. */
+  setRunFrame(frame: number): void { this.runFrame = frame; }
+  setDuckFrame(frame: number): void { this.duckFrame = frame; }
 
-    if (this.status === 'jumping') {
-      // Port of the original updateJump: integrate velocity + gravity, with a
-      // fast-fall multiplier while speed-dropping.
-      this.y += this.velocity * (this.speedDrop ? JUMP.speedDropCoefficient : 1) * frames;
-      this.velocity += this.cfg.gravity * frames;
-
-      if (this.y <= GROUND_Y - JUMP.minJumpRise) this.reachedMinHeight = true;
-      // Auto-cap the rise near the top (and whenever speed-dropping) so a held
-      // jump can't fly off the world.
-      if (this.y < GROUND_Y - JUMP.autoCapRise || this.speedDrop) this.endJump();
-      if (this.y < JUMP.ceilingY) {
-        this.y = JUMP.ceilingY;
-        if (this.velocity < 0) this.velocity = 0;
-      }
-
-      if (this.y >= GROUND_Y) {
-        this.y = GROUND_Y;
-        this.velocity = 0;
-        this.jumpCount += 1;
-        this.status = this.duckHeld ? 'ducking' : 'running';
-        this.speedDrop = false;
-        this.reachedMinHeight = false;
-      }
-    }
-
+  /** Advance the runner's animation timers by `dtMs` of game time.
+   *  Jump physics are NOT re-integrated here — when the live driver is active
+   *  the sim view owns the authoritative position; syncRenderObjects() in
+   *  game.ts writes `y` and `status` directly before each render pass. */
+  update(dtMs: number, _speed: number): void {
     this.advanceAnimation(dtMs);
   }
 

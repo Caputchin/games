@@ -1,39 +1,39 @@
-// Orchestrates Dino Runner: builds the DOM shell, runs the requestAnimation-
-// Frame loop, wires input, and drives the state machine (waiting -> running
-// -> crashed -> running). Physics live in engine.ts / obstacles.ts /
-// horizon.ts; this module is the glue + rendering + the pass gate.
+// Orchestrates Dino Runner LIVE play (ADR-0069). The authoritative game logic
+// is the headless reducer in sim/engine; this module is the live DRIVER +
+// renderer around it: it builds the DOM shell, runs a FIXED-STEP accumulator
+// loop that advances the reducer one logical tick at a time, records jump/duck
+// inputs tick-stamped as the opaque trace (encodeTrace), and renders the
+// reducer's view projection. Because the live driver and the server replay run
+// the SAME reducer over the SAME recorded ticks, the live score equals the
+// replayed verdict by construction.
 //
-// Pass gate (mirrors fruit-slash): bridge.pass fires the moment the live
-// score reaches `passScore` mid-run (markVerified, once per session) so the
-// captcha is satisfied immediately and the visitor can keep running for a
-// higher score. It fires again at crash time for any run that beats the best
-// score already passed (scoring.evaluatePass). Best score and the `verified`
-// latch are in-memory only (the iframe is sandbox="allow-scripts", an opaque
-// origin), so localStorage is unavailable.
+// What lives HERE (render-only, never in the verdict): the DOM chrome, obstacle
+// node pool, horizon/scenery, audio, and accessibility announcements. These may
+// use real time / Math.random freely — they never touch the sim. What crosses to
+// the server is only the recorded trace; the seed comes from `ctx.seed`.
 
-import type { Bridge, GameContext } from '@caputchin/game-sdk';
+import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
+import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
+import { engine, toScore } from './sim/engine.js';
+import { WORLD_WIDTH, WORLD_HEIGHT } from './sim/constants.js';
+import type { SimAction, SimRunner, SimObstacle } from './sim/types.js';
 import { Runner, runnerCollisionOrigin } from './engine.js';
 import { ObstacleManager, obstacleTiles, type ActiveObstacle } from './obstacles.js';
 import { Horizon } from './horizon.js';
-import { collides } from './collision.js';
-import { resolveDinoConfig, type DinoConfig } from './config.js';
+import { resolveDinoConfig } from './config.js';
 import { resolveSprites, type SpriteId } from './sprites.js';
 import { buildStrings } from './strings.js';
 import { cjkFontStack } from './fonts.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
-import { toScore, evaluatePass } from './scoring.js';
-import { advanceSpeed } from './progression.js';
 import { createSfx } from './audio.js';
 import { SOUND_CLIPS } from './sounds.js';
 import { STYLES } from './styles.js';
-import { WORLD_WIDTH, WORLD_HEIGHT, MS_PER_FRAME } from './constants.js';
 import { renderStartScreen, renderGameOverScreen } from './screens.js';
 
-/** Score interval between milestone chimes. */
+// Score interval between milestone chimes.
 const SCORE_MILESTONE = 100;
 
-// Skin color keys consumed as CSS custom properties: each `foo_bar` becomes
-// `--dr-foo-bar`. Asset (sprite_*) keys are handled by resolveSprites.
+// Skin color keys consumed as CSS custom properties.
 const SKIN_COLOR_KEYS: readonly string[] = [
   'bg',
   'fg',
@@ -46,19 +46,29 @@ const SKIN_COLOR_KEYS: readonly string[] = [
   'focus_ring',
 ];
 
-type Status = 'waiting' | 'running' | 'crashed';
+type DriverStatus = 'waiting' | 'running' | 'crashed';
 
-/** Largest delta we honor in one step; after a tab blur the rAF gap can be
- *  huge and we don't want the world to teleport. */
-const MAX_STEP_MS = 1000 / 30;
+// After a tab stall we cap one frame's real delta; the logical ticks that ran
+// stay in the recorded trace, so replay reproduces them either way.
+const MAX_FRAME_DT = 0.1;
+const MAX_STEPS_PER_FRAME = 10;
+
+// Fixed logical timestep in seconds (must match sim/constants.ts STEP_S).
+const STEP_S = 0.016;
 
 export interface GameOptions {
   container: HTMLElement;
   bridge: Bridge;
   ctx?: GameContext;
-  /** Injectable for tests; defaults to the view's rAF/caf. */
+  /** Injectable for tests; default to the view's rAF/caf. */
   raf?: (cb: (ts: number) => void) => number;
   caf?: (handle: number) => void;
+}
+
+/** Build a throwaway seed for a no-verify mount (no server seed issued). */
+function randomSeed(): Seed {
+  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
+  return [u(), u(), u(), u()];
 }
 
 export function runDinoRunner(opts: GameOptions): () => void {
@@ -81,14 +91,29 @@ export function runDinoRunner(opts: GameOptions): () => void {
     doc.head.appendChild(style);
   }
 
+  // Per-round seed: server-issued (replayable) or a driver-side random.
+  const seed: Seed = ctx?.seed ?? randomSeed();
+
+  // Build the sim config from the resolved DinoConfig so ctx.config is
+  // respected live (server passes the same config to run() on replay).
+  const simConfig = {
+    passScore: cfg.passScore,
+    startSpeed: cfg.startSpeed,
+    maxSpeed: cfg.maxSpeed,
+    acceleration: cfg.acceleration,
+    gravity: cfg.gravity,
+    jumpVelocity: Math.abs(cfg.initialJumpVelocity),
+    gapCoefficient: cfg.gapCoefficient,
+    birdsEnabled: cfg.birdsEnabled,
+    birdMinSpeed: cfg.birdMinSpeed,
+  };
+
   // ---- DOM shell -------------------------------------------------------
   const root = el('div', 'dr-root');
   root.setAttribute('lang', strings.lang);
   root.setAttribute('role', 'application');
   root.setAttribute('aria-label', strings.t('ariaGame'));
   if (strings.direction === 'rtl') root.setAttribute('dir', 'rtl');
-  // Light vs dark is a fixed skin choice for the session, not an in-game
-  // cycle. The dark skin also shows a night sky (moon + stars).
   const skinTheme = ctx?.skin?._theme === 'dark' ? 'dark' : 'light';
   const nightSky = skinTheme === 'dark';
   root.dataset['theme'] = skinTheme;
@@ -107,61 +132,53 @@ export function runDinoRunner(opts: GameOptions): () => void {
   const obstacleLayer = el('div', 'dr-obstacle-layer');
   const runnerEl = el('div', 'dr-entity dr-runner');
   const hud = buildHud();
-  // The in-game sound toggle only exists when sound is enabled by config.
   const soundBtn = cfg.sound ? buildSoundButton() : null;
   const overlay = el('div', 'dr-overlay-host');
 
   world.append(skyNight, skyDay, groundLayer, obstacleLayer, runnerEl, hud.root);
-  // The overlay (start / game-over screen) lives on the STAGE, not the World:
-  // the World is letterboxed + scaled to a fixed 600x150 box, so an overlay
-  // inside it would only cover the game rect, not the full iframe when the
-  // embed's aspect differs (e.g. full-width). On the stage it always fills the
-  // embed. `.dr-overlay` (inset:0) resolves against the positioned stage.
-  // Invariant: `.dr-overlay-host` must stay UNpositioned (no CSS position) so
-  // the containing-block walk passes through it to the stage; giving it a
-  // position would silently re-scope the overlay to the host's box.
   stage.append(world, overlay);
-  // Sound toggle is appended to the stage AFTER the overlay, so it stays
-  // visible + clickable on top of the start / game-over screen (always on top).
   if (soundBtn) stage.appendChild(soundBtn);
 
   const touch = buildTouchControls();
-
   const announcer = createAnnouncer(doc);
   root.append(stage, touch.root, announcer.element);
   container.appendChild(root);
 
-  // ---- game state ------------------------------------------------------
-  const runner = new Runner(cfg);
-  const obstacles = new ObstacleManager();
+  // ---- render-only state (not in the sim) ------------------------------
+  // These objects are RENDER-ONLY drivers — they do NOT affect the verdict.
+  // The sim drives the authoritative runner/obstacle state; these mirror the
+  // view projection for DOM rendering and horizon/scenery only.
+  const renderRunner = new Runner(cfg);
+  const renderObstacles = new ObstacleManager(); // render-only mirror
   const horizon = new Horizon();
-  let status: Status = 'waiting';
-  let speed = cfg.startSpeed;
-  let distanceRan = 0;
-  let bestScore = 0;
-  let bestPassed = -1;
-  let verified = false; // pass threshold reached; bridge.pass fired once
-  let muted = false;
-  let runElapsedMs = 0;
-  let lastMilestone = 0;
-  let lastTs: number | null = null;
-  let rafHandle = 0;
-  let disposed = false;
-  let scale = 1;
-
   const obstacleEls = new Map<ActiveObstacle, HTMLElement>();
   const cloudEls: HTMLElement[] = [];
   const starEls: HTMLElement[] = [];
-  // Moon only exists in the dark skin's night sky.
   const moonEl = nightSky ? scenerySprite('moon') : null;
   if (moonEl) {
     moonEl.classList.add('dr-moon');
-    // Square box (matches the moon's square viewBox so the crescent isn't
-    // distorted); sized well above the 9px stars so the moon clearly reads as
-    // the dominant night-sky element.
     sizeEntity(moonEl, 40, 40);
     skyNight.appendChild(moonEl);
   }
+
+  // ---- driver state ---------------------------------------------------
+  let driverStatus: DriverStatus = 'waiting';
+  let simState = engine.init({ seed, config: simConfig });
+  let recorded: TickInput<SimAction>[] = [];
+  let logicalTick = 0;
+  let acc = 0;
+  let lastMs: number | null = null;
+  let verified = false;
+  let bestScore = 0;
+  let bestPassed = -1;
+  let muted = false;
+  let lastMilestone = 0;
+  let disposed = false;
+  let scale = 1;
+  let rafHandle = 0;
+
+  // Queued inputs since the last logical tick.
+  let inputQueue: SimAction[] = [];
 
   // ---- responsiveness --------------------------------------------------
   function recomputeScale(): void {
@@ -180,122 +197,127 @@ export function runDinoRunner(opts: GameOptions): () => void {
   recomputeScale();
 
   // ---- input -----------------------------------------------------------
-  // The first input is the user gesture that unlocks the AudioContext.
-  function jumpPressed(): void {
+  // Input handlers queue DISCRETE actions. The fixed-step loop applies them
+  // tick-stamped so the exact logical tick is recorded for replay.
+  function onJumpPress(): void {
     sfx.resume();
-    if (status === 'waiting') startRun();
-    else if (status === 'running') doJump();
-    else if (status === 'crashed') restart();
+    if (driverStatus === 'crashed') { restart(); return; }
+    inputQueue.push({ k: 'jump_press' });
+    if (driverStatus === 'waiting') {
+      // Immediately start run (the sim.step will flip status to 'running').
+      driverStatus = 'running';
+      startRun();
+    } else {
+      sfx.jump();
+    }
   }
-  function doJump(): void {
-    if (status !== 'running') return;
-    runner.startJump(speed);
-    sfx.jump();
+  function onJumpRelease(): void {
+    inputQueue.push({ k: 'jump_release' });
   }
-  function duck(down: boolean): void {
-    if (down) sfx.resume();
-    if (status === 'running') runner.setDuck(down);
+  function onDuckPress(): void {
+    sfx.resume();
+    inputQueue.push({ k: 'duck_press' });
+  }
+  function onDuckRelease(): void {
+    inputQueue.push({ k: 'duck_release' });
   }
 
   function onKeyDown(e: KeyboardEvent): void {
     if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
       e.preventDefault();
-      if (!e.repeat) jumpPressed();
+      if (!e.repeat) onJumpPress();
     } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
       e.preventDefault();
-      duck(true);
+      if (!e.repeat) onDuckPress();
     }
   }
   function onKeyUp(e: KeyboardEvent): void {
-    if (e.code === 'ArrowDown' || e.code === 'KeyS') duck(false);
-    // Releasing the jump key cuts the jump short (variable jump).
-    else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') runner.endJump();
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') onDuckRelease();
+    else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') onJumpRelease();
   }
   function onStagePointer(e: PointerEvent): void {
-    // Pointer/tap on the field jumps mid-run; start + restart go through the
-    // overlay buttons so a tap can't skip them.
     sfx.resume();
-    if (status === 'running') {
+    if (driverStatus === 'running') {
       e.preventDefault();
-      doJump();
+      onJumpPress();
+    } else if (driverStatus === 'waiting') {
+      onJumpPress();
     }
   }
 
   doc.addEventListener('keydown', onKeyDown);
   doc.addEventListener('keyup', onKeyUp);
   stage.addEventListener('pointerdown', onStagePointer);
-  // A short tap ends the jump early; holding keeps the full arc.
-  stage.addEventListener('pointerup', () => runner.endJump());
-  touch.jump.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    sfx.resume();
-    doJump();
-  });
-  touch.jump.addEventListener('pointerup', () => runner.endJump());
-  touch.jump.addEventListener('pointercancel', () => runner.endJump());
-  touch.duck.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    duck(true);
-  });
-  touch.duck.addEventListener('pointerup', () => duck(false));
-  touch.duck.addEventListener('pointercancel', () => duck(false));
+  stage.addEventListener('pointerup', onJumpRelease);
+  touch.jump.addEventListener('pointerdown', (e) => { e.preventDefault(); sfx.resume(); onJumpPress(); });
+  touch.jump.addEventListener('pointerup', onJumpRelease);
+  touch.jump.addEventListener('pointercancel', onJumpRelease);
+  touch.duck.addEventListener('pointerdown', (e) => { e.preventDefault(); onDuckPress(); });
+  touch.duck.addEventListener('pointerup', onDuckRelease);
+  touch.duck.addEventListener('pointercancel', onDuckRelease);
 
   // ---- state transitions ----------------------------------------------
   function showStart(): void {
-    overlay.replaceChildren(renderStartScreen(doc, strings, startRun));
+    overlay.replaceChildren(renderStartScreen(doc, strings, () => onJumpPress()));
     touch.root.dataset['active'] = 'false';
     focusOverlayButton();
   }
 
   function startRun(): void {
     overlay.replaceChildren();
-    status = 'running';
-    runner.start();
-    runElapsedMs = 0;
     lastMilestone = 0;
     touch.root.dataset['active'] = 'true';
     announcer.say(strings.t('announceStart'));
+    // Sync the render-only runner into 'running' state.
+    renderRunner.start();
+    renderAll();
   }
 
   function restart(): void {
-    runner.reset();
-    obstacles.reset();
-    horizon.reset();
+    simState = engine.init({ seed, config: simConfig });
+    recorded = [];
+    logicalTick = 0;
+    acc = 0;
+    lastMs = null;
+    inputQueue = [];
+    driverStatus = 'waiting';
+    lastMilestone = 0;
+
+    // Reset render-only objects.
+    renderRunner.reset();
+    renderObstacles.reset();
     obstacleEls.forEach((node) => node.remove());
     obstacleEls.clear();
-    speed = cfg.startSpeed;
-    distanceRan = 0;
+    horizon.reset();
+
+    // Start immediately on restart.
+    driverStatus = 'running';
+    inputQueue.push({ k: 'jump_press' });
     startRun();
   }
 
-  // Report success once the live score reaches the pass threshold, then keep
-  // running. A Verified badge shows in the HUD; gameOver() resends the final
-  // score if it beats this. `verified` is a session latch (the badge persists
-  // across restarts), since a Dino session is one continuous endless run set.
-  function markVerified(score: number): void {
+  function onVerified(score: number): void {
     verified = true;
-    bestPassed = score; // first pass; high-water mark for the crash resend
-    bridge.pass({ score, durationMs: Math.round(runElapsedMs) });
+    bestPassed = score;
+    bridge.pass({ trace: encodeTrace(recorded) });
     announcer.say(strings.t('announceVerified', { score }));
     renderHud();
   }
 
-  function gameOver(): void {
-    status = 'crashed';
-    runner.crash();
+  function onGameOver(score: number): void {
+    driverStatus = 'crashed';
+    renderRunner.crash();
     sfx.hit();
     touch.root.dataset['active'] = 'false';
-    const score = toScore(distanceRan);
+
     const isNewBest = score > bestScore;
     if (isNewBest) bestScore = score;
 
-    // Resend the final score if this run beat the best already passed (the
-    // mid-run verify reported the threshold score; the visitor may have run
-    // further since). The widget keeps the highest score reached.
-    const decision = evaluatePass(score, cfg.passScore, bestPassed);
-    if (decision.pass) {
-      bestPassed = decision.bestPassed;
-      bridge.pass({ score: decision.score, durationMs: Math.round(runElapsedMs) });
+    // Resend if this run beat the best already passed.
+    const qualifies = score >= simConfig.passScore && score > bestPassed;
+    if (qualifies) {
+      bestPassed = score;
+      bridge.pass({ trace: encodeTrace(recorded) });
     }
 
     announcer.say(
@@ -323,68 +345,90 @@ export function runDinoRunner(opts: GameOptions): () => void {
     if (btn instanceof HTMLButtonElement) btn.focus();
   }
 
-  // ---- simulation ------------------------------------------------------
-  function step(dtMs: number): void {
-    runElapsedMs += dtMs;
-    const frames = dtMs / MS_PER_FRAME;
-    distanceRan += speed * frames;
-    speed = advanceSpeed(speed, cfg.maxSpeed, cfg.acceleration, frames);
+  // ---- fixed-step driver ----------------------------------------------
+  /** Advance the reducer one logical tick: apply + record queued inputs,
+   *  tick the sim, react to new state (HUD, pass, game-over). */
+  function advanceOneTick(): void {
+    const acts = inputQueue;
+    inputQueue = [];
+    for (const a of acts) {
+      simState = engine.step(simState, a);
+      recorded.push({ tick: logicalTick, action: a });
+    }
+    simState = engine.tick(simState);
+    logicalTick++;
 
-    runner.update(dtMs, speed);
-    obstacles.update(dtMs, speed, cfg);
-    horizon.update(dtMs, speed, reducedMotion);
+    // Sync render-only objects with the sim view for rendering.
+    const v = engine.view!(simState);
+    syncRenderObjects(v.runner, v.obstacles, v.speed);
+    renderAll();
 
-    const score = toScore(distanceRan);
+    // Milestone chime.
+    const score = toScore(simState.distanceRan);
     if (score > bestScore) bestScore = score;
-    // Milestone chime every SCORE_MILESTONE points.
     const milestone = Math.floor(score / SCORE_MILESTONE);
     if (milestone > lastMilestone) {
       lastMilestone = milestone;
       sfx.score();
     }
-    // Captcha is satisfied the instant the run reaches the pass threshold.
-    if (!verified && score >= cfg.passScore) markVerified(score);
 
-    if (hasCollision()) {
-      gameOver();
+    // Pass gate.
+    if (!verified && simState.verified) onVerified(score);
+
+    // Game over.
+    if (engine.isOver(simState)) {
+      onGameOver(score);
     }
   }
 
+  /** Mirror the sim's authoritative runner + obstacle data into the render-only
+   *  objects so renderAll() can draw them. The render objects' physics ARE NOT
+   *  re-run — we overwrite their position from the sim view directly. This
+   *  ensures the rendered position matches the authoritative sim exactly. */
+  function syncRenderObjects(runner: SimRunner, obstacles: readonly SimObstacle[], speed: number): void {
+    // Sync render runner pose from the sim view. status is public; runFrame +
+    // duckFrame use the setters exposed for exactly this purpose.
+    renderRunner.y = runner.y;
+    renderRunner.status = runner.status;
+    renderRunner.setRunFrame(runner.runFrame);
+    renderRunner.setDuckFrame(runner.duckFrame);
 
-  function hasCollision(): boolean {
-    const origin = runnerCollisionOrigin(runner);
-    for (const o of obstacles.obstacles) {
-      // Only bother with obstacles overlapping the runner's X span.
-      if (o.x > origin.x + 60 || o.x + o.width < origin.x - 10) continue;
-      if (collides(origin, { x: o.x, y: o.y, boxes: o.boxes })) return true;
+    // Sync render obstacle pool: add new, remove gone.
+    // We don't use ObstacleManager for physics — we just need its obstacle array
+    // for the DOM renderer's node pool. Overwrite directly.
+    renderObstacles.obstacles.length = 0;
+    for (const o of obstacles) {
+      renderObstacles.obstacles.push(o as unknown as ActiveObstacle);
     }
-    return false;
+
+    // Advance horizon (render-only: ground scroll + clouds).
+    horizon.update(STEP_S * 1000, speed, reducedMotion);
   }
 
   // ---- rendering -------------------------------------------------------
   function renderAll(): void {
-    renderRunner();
-    renderObstacles();
+    renderRunnerEl();
+    renderObstacleEls();
     renderScenery();
     renderHud();
   }
 
-  function renderRunner(): void {
-    const f = runner.frame();
+  function renderRunnerEl(): void {
+    const f = renderRunner.frame();
     sizeEntity(runnerEl, f.width, f.height);
     translate(runnerEl, f.x, f.y);
     setSprite(runnerEl, f.sprite);
   }
 
-  function renderObstacles(): void {
-    const live = new Set(obstacles.obstacles);
+  function renderObstacleEls(): void {
+    const live = new Set(renderObstacles.obstacles);
     for (const [o, node] of obstacleEls) {
       if (!live.has(o)) {
         node.remove();
         obstacleEls.delete(o);
       }
     }
-    for (const o of obstacles.obstacles) {
+    for (const o of renderObstacles.obstacles) {
       let node = obstacleEls.get(o);
       if (!node) {
         node = el('div', 'dr-entity dr-obstacle');
@@ -420,7 +464,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
       return node;
     });
     horizon.clouds.forEach((c, i) => translate(cloudEls[i]!, c.x, c.y));
-    // Stars + moon only render in the dark skin's night sky.
     if (nightSky) {
       syncPool(starEls, horizon.stars.length, () => {
         const node = scenerySprite('star');
@@ -442,24 +485,39 @@ export function runDinoRunner(opts: GameOptions): () => void {
       hud.best.innerHTML = `<span class="label">${strings.t('headerBest')}</span>${pad(bestScore)}`;
     }
     if (cfg.showScore) {
-      hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${pad(toScore(distanceRan))}`;
+      hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${pad(toScore(simState.distanceRan))}`;
     }
   }
 
   // ---- loop ------------------------------------------------------------
-  function tick(ts: number): void {
+  function frame(tMs: number): void {
     if (disposed) return;
-    const dt = lastTs === null ? 0 : Math.min(MAX_STEP_MS, ts - lastTs);
-    lastTs = ts;
-    if (status === 'running' && dt > 0) step(dt);
-    if (status !== 'crashed') renderAll();
-    rafHandle = raf(tick);
+    let dt = lastMs === null ? 0 : (tMs - lastMs) / 1000;
+    lastMs = tMs;
+    if (dt > MAX_FRAME_DT) dt = MAX_FRAME_DT;
+
+    if (driverStatus === 'running') {
+      acc += dt;
+      let steps = 0;
+      while (acc >= STEP_S && steps < MAX_STEPS_PER_FRAME && driverStatus === 'running') {
+        advanceOneTick();
+        acc -= STEP_S;
+        steps++;
+      }
+      if (steps === MAX_STEPS_PER_FRAME) acc = 0;
+    } else if (driverStatus === 'waiting') {
+      // Render the idle start frame (runner standing, no obstacles).
+      renderAll();
+    }
+
+    rafHandle = raf(frame);
   }
 
   // ---- boot ------------------------------------------------------------
   showStart();
   renderAll();
-  rafHandle = raf(tick);
+  bridge.setSize(WORLD_WIDTH, WORLD_HEIGHT);
+  rafHandle = raf(frame);
 
   // ---- helpers ---------------------------------------------------------
   function el(tag: string, className: string): HTMLElement {
@@ -502,8 +560,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
     rootEl.append(badge, best, score);
     return { root: rootEl, best, score, badge };
   }
-  // In-game sound toggle: an accessible switch that mutes / unmutes the audio
-  // engine at runtime. aria-checked = sound ON.
   function buildSoundButton(): HTMLButtonElement {
     const btn = doc.createElement('button');
     btn.type = 'button';
@@ -512,7 +568,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
     btn.setAttribute('aria-checked', 'true');
     btn.setAttribute('aria-label', strings.t('ariaSound'));
     btn.innerHTML = sprites['sound-on'];
-    // Keep a tap on the toggle from bubbling to the stage's jump handler.
     btn.addEventListener('pointerdown', (e) => e.stopPropagation());
     btn.addEventListener('click', () => {
       muted = !muted;
@@ -536,7 +591,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
     jumpBtn.className = 'dr-touch-button dr-touch-jump';
     jumpBtn.textContent = strings.t('ariaJump');
     jumpBtn.setAttribute('aria-label', strings.t('ariaJump'));
-    // Duck on the leading side, jump on the trailing side.
     rootEl.append(duckBtn, jumpBtn);
     return { root: rootEl, jump: jumpBtn, duck: duckBtn };
   }
