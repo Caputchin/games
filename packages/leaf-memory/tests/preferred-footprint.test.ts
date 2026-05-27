@@ -8,7 +8,7 @@ import { STAGE_WIDTH, STAGE_HEIGHT } from '../src/styles.js';
 // cell-grid layout constants. These two MUST agree: if the cell sizing
 // changes, the manifest must be updated to match. This test is the guard
 // that turns silent drift into a red build.
-describe('leaf-memory caputchin.json — preferred footprint', () => {
+describe('leaf-memory caputchin.json - preferred footprint', () => {
   const preferred = manifest.preferred as { width?: number; height?: number } | undefined;
 
   it('declares a preferred block', () => {

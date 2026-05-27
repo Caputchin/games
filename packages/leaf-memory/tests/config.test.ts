@@ -22,7 +22,7 @@ const configurations = manifest.configurations;
 const presets = (configurations?.presets ?? {}) as Record<string, ConfigPreset>;
 const schema = (configurations?.schema ?? {}) as Record<string, ConfigSchemaEntry>;
 
-describe('leaf-memory caputchin.json — configurations schema / preset parity', () => {
+describe('leaf-memory caputchin.json - configurations schema / preset parity', () => {
   it('declares a default preset marked _default:true', () => {
     expect(presets['default']?._default).toBe(true);
   });
@@ -64,7 +64,7 @@ describe('leaf-memory caputchin.json — configurations schema / preset parity',
   });
 });
 
-describe('resolveLeafMemoryConfig — null ctx (no configurations block)', () => {
+describe('resolveLeafMemoryConfig - null ctx (no configurations block)', () => {
   it('returns the hardcoded fallbacks', () => {
     const out = resolveLeafMemoryConfig(undefined);
     expect(out.startIndex).toBe(0);
@@ -84,7 +84,7 @@ describe('resolveLeafMemoryConfig — null ctx (no configurations block)', () =>
   });
 });
 
-describe('resolveLeafMemoryConfig — start_level', () => {
+describe('resolveLeafMemoryConfig - start_level', () => {
   it('translates start_level=1 to startIndex=0', () => {
     const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 1 } });
     expect(out.startIndex).toBe(0);
@@ -111,7 +111,7 @@ describe('resolveLeafMemoryConfig — start_level', () => {
   });
 });
 
-describe('resolveLeafMemoryConfig — per-level timing overrides', () => {
+describe('resolveLeafMemoryConfig - per-level timing overrides', () => {
   it('applies memorize_seconds_level_2 (seconds -> peekMs)', () => {
     const out = resolveLeafMemoryConfig({
       seed: null,
@@ -149,7 +149,7 @@ describe('resolveLeafMemoryConfig — per-level timing overrides', () => {
   });
 });
 
-describe('resolveLeafMemoryConfig — boolean toggles', () => {
+describe('resolveLeafMemoryConfig - boolean toggles', () => {
   it('show_high_score=false propagates', () => {
     const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { show_high_score: false } });
     expect(out.showHighScore).toBe(false);
@@ -160,7 +160,7 @@ describe('resolveLeafMemoryConfig — boolean toggles', () => {
   });
 });
 
-describe('resolveLeafMemoryConfig — type guards (defensive)', () => {
+describe('resolveLeafMemoryConfig - type guards (defensive)', () => {
   it('ignores string-form numbers and falls back to defaults', () => {
     const out = resolveLeafMemoryConfig({
       seed: null,
@@ -204,7 +204,7 @@ describe('bundled preset behaviors', () => {
 // These tests drive `runLeafMemory` end-to-end and assert the first round
 // after Start uses the configured level + ladder values, not the
 // hardcoded level 1.
-describe('runLeafMemory — start_level threads through Start button', () => {
+describe('runLeafMemory - start_level threads through Start button', () => {
   it('config.start_level=3 opens the first round at level 3 (4 pairs, 4x2)', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -217,7 +217,7 @@ describe('runLeafMemory — start_level threads through Start button', () => {
     expect(startBtn).not.toBeNull();
     startBtn!.click();
 
-    // Level chip reflects the started level (3/4) — and 4 pairs = 8 cards.
+    // Level chip reflects the started level (3/4) - and 4 pairs = 8 cards.
     const levelEl = container.querySelector('.lm-level');
     expect(levelEl?.textContent).toContain('3');
     expect(container.querySelectorAll('.lm-cell').length).toBe(8);
@@ -246,7 +246,7 @@ describe('runLeafMemory — start_level threads through Start button', () => {
   });
 });
 
-describe('runLeafMemory — header visibility toggles via config', () => {
+describe('runLeafMemory - header visibility toggles via config', () => {
   it('show_high_score=false hides the Best chip', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

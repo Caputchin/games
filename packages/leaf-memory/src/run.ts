@@ -1,7 +1,7 @@
 // The conforming run artifact. This is the headless entry the
 // marketplace pins (caputchin.json `run.entry`) and the replay host loads in
 // an isolate: it exports `run(seed, config, trace) -> verdict`, and nothing
-// else. No DOM, no rendering — `toRun` turns the pure reducer in sim/engine
+// else. No DOM, no rendering - `toRun` turns the pure reducer in sim/engine
 // into the contract function.
 //
 // `passed` reads the gate from `config` (server-supplied, safe): all pairs
@@ -25,7 +25,7 @@
 //   Replayed round is L1-only while server config injection is deferred.
 //   Enabling start_level>1 or per-round (bigger-board) replay REQUIRES
 //   threading the per-round SimConfig (pairs + budgetTicks + flipBackTicks)
-//   into run() — otherwise a non-L1 win false-rejects.
+//   into run() - otherwise a non-L1 win false-rejects.
 
 import { toRun } from '@caputchin/engine-runtime';
 import { engine } from './sim/engine.js';

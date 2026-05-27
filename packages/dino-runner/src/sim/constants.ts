@@ -20,7 +20,7 @@ export const SIM_FPS = 1000 / FIXED_TIMESTEP_MS; // 62.5 logical fps
 
 /** Fixed logical timestep in seconds. All per-"frame" physics multiply by this
  *  instead of MS_PER_FRAME, mapping the 60fps-tuned constants to 62.5fps ticks
- *  with an imperceptible 4% stretch — keeps the kit's integer tick math. */
+ *  with an imperceptible 4% stretch - keeps the kit's integer tick math. */
 export const STEP_S = FIXED_TIMESTEP_MS / 1000; // 0.016 s
 
 /** Fixed logical world footprint. */

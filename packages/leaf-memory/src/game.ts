@@ -8,12 +8,12 @@
 //
 // What lives HERE (render-only, never in the verdict): the DOM grid, CSS
 // flip animations, accessibility announcements, HUD time / best / level
-// display. These may use real time / Math.random freely — they never touch
+// display. These may use real time / Math.random freely - they never touch
 // the sim. What crosses to the server is only the recorded card-pick trace;
 // the seed comes from `ctx.seed`.
 //
 // Time model: the wall-clock countdown visible in the HUD is derived from
-// ticksElapsed in the reducer's view projection — never from an independent
+// ticksElapsed in the reducer's view projection - never from an independent
 // setInterval. A fixed-step rAF loop advances ticks at FIXED_TIMESTEP_MS per
 // step with the standard accumulator + catch-up clamp pattern.
 
@@ -314,7 +314,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     if (!Number.isFinite(idx)) return;
     // The reducer's step() ignores the click if the board is busy (flip-back
     // countdown > 0) or the card is already matched/firstPick. We still push
-    // the input and record it — the reducer is the authority on whether it
+    // the input and record it - the reducer is the authority on whether it
     // causes a state change.
     inputQueue.push({ cardIndex: idx });
   }

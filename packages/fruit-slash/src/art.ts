@@ -2,7 +2,7 @@
 // providing `art_good` / `art_hazard` image skin keys (absolute URL, bundle
 // path, or data URI). When present we draw the image instead of the built-in
 // shape; when absent or on load failure we fall back to the drawn shape, so the
-// game always renders. v1 ships NO bundled art — the default skins draw shapes.
+// game always renders. v1 ships NO bundled art - the default skins draw shapes.
 
 import type { ResolvedSkin } from '@caputchin/game-sdk';
 

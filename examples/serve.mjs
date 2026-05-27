@@ -5,10 +5,10 @@
 //
 // HTTPS is required when exercising examples/host.html (the published widget
 // rejects http: game-src as invalid-config). examples/direct-mount.html works
-// over plain HTTP — it bypasses the widget iframe path entirely.
+// over plain HTTP - it bypasses the widget iframe path entirely.
 //
 // To enable HTTPS:
-//   brew install mkcert nss   # or your platform equivalent — see README
+//   brew install mkcert nss   # or your platform equivalent - see README
 //   mkcert -install            # one-time, adds local CA to trust stores
 //   cd examples && mkdir -p .cert && cd .cert
 //   mkcert -cert-file localhost.pem -key-file localhost-key.pem localhost 127.0.0.1
@@ -96,7 +96,7 @@ server.listen(PORT, () => {
   console.log(`leaf-memory dev harness → ${scheme}://localhost:${PORT}/examples/host.html`);
   if (!tls) {
     console.log(
-      '(HTTP mode — host.html will hit invalid-config on the widget. Use direct-mount.html for HTTP testing, or set up mkcert to enable HTTPS.)',
+      '(HTTP mode: host.html will hit invalid-config on the widget. Use direct-mount.html for HTTP testing, or set up mkcert to enable HTTPS.)',
     );
   }
 });

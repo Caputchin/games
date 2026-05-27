@@ -9,7 +9,7 @@
 // What lives HERE (render-only, never in the verdict): the canvas + DOM chrome,
 // the blade trail, the slice splatter particles, target spin animation, audio,
 // and accessibility announcements. These may use real time / Math.random freely
-// — they never touch the sim. What crosses to the server is only the recorded
+// - they never touch the sim. What crosses to the server is only the recorded
 // pointer trace; the seed comes from `ctx.seed`.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
@@ -175,7 +175,7 @@ export function runFruitSlash(opts: GameOptions): () => void {
     canvas.height = Math.round(rect.height * dpr);
     // The logical world is FIXED (sim-authoritative); letterbox it into the
     // canvas. A non-matching container aspect leaves bands, never reshapes the
-    // world — the server has no container, so the world cannot depend on it.
+    // world - the server has no container, so the world cannot depend on it.
     scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / WORLD_HEIGHT);
     offX = (canvas.width - WORLD_WIDTH * scale) / 2;
     offY = (canvas.height - WORLD_HEIGHT * scale) / 2;
@@ -277,7 +277,7 @@ export function runFruitSlash(opts: GameOptions): () => void {
     status = 'over';
     // If the player beat their verified score after passing, resubmit the longer
     // trace so the server's replayed score reflects the full round (the widget
-    // keeps the best). A never-verified loss submits nothing — local retry only.
+    // keeps the best). A never-verified loss submits nothing - local retry only.
     if (verifiedFired && state.sliced > verifiedScore) {
       bridge.pass({ trace: encodeTrace(recorded) });
     }

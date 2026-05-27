@@ -1,10 +1,10 @@
 // Render-only constants for game.ts. Gameplay constants (world size, grid,
-// mole physics, spawn, scoring, difficulty) live in src/sim/constants.ts —
+// mole physics, spawn, scoring, difficulty) live in src/sim/constants.ts -
 // the single source used by both the live driver and the headless replay run.
 
 /** Largest real-time step honored in one frame (seconds). After a tab-stall
  *  the real delta can be huge; clamping keeps cosmetic timers from teleporting.
- *  NOT a sim timestep — the sim uses the fixed STEP_S from sim/constants.ts. */
+ *  NOT a sim timestep - the sim uses the fixed STEP_S from sim/constants.ts. */
 export const MAX_DT = 1 / 30;
 
 // ── Hit particles ────────────────────────────────────────

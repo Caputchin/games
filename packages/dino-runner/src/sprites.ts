@@ -120,7 +120,7 @@ export const DEFAULT_SPRITE_URIS: Record<SpriteId, string> = {
 
 /** Decode a `data:image/svg+xml` URI back into raw SVG markup so it can be
  *  injected via innerHTML and still inherit `currentColor`. Returns an empty
- *  string for malformed or non-data URIs (e.g. an `https://` skin override —
+ *  string for malformed or non-data URIs (e.g. an `https://` skin override -
  *  the caller falls back to the bundled default for that sprite). */
 export function decodeSvgDataUri(uri: string): string {
   // Group 1 is the meta segment (`;base64` / `;charset=…`, possibly empty),
@@ -155,7 +155,7 @@ export function sanitizeSvgMarkup(raw: string): string {
 }
 
 /** Resolve the final inline-SVG string per sprite id. Cascade per sprite:
- *    1. customer override (`ctx.skin?.sprite_<id>`) — only `data:image/svg+xml`
+ *    1. customer override (`ctx.skin?.sprite_<id>`) - only `data:image/svg+xml`
  *       payloads survive decoding; URL-form overrides pass the widget's image
  *       validator but can't be inline-injected, so they fall back.
  *    2. bundled `DEFAULT_SPRITE_URIS[id]`.

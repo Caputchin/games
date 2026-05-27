@@ -56,7 +56,7 @@ export const DEFAULT_LEAF_URIS: Record<LeafId, string> = {
 /** Decode a `data:image/svg+xml` URI back into raw SVG markup so it can be
  *  injected via innerHTML and still inherit `currentColor`. Returns an
  *  empty string when the URI is malformed or non-data (e.g. an `https://`
- *  URL — caller is expected to fall back). The widget validator gates
+ *  URL - caller is expected to fall back). The widget validator gates
  *  the MIME at the door; we still re-check the prefix here so a
  *  caller-supplied raw `<svg>` string can't slip through. */
 export function decodeSvgDataUri(uri: string): string {
@@ -77,13 +77,13 @@ export function decodeSvgDataUri(uri: string): string {
 /** Strip active-content from SVG markup before injecting it via innerHTML.
  *  Defense-in-depth: the widget validator only checks the data: MIME (not
  *  the payload), and the iframe is `sandbox="allow-scripts"` without
- *  allow-same-origin — but the iframe still holds the Cap verification
+ *  allow-same-origin - but the iframe still holds the Cap verification
  *  token + postMessage bridge, so a customer-supplied skin with active
  *  content is a trust-boundary risk. We strip the common SVG-XSS vectors:
  *    - `<script>…</script>` blocks
  *    - inline `on*=` event handlers
  *    - `javascript:` / `data:text/html` URIs on href / src / xlink:href
- *  This is intentionally regex-based (not a full DOM parse) — small
+ *  This is intentionally regex-based (not a full DOM parse) - small
  *  surface, no extra deps. The defense is layered against the widget's
  *  MIME guard and the sandbox boundary, not the sole gate. */
 export function sanitizeSvgMarkup(raw: string): string {
@@ -104,11 +104,11 @@ export function sanitizeSvgMarkup(raw: string): string {
 }
 
 /** Resolve the final inline-SVG string per leaf id. Cascade:
- *    1. customer override (`ctx.skin?.leaf_<id>`) — only `data:image/svg+xml`
+ *    1. customer override (`ctx.skin?.leaf_<id>`) - only `data:image/svg+xml`
  *       payloads survive decoding; URL-form overrides (`https://cdn/x.svg`)
  *       pass the widget's image validator but can't be inline-injected, so
  *       they fall back to the bundled default for that leaf.
- *    2. bundled `DEFAULT_LEAF_URIS[id]` — the build-time-loaded SVG.
+ *    2. bundled `DEFAULT_LEAF_URIS[id]` - the build-time-loaded SVG.
  *  In both paths the decoded markup runs through `sanitizeSvgMarkup`. */
 export function resolveLeafSvgs(skin: Readonly<Record<string, string>> | null | undefined): Record<LeafId, string> {
   const out = {} as Record<LeafId, string>;

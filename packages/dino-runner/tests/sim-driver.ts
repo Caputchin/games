@@ -1,6 +1,6 @@
 // A headless stand-in for the live driver (game.ts), shared by the sim tests.
 // It runs the SAME loop the kit's `replay` runs (apply this tick's actions, then
-// tick once) and records the discrete jump/duck inputs — exactly what the real
+// tick once) and records the discrete jump/duck inputs - exactly what the real
 // driver does, minus the DOM. Replaying the recorded trace must reproduce the
 // live score; that equivalence is the core guarantee these tests assert.
 
@@ -24,7 +24,7 @@ export interface PlayOpts {
 
 /** Drive the engine like the live loop: per tick, decide + apply + record the
  *  actions, then advance one logical tick. Mimics the real driver's
- *  fixed-step accumulator — single-tick increments, discrete inputs stamped
+ *  fixed-step accumulator - single-tick increments, discrete inputs stamped
  *  with their exact logical tick. */
 export function play(seed: Seed, config: SimConfig, opts: PlayOpts): PlayResult {
   let state = engine.init({ seed, config });

@@ -5,7 +5,7 @@
 // top border, so the parabola enters and exits ONLY through the bottom border.
 //
 // `integrate` uses the EXACT closed-form update for constant acceleration
-// (y += vy*dt + 0.5*g*dt^2), which composes exactly across any step size — the
+// (y += vy*dt + 0.5*g*dt^2), which composes exactly across any step size - the
 // trajectory is identical whatever the timestep.
 //
 // Determinism: the one transcendental, the launch's `sqrt`, goes

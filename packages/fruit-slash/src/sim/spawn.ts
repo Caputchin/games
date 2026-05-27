@@ -1,7 +1,7 @@
 // Pure spawn helpers. The old game kept a stateful Spawner class; spawn
 // bookkeeping now lives in the serializable SimState and these pure
 // functions do the work, driven by an injected `next: () => number` (a `cap.rng`
-// draw). No class, no closure over rng — the reducer reconstructs the rng from
+// draw). No class, no closure over rng - the reducer reconstructs the rng from
 // state each tick, calls these, then captures the rng state back.
 
 import { deriveLaunch, type LaunchBounds } from './launch.js';
@@ -15,7 +15,7 @@ export function pickInterval(next: () => number, spawnRate: number): number {
 }
 
 /** Build one target. Consumes `next` for: kind, the three launch draws, hue,
- *  spin, spinRate — in that fixed order, so the rng stream is identical live and
+ *  spin, spinRate - in that fixed order, so the rng stream is identical live and
  *  on replay. `hue` / `spin` / `spinRate` are render hints and never feed the
  *  verdict, but stay in the stream so the ordering can't drift. */
 export function spawnOne(

@@ -56,7 +56,7 @@ describe('idle / empty play', () => {
   });
 });
 
-describe('fx render cues (F1 — step pushes, driver clears before next tick)', () => {
+describe('fx render cues (F1 - step pushes, driver clears before next tick)', () => {
   it('tapping an up monkey emits a whack cue visible on the same tick', () => {
     // Run until a monkey is up, then apply the tap action + tick manually.
     let state = engine.init({ seed: SEED, config: CFG });

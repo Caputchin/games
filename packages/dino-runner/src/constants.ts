@@ -41,7 +41,7 @@ import { DEFAULT_GRAVITY, DEFAULT_JUMP_VELOCITY } from './sim/config.js';
 export const FPS = 60;
 export const MS_PER_FRAME = 1000 / FPS; // 16.67ms
 
-/** Ground tile strip height — render-only, no physics use. */
+/** Ground tile strip height - render-only, no physics use. */
 export const GROUND_LINE_HEIGHT = 12;
 
 /** Runner box dimensions as an object, kept for the render layer's existing

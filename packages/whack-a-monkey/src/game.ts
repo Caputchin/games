@@ -9,7 +9,7 @@
 //
 // What lives HERE (render-only, never in the verdict): the canvas + DOM chrome,
 // hit particles, score popups, audio, and accessibility announcements. These
-// may use real time / Math.random freely — they never touch the sim. What
+// may use real time / Math.random freely - they never touch the sim. What
 // crosses to the server is only the recorded tap trace; the seed comes from
 // `ctx.seed`.
 
@@ -92,7 +92,7 @@ function computeHoleCenters(): Vec[] {
   return centers;
 }
 
-// Hole centers in fixed world coords — shared by driver and renderer.
+// Hole centers in fixed world coords - shared by driver and renderer.
 const HOLES: readonly Vec[] = computeHoleCenters();
 
 /** Build a throwaway seed for a no-verify mount. This is DRIVER-side (not
@@ -218,7 +218,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     const dpr = Math.min(view.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
-    // Fixed world letterboxed into the canvas — the server has no container,
+    // Fixed world letterboxed into the canvas - the server has no container,
     // so the world cannot depend on it.
     scale = Math.min(canvas.width / WORLD_WIDTH, canvas.height / WORLD_HEIGHT);
     offX = (canvas.width - WORLD_WIDTH * scale) / 2;
@@ -325,7 +325,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
    *  (fx, HUD, pass, over). */
   function advanceOneTick(): void {
     // Clear before applying actions so step()'s pushFx writes are the ONLY
-    // cues visible after this tick — not a mix of this tick and previous ones.
+    // cues visible after this tick - not a mix of this tick and previous ones.
     simState.fx = [];
     const acts = inputQueue;
     inputQueue = [];

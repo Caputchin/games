@@ -1,6 +1,6 @@
 // Default SimConfig for Leaf Memory. Mirrors the L1 (2-pair) defaults
 // from DIFFICULTY_LADDER so MVP runs (config=null) use the canonical
-// easiest level. The gate reads pairs/budgetTicks from this config —
+// easiest level. The gate reads pairs/budgetTicks from this config -
 // never from the trace.
 
 import { FIXED_TIMESTEP_MS } from './constants.js';

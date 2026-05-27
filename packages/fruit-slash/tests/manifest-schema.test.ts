@@ -9,7 +9,7 @@ const METADATA_KEYS = new Set(['_lang', '_direction', '_default', '_extends']);
 const presetNames = Object.keys(presets);
 const referenceKeys = Object.keys(Object.values(presets)[0] ?? {}).filter((k) => !METADATA_KEYS.has(k));
 
-describe('fruit-slash caputchin.json — schema / presets parity', () => {
+describe('fruit-slash caputchin.json - schema / presets parity', () => {
   it('every text key in the base preset is documented in schema', () => {
     for (const key of referenceKeys) {
       expect(schema, `schema missing entry for "${key}"`).toHaveProperty(key);

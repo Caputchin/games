@@ -134,7 +134,7 @@ describe('runLeafMemory state machine', () => {
     // Some cells should be revealed (peek phase).
     expect(container.querySelectorAll('.lm-cell[data-flipped="true"]').length).toBeGreaterThan(0);
 
-    // Click any cell — peek should end immediately.
+    // Click any cell - peek should end immediately.
     (container.querySelector('.lm-cell') as HTMLButtonElement).click();
 
     // All non-matched cards now covered.
@@ -179,7 +179,7 @@ describe('runLeafMemory state machine', () => {
     expect(container.querySelector('.lm-screen--win')).not.toBeNull();
     const buttons = Array.from(container.querySelectorAll('.lm-screen button')).map((b) => b.textContent);
     expect(buttons).toEqual(['Retry', 'Bigger board!']);
-    expect(container.querySelector('.lm-best')?.textContent).not.toContain('—');
+    expect(container.querySelector('.lm-best')?.textContent).not.toContain('-');
   });
 
   it('harder-button label climbs per level (Bigger board / Even bigger / Final challenge)', () => {

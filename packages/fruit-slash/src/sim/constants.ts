@@ -3,7 +3,7 @@
 // MUST stay deterministic and free of any render/DOM concern.
 //
 // Physics are expressed PER SECOND, integrated by a FIXED logical timestep
-// (STEP_S) every tick — never per real frame. The live driver advances the sim
+// (STEP_S) every tick - never per real frame. The live driver advances the sim
 // with a fixed-step accumulator and the server replays the SAME ticks, so live
 // score == replay score by construction.
 //

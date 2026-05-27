@@ -1,4 +1,4 @@
-// Tests for the run artifact — the conforming `run(seed, config, trace) ->
+// Tests for the run artifact - the conforming `run(seed, config, trace) ->
 // verdict` the marketplace pins. run() is the server-side replay contract entry.
 
 import { describe, it, expect } from 'vitest';
@@ -17,7 +17,7 @@ describe('run artifact (toRun)', () => {
     const cfg = { ...DEFAULT_SIM_CONFIG, passScore: 10 };
     const live = play(SEED, cfg, { maxTicks: MAX });
     // live.score may be below 10 if the runner crashed before reaching it;
-    // only assert the verdict reflects reality — passed iff score >= threshold.
+    // only assert the verdict reflects reality - passed iff score >= threshold.
     const verdict = run(SEED, cfg, encodeTrace(live.recorded));
     expect(verdict.passed).toBe(live.score >= cfg.passScore);
     expect(verdict.score).toBe(live.score);

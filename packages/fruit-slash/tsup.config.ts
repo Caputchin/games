@@ -1,11 +1,11 @@
 import { defineConfig } from 'tsup';
 
 // Two artifacts:
-//   1. dist/fruit-slash.js — the LIVE bundle the widget loads in the game iframe.
+//   1. dist/fruit-slash.js - the LIVE bundle the widget loads in the game iframe.
 //      IIFE, registers the game via side-effect, carries the full renderer + DOM.
-//   2. dist/run.js — the headless REPLAY artifact the marketplace pins and the
+//   2. dist/run.js - the headless REPLAY artifact the marketplace pins and the
 //      replay host loads in an isolate. ESM exporting `run(seed, config, trace)`;
-//      no DOM, no renderer — just the pure sim wrapped by the kit's `toRun`.
+//      no DOM, no renderer - just the pure sim wrapped by the kit's `toRun`.
 export default defineConfig([
   {
     entry: { 'fruit-slash': 'src/index.ts' },
@@ -34,7 +34,7 @@ export default defineConfig([
     // Self-contained ESM module: the isolate imports it with no resolver, so the
     // kit + contract + sim must all be bundled in.
     noExternal: [/.*/],
-    // Second config in the array — must NOT clean (it would wipe fruit-slash.js).
+    // Second config in the array - must NOT clean (it would wipe fruit-slash.js).
     clean: false,
     target: 'es2020',
   },

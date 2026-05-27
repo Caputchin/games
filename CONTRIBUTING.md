@@ -98,7 +98,7 @@ package and keeps an open **Release PR** that bumps versions and writes the
 CHANGELOG; merging that PR tags the release and emits a
 `packages/<game-id>--release_created` output.
 
-A new game must appear in **both** files (step 6–7 above): a `component` +
+A new game must appear in **both** files (step 6-7 above): a `component` +
 `package-name` entry in the config, and a `"packages/<game-id>": "0.1.0"` line in
 the manifest. Versions are release-please-managed, so never hand-edit a `version`,
 `CHANGELOG`, or manifest version yourself; the only manual manifest edit is the

@@ -1,6 +1,6 @@
 // Tests for the headless sim reducer. The core guarantee: replaying
 // the recorded trace (seed, config, actions) produces the same score as the
-// live driver — the live==replay invariant. Also covers the old Runner class
+// live driver - the live==replay invariant. Also covers the old Runner class
 // unit tests (jump arc, duck, collision origin) against the new sim engine.
 
 import { describe, it, expect } from 'vitest';

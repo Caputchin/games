@@ -11,7 +11,7 @@ const presetNames = Object.keys(presets);
 // proves every preset shares the same text-key set, so any one is canonical).
 const referenceKeys = Object.keys(Object.values(presets)[0] ?? {}).filter((k) => !METADATA_KEYS.has(k));
 
-describe('leaf-memory caputchin.json — schema / presets parity', () => {
+describe('leaf-memory caputchin.json - schema / presets parity', () => {
   it('every text key in the base preset is documented in schema', () => {
     for (const key of referenceKeys) {
       expect(schema, `schema missing entry for "${key}"`).toHaveProperty(key);

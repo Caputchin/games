@@ -16,7 +16,7 @@ export default defineConfig([
     loader: { '.svg': 'dataurl' },
   },
   // 2. Headless run artifact (ESM): the replay host imports `run` from here.
-  //    No DOM, no assets — pure logic only.
+  //    No DOM, no assets - pure logic only.
   {
     entry: { run: 'src/run.ts' },
     format: ['esm'],

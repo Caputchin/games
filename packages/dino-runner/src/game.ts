@@ -9,7 +9,7 @@
 //
 // What lives HERE (render-only, never in the verdict): the DOM chrome, obstacle
 // node pool, horizon/scenery, audio, and accessibility announcements. These may
-// use real time / Math.random freely — they never touch the sim. What crosses to
+// use real time / Math.random freely - they never touch the sim. What crosses to
 // the server is only the recorded trace; the seed comes from `ctx.seed`.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
@@ -145,7 +145,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   container.appendChild(root);
 
   // ---- render-only state (not in the sim) ------------------------------
-  // These objects are RENDER-ONLY drivers — they do NOT affect the verdict.
+  // These objects are RENDER-ONLY drivers - they do NOT affect the verdict.
   // The sim drives the authoritative runner/obstacle state; these mirror the
   // view projection for DOM rendering and horizon/scenery only.
   const renderRunner = new Runner(cfg);
@@ -383,7 +383,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
 
   /** Mirror the sim's authoritative runner + obstacle data into the render-only
    *  objects so renderAll() can draw them. The render objects' physics ARE NOT
-   *  re-run — we overwrite their position from the sim view directly. This
+   *  re-run - we overwrite their position from the sim view directly. This
    *  ensures the rendered position matches the authoritative sim exactly. */
   function syncRenderObjects(runner: SimRunner, obstacles: readonly SimObstacle[], speed: number): void {
     // Sync render runner pose from the sim view. status is public; runFrame +
@@ -394,7 +394,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
     renderRunner.setDuckFrame(runner.duckFrame);
 
     // Sync render obstacle pool: add new, remove gone.
-    // We don't use ObstacleManager for physics — we just need its obstacle array
+    // We don't use ObstacleManager for physics - we just need its obstacle array
     // for the DOM renderer's node pool. Overwrite directly.
     renderObstacles.obstacles.length = 0;
     for (const o of obstacles) {

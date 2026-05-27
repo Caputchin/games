@@ -1,7 +1,7 @@
 // Logical world + physics tuning for the headless WAM sim.
 // Everything here is shared by the live driver (game.ts) and the replay run
 // (run.ts). Physics expressed PER SECOND, integrated by a FIXED logical
-// timestep (STEP_S) every tick — never per real frame. Live driver advances
+// timestep (STEP_S) every tick - never per real frame. Live driver advances
 // with a fixed-step accumulator; server replays the SAME ticks → live score
 // == replay score by construction.
 //

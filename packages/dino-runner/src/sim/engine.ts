@@ -40,7 +40,7 @@ import {
 import type { SimState, SimAction, SimConfig, SimView, SimRunner, SimObstacle, SimBox, ObstacleTypeId } from './types.js';
 
 // ---- Obstacle type catalog -----------------------------------------------
-// (Verbatim from obstacles.ts — same collision box sets.)
+// (Verbatim from obstacles.ts - same collision box sets.)
 
 interface ObstacleType {
   id: ObstacleTypeId;
@@ -383,7 +383,7 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
       if (o) state.obstacles.push(o);
     }
 
-    // Pass gate — check before collision so a borderline run that hits an
+    // Pass gate - check before collision so a borderline run that hits an
     // obstacle in the same tick that it crosses the threshold still counts.
     const score = toScore(state.distanceRan);
     if (!state.verified && score >= state.cfg.passScore) {

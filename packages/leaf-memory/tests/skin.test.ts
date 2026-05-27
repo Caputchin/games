@@ -7,7 +7,7 @@ const skinPresets = manifest.skins?.presets as Record<string, SkinPreset>;
 const skinSchema = (manifest.skins?.schema ?? {}) as Record<string, SkinSchemaEntry>;
 const METADATA_KEYS = new Set(['_theme', '_default', '_extends']);
 
-describe('leaf-memory caputchin.json — skin schema / preset parity', () => {
+describe('leaf-memory caputchin.json - skin schema / preset parity', () => {
   it('declares a light and a dark preset both marked _default:true', () => {
     expect(skinPresets['light']?._theme).toBe('light');
     expect(skinPresets['light']?._default).toBe(true);
@@ -61,7 +61,7 @@ describe('leaf-memory caputchin.json — skin schema / preset parity', () => {
   });
 });
 
-describe('leaves.ts — runtime decode pipeline', () => {
+describe('leaves.ts - runtime decode pipeline', () => {
   it('DEFAULT_LEAF_URIS covers every leaf id', () => {
     for (const id of LEAF_IDS) {
       expect(DEFAULT_LEAF_URIS[id]).toMatch(/^data:image\/svg\+xml/);
@@ -104,7 +104,7 @@ describe('leaves.ts — runtime decode pipeline', () => {
   it('resolveLeafSvgs falls back to default when override is a URL form (non-data: URI)', () => {
     // The widget validator accepts `https://...svg` as a valid image URL
     // and hands it through to the game. The decoder can only inline-render
-    // data: URIs — URL form falls back to the bundled default so the card
+    // data: URIs - URL form falls back to the bundled default so the card
     // doesn't render blank.
     const out = resolveLeafSvgs({
       _theme: 'light',
@@ -123,7 +123,7 @@ describe('leaves.ts — runtime decode pipeline', () => {
   });
 });
 
-describe('sanitizeSvgMarkup — XSS defense-in-depth', () => {
+describe('sanitizeSvgMarkup - XSS defense-in-depth', () => {
   it('strips <script> blocks', () => {
     const out = sanitizeSvgMarkup('<svg><script>alert(1)</script><path/></svg>');
     expect(out).not.toContain('<script');

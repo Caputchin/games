@@ -1,12 +1,12 @@
 import { defineConfig } from 'tsup';
 
 // Two artifacts:
-//   1. dist/whack-a-monkey.js — the LIVE bundle the widget loads in the game
+//   1. dist/whack-a-monkey.js - the LIVE bundle the widget loads in the game
 //      iframe. IIFE, registers the game via side-effect, carries the full
 //      renderer + DOM.
-//   2. dist/run.js — the headless REPLAY artifact the marketplace pins and the
+//   2. dist/run.js - the headless REPLAY artifact the marketplace pins and the
 //      replay host loads in an isolate. ESM exporting `run(seed, config,
-//      trace)`; no DOM, no renderer — just the pure sim wrapped by `toRun`.
+//      trace)`; no DOM, no renderer - just the pure sim wrapped by `toRun`.
 export default defineConfig([
   {
     entry: { 'whack-a-monkey': 'src/index.ts' },
@@ -34,7 +34,7 @@ export default defineConfig([
     // Self-contained ESM: the isolate imports it with no resolver, so the
     // kit + contract + sim must all be bundled in.
     noExternal: [/.*/],
-    // Second config in the array — must NOT clean (it would wipe whack-a-monkey.js).
+    // Second config in the array - must NOT clean (it would wipe whack-a-monkey.js).
     clean: false,
     target: 'es2020',
   },

@@ -1,6 +1,6 @@
 // Sound effects via the Web Audio API. We play the original game's three Ogg
 // clips (sounds.ts): jump, milestone, crash. The clips are decoded once into
-// AudioBuffers and played through short-lived BufferSources — the same
+// AudioBuffers and played through short-lived BufferSources - the same
 // low-latency path the original uses, and entirely inside the iframe CSP
 // (decoding a `data:` URI needs no network; playback needs no media-src).
 //
@@ -53,7 +53,7 @@ function dataUriToArrayBuffer(uri: string): ArrayBuffer | null {
 export function createSfx(view: Window, enabled: boolean, clips: SoundClips): Sfx {
   if (!enabled) return SILENT;
   // AudioContext is a global ctor, not on the Window interface, and older
-  // Safari exposes it prefixed — reach for both through a cast.
+  // Safari exposes it prefixed - reach for both through a cast.
   const w = view as unknown as { AudioContext?: AudioCtor; webkitAudioContext?: AudioCtor };
   const Ctor = w.AudioContext ?? w.webkitAudioContext;
   if (typeof Ctor !== 'function') return SILENT;
@@ -78,11 +78,11 @@ export function createSfx(view: Window, enabled: boolean, clips: SoundClips): Sf
         result.then((decoded) => {
           buffers[name] = decoded;
         }).catch(() => {
-          /* unsupported codec — that clip stays silent */
+          /* unsupported codec - that clip stays silent */
         });
       }
     } catch {
-      /* decodeAudioData unavailable — clip stays silent */
+      /* decodeAudioData unavailable - clip stays silent */
     }
   });
 

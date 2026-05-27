@@ -1,7 +1,7 @@
 // The conforming run artifact. This is the headless entry the
 // marketplace pins (caputchin.json `run.entry`) and the replay host loads in an
 // isolate: it exports `run(seed, config, trace) -> verdict`, and nothing else.
-// No DOM, no rendering, no audio — `toRun` turns the pure reducer in sim/engine
+// No DOM, no rendering, no audio - `toRun` turns the pure reducer in sim/engine
 // into the contract function.
 //
 // `passed` reads the gate threshold from `config` (server-supplied, safe), never

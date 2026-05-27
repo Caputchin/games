@@ -1,7 +1,7 @@
 // Shapes for the headless Fruit Slash sim. Everything here is plain
 // JSON-serializable: the sim state is threaded linearly through the kit's reducer
 // (init -> step* -> tick)* and must never carry a closure, a Date, a DOM node, or
-// a reference to the renderer. Determinism is the whole point — identical
+// a reference to the renderer. Determinism is the whole point - identical
 // (seed, config, recorded actions) MUST yield an identical outcome live and on
 // replay.
 
@@ -10,7 +10,7 @@ import type { RngState } from '@caputchin/engine-runtime';
 /** Server-supplied, gate-affecting gameplay config the run executes under. Only
  *  these five fields change the sim; presentation toggles (sound / show*) live in
  *  the live driver's config, never here, because they cannot affect the verdict.
- *  Read the pass gate (`passScore`) from this — it is server-sourced and safe —
+ *  Read the pass gate (`passScore`) from this - it is server-sourced and safe -
  *  never from the trace. */
 export interface SimConfig {
   passScore: number;

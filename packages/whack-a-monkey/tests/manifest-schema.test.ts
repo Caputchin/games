@@ -46,11 +46,15 @@ describe('locales schema + preset integrity', () => {
   });
 
   it('uses no em-dash or en-dash in any preset string (public-source rule)', () => {
+    // Built at runtime so this file holds no literal dash (mirrors the other
+    // games + the widget locale test; keeps the detector immune to a sweep).
+    const EM_DASH = String.fromCharCode(0x2014);
+    const EN_DASH = String.fromCharCode(0x2013);
     for (const [name, p] of Object.entries(presets)) {
       for (const k of textKeys) {
         const v = String(p[k]);
-        expect(v.includes('—'), `${name}.${k} em-dash`).toBe(false);
-        expect(v.includes('–'), `${name}.${k} en-dash`).toBe(false);
+        expect(v.includes(EM_DASH), `${name}.${k} em-dash`).toBe(false);
+        expect(v.includes(EN_DASH), `${name}.${k} en-dash`).toBe(false);
       }
     }
   });

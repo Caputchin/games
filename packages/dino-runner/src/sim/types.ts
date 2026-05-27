@@ -1,7 +1,7 @@
 // Shapes for the headless Dino Runner sim. Everything here is plain
 // JSON-serializable: the sim state is threaded linearly through the kit's reducer
 // (init -> step* -> tick)* and must never carry a closure, a Date, a DOM node, or
-// a reference to the renderer. Determinism is the whole point — identical
+// a reference to the renderer. Determinism is the whole point - identical
 // (seed, config, recorded actions) MUST yield an identical outcome live and on
 // replay.
 
@@ -12,7 +12,7 @@ export type { SimBox };
 /** Server-supplied, gate-affecting gameplay config the run executes under. Only
  *  fields that change the sim outcome live here; presentation toggles live in
  *  the live driver's config, never here. Read the pass gate (`passScore`) from
- *  this — it is server-sourced and safe — never from the trace. */
+ *  this - it is server-sourced and safe - never from the trace. */
 export interface SimConfig {
   passScore: number;
   startSpeed: number;
@@ -29,7 +29,7 @@ export interface SimConfig {
 /** Obstacle kind, discriminated by string so state stays readable in tests. */
 export type ObstacleTypeId = 'cactus-small' | 'cactus-large' | 'bird';
 
-/** One live obstacle — plain data, no class. Mirrors ActiveObstacle but with
+/** One live obstacle - plain data, no class. Mirrors ActiveObstacle but with
  *  RNG removed (RNG lives in SimState). */
 export interface SimObstacle {
   typeId: ObstacleTypeId;

@@ -1,7 +1,7 @@
 // The runner (T-rex) physics + pose state. Pure logic over logical world
 // units: given a per-frame delta and the current run speed, it advances the
 // jump arc, tracks the duck pose, and reports which sprite frame + render box
-// to draw and which collision origin to test. No DOM, no timers of its own —
+// to draw and which collision origin to test. No DOM, no timers of its own -
 // game.ts drives it from the rAF loop, which keeps the physics deterministic
 // and unit-testable.
 
@@ -132,7 +132,7 @@ export class Runner {
   setDuckFrame(frame: number): void { this.duckFrame = frame; }
 
   /** Advance the runner's animation timers by `dtMs` of game time.
-   *  Jump physics are NOT re-integrated here — when the live driver is active
+   *  Jump physics are NOT re-integrated here - when the live driver is active
    *  the sim view owns the authoritative position; syncRenderObjects() in
    *  game.ts writes `y` and `status` directly before each render pass. */
   update(dtMs: number, _speed: number): void {

@@ -12,7 +12,7 @@
 //
 // Color model: every sprite + the ground + the HUD text paint with
 // `currentColor`, and `.dr-world`'s color is `--dr-fg`. The whole palette is
-// the chosen skin (light or dark) and stays fixed for the session — there is
+// the chosen skin (light or dark) and stays fixed for the session - there is
 // no in-game day/night inversion; light and dark are separate skin presets the
 // host selects (see caputchin.json skins.presets). The dark skin also gets a
 // night sky (moon + stars) via `data-theme="dark"` on the root. Defaults below

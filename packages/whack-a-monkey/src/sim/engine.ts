@@ -2,7 +2,7 @@
 // pure state machine the kit drives both ways: the live driver steps it
 // tick-by-tick (recording tap inputs as the opaque trace) and the server
 // replays the SAME ticks over (seed, config, trace). Identical inputs =>
-// identical outcome — that is what makes the server's replayed verdict
+// identical outcome - that is what makes the server's replayed verdict
 // trustworthy.
 //
 // Determinism rules obeyed here: all randomness comes from `cap.rng` (seeded
@@ -13,7 +13,7 @@
 // Fixed-step design: the live driver advances the sim one logical tick (STEP_S)
 // at a time via a fixed-step accumulator loop, recording any tap that arrived
 // in that tick window. The server replays the exact same ticks. Variable real
-// dt is a live-driver concern only — the sim never sees it.
+// dt is a live-driver concern only - the sim never sees it.
 
 import { cap, defineEngine, rngFromState } from '@caputchin/engine-runtime';
 import {

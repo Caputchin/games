@@ -78,7 +78,7 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
       return state;
     }
 
-    // Second pick — evaluate the pair.
+    // Second pick - evaluate the pair.
     state.secondPick = cardIndex;
     const first = state.cards[state.firstPick]!;
     const second = card;

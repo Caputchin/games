@@ -3,7 +3,7 @@
 //
 // Time is TICK-counted (ticksElapsed / budgetTicks), never wall-clock.
 // The flip-back delay is a countdown in ticks stored in state, not a
-// setTimeout — this is the critical change that makes live == replay.
+// setTimeout - this is the critical change that makes live == replay.
 
 import type { RngState } from '@caputchin/engine-runtime';
 
@@ -21,7 +21,7 @@ export interface CardState {
 
 /** The full simulation state threaded through every tick and step. */
 export interface SimState {
-  /** PRNG state — seeded once in init, advanced whenever randomness is needed
+  /** PRNG state - seeded once in init, advanced whenever randomness is needed
    *  (only during init's shuffle, since later steps are deterministic flips). */
   rng: RngState;
   /** Cards in board order after the seeded shuffle. Immutable length. */
@@ -45,7 +45,7 @@ export interface SimState {
 /** Gameplay configuration (server-supplied; gate thresholds live here,
  *  never in the trace). At MVP the server passes null → DefaultSimConfig. */
 export interface SimConfig {
-  /** Total number of pairs on the board (2–6). */
+  /** Total number of pairs on the board (2-6). */
   pairs: number;
   /** Time budget expressed as a tick count: Math.round(timeSec * 1000 / STEP_MS). */
   budgetTicks: number;

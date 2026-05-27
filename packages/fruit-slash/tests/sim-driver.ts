@@ -1,6 +1,6 @@
 // A headless stand-in for the live driver (game.ts), shared by the sim tests. It
 // runs the SAME loop the kit's `replay` runs (apply this tick's actions, then
-// tick once) and records the pointer actions it applied — exactly what the real
+// tick once) and records the pointer actions it applied - exactly what the real
 // driver does, minus the DOM. Replaying the recorded trace must reproduce the
 // live score; that equivalence is the core guarantee these tests assert.
 

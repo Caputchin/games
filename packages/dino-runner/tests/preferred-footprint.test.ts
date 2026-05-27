@@ -6,7 +6,7 @@ import { STAGE_WIDTH, STAGE_HEIGHT } from '../src/styles.js';
 // (the widget reads preferred.width / preferred.height to size the iframe).
 // styles.ts derives the same numbers from the logical world. If they drift,
 // this turns it into a red build.
-describe('dino-runner caputchin.json — preferred footprint', () => {
+describe('dino-runner caputchin.json - preferred footprint', () => {
   const preferred = manifest.preferred as { width?: number; height?: number } | undefined;
 
   it('declares a preferred block', () => {

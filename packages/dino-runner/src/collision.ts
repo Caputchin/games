@@ -25,7 +25,7 @@ export function boxesIntersect(a: Box, b: Box): boolean {
   );
 }
 
-// Runner collision boxes — canonical values from sim/constants.ts.
+// Runner collision boxes - canonical values from sim/constants.ts.
 export const RUNNER_COLLISION_BOXES: { running: readonly Box[]; ducking: readonly Box[] } = {
   running: RUNNER_BOXES_RUNNING,
   ducking: RUNNER_BOXES_DUCKING,

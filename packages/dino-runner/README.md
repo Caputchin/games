@@ -29,14 +29,14 @@ session (the sandboxed iframe has no storage).
 Everything is driven by [`caputchin.json`](caputchin.json) and resolved by the
 widget into the game's runtime context:
 
-- **Locales** — all on-screen text (including the game-over title the original
+- **Locales**: all on-screen text (including the game-over title the original
   hard-coded) ships in the 11 official languages and is fully overridable.
-- **Skins** — `light` and `dark` are separate presets the host picks (no
+- **Skins**: `light` and `dark` are separate presets the host picks (no
   in-game switching); each sets the background, foreground, and button colors.
   All 16 sprites are `currentColor` SVGs decoded and inlined at runtime, so a
   customer skin can recolor them or swap the art wholesale (e.g. a different
   runner) without touching code.
-- **Configurations** — speed, acceleration, gravity, jump strength, obstacle
+- **Configurations**: speed, acceleration, gravity, jump strength, obstacle
   spacing, the pass score, whether birds spawn, and sound on/off. Ships with
   `default` (tuned for short sessions), `classic` (the original's exact speed +
   bird timing), `casual`, `hardcore`, and `calm` presets.

@@ -4,7 +4,7 @@
 //
 // Determinism: the ramp's `exp` goes through `cap.math.exp` (fdlibm,
 // bit-identical across runtimes). Native `Math.exp` is NOT correctly-rounded by
-// IEEE-754 — its last ULP varies between engines — so it would silently diverge
+// IEEE-754 - its last ULP varies between engines - so it would silently diverge
 // the live play from the server replay. `Math.min` is exact and stays native.
 
 import { cap } from '@caputchin/engine-runtime';
