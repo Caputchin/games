@@ -20,7 +20,12 @@
   },
   "npm": "@caputchin/game-leaf-memory",
   "entry": "dist/leaf-memory.js",
-  "run": { "entry": "dist/run.js" },
+  "run": {
+    "entry": "dist/run.js",
+    "modules": [
+      { "name": "engine.wasm", "type": "wasm", "path": "dist/engine.wasm" }
+    ]
+  },
   "preferred": {
     "width": 336,
     "height": 368
