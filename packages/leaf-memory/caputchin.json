@@ -1,4 +1,6 @@
 {
+  "terms_accepted": true,
+  "license": "MIT",
   "marketplace": {
     "name": "Leaf Memory",
     "description": "Match pairs of tropical leaves before the timer runs out.",
@@ -10,6 +12,10 @@
       "keyboard": true,
       "screenReader": true,
       "audio": "none"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
     }
   },
   "npm": "@caputchin/game-leaf-memory",

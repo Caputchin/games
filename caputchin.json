@@ -1,8 +1,14 @@
 {
+  "terms_accepted": true,
+  "license": "MIT",
   "marketplace": {
     "name": "Caputchin Core Pack",
     "description": "The official Caputchin pack. Built playful, accessible, and surveillance-free.",
-    "preview": "preview.png"
+    "preview": "preview.png",
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
   },
   "games": ["./packages/leaf-memory", "./packages/dino-runner", "./packages/fruit-slash", "./packages/whack-a-monkey"]
 }

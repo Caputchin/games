@@ -1,4 +1,6 @@
 {
+  "terms_accepted": true,
+  "license": "MIT",
   "marketplace": {
     "name": "Whack-a-Monkey",
     "description": "Tap the monkeys as they peek out, leave the jungle animals alone.",
@@ -10,6 +12,10 @@
       "keyboard": false,
       "screenReader": true,
       "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
     }
   },
   "npm": "@caputchin/game-whack-a-monkey",

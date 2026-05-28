@@ -1,4 +1,6 @@
 {
+  "terms_accepted": true,
+  "license": "MIT",
   "marketplace": {
     "name": "Fruit Slash",
     "description": "Swipe to slice the flying fruit, avoid the bombs.",
@@ -10,6 +12,10 @@
       "keyboard": false,
       "screenReader": true,
       "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
     }
   },
   "npm": "@caputchin/game-fruit-slash",

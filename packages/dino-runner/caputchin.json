@@ -1,4 +1,6 @@
 {
+  "terms_accepted": true,
+  "license": "MIT",
   "marketplace": {
     "name": "Dino Runner",
     "description": "Jump the cactus, duck the birds, and run as far as you can.",
@@ -10,6 +12,10 @@
       "keyboard": true,
       "screenReader": true,
       "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
     }
   },
   "npm": "@caputchin/game-dino-runner",
