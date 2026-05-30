@@ -30,7 +30,9 @@
   ],
   "scripts": {
     "build:engines": "bash scripts/build-engines.sh",
+    "prebuild": "[ -f src/generated/phobos-live-wasm.ts ] || pnpm build:engines",
     "build": "tsup",
+    "predev": "[ -f src/generated/phobos-live-wasm.ts ] || pnpm build:engines",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
