@@ -21,6 +21,10 @@
     "packages/whack-a-monkey": {
       "component": "whack-a-monkey",
       "package-name": "@caputchin/game-whack-a-monkey"
+    },
+    "packages/phobos": {
+      "component": "phobos",
+      "package-name": "@caputchin/game-phobos"
     }
   }
 }

@@ -18,6 +18,7 @@ jobs:
       dino_runner_released: ${{ steps.release.outputs['packages/dino-runner--release_created'] }}
       fruit_slash_released: ${{ steps.release.outputs['packages/fruit-slash--release_created'] }}
       whack_a_monkey_released: ${{ steps.release.outputs['packages/whack-a-monkey--release_created'] }}
+      phobos_released: ${{ steps.release.outputs['packages/phobos--release_created'] }}
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
@@ -59,6 +60,14 @@ jobs:
       # then regen this lockfile). games has no intra-repo cross-deps, so a
       # release commit never drifts the lockfile.
       - run: pnpm install --frozen-lockfile
+
+      # Phobos compiles a real DOOM engine to WASM (the other games are pure TS).
+      # Its IWAD (engine/wad/phobos.wad) is a committed vendored asset, so CI
+      # only needs Emscripten -- not the WAD toolchain -- to produce the wasm +
+      # the inlined-engine codegen that `pnpm build` (tsup) then bundles.
+      - uses: mymindstorm/setup-emsdk@v14
+      - run: pnpm --filter @caputchin/game-phobos build:engines
+
       - run: pnpm build
 
       - name: Publish @caputchin/game-leaf-memory
@@ -76,3 +85,7 @@ jobs:
       - name: Publish @caputchin/game-whack-a-monkey
         if: ${{ needs.release-please.outputs.whack_a_monkey_released == 'true' }}
         run: pnpm --filter @caputchin/game-whack-a-monkey publish --access public --no-git-checks
+
+      - name: Publish @caputchin/game-phobos
+        if: ${{ needs.release-please.outputs.phobos_released == 'true' }}
+        run: pnpm --filter @caputchin/game-phobos publish --access public --no-git-checks

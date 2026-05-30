@@ -1,0 +1,343 @@
+{
+  "terms_accepted": true,
+  "license": "GPL-2.0-only",
+  "marketplace": {
+    "name": "Phobos",
+    "description": "Clear the demons to prove you're human. A real DOOM-engine captcha.",
+    "preview": "preview.png",
+    "categories": ["Arcade", "Action"],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": false,
+      "audio": "none"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-phobos",
+  "entry": "dist/phobos.js",
+  "run": {
+    "entry": "dist/run.js",
+    "modules": [
+      { "name": "phobos.wasm", "path": "dist/phobos.wasm", "type": "wasm" }
+    ]
+  },
+  "preferred": {
+    "width": 640,
+    "height": 400
+  },
+  "configurations": {
+    "schema": {
+      "pass_kills": {
+        "type": "range",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "name": "Kills to pass",
+        "description": "Demons the visitor must kill for the round to count as solved."
+      },
+      "start_level": {
+        "type": "range",
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "name": "Start arena",
+        "description": "Which campaign arena the captcha round runs on. The server rebuilds this exact arena when it replays the run."
+      },
+      "wave_count": {
+        "type": "range",
+        "min": 1,
+        "max": 16,
+        "step": 1,
+        "name": "Monster count",
+        "description": "How many demons spawn into the arena from the per-round seed."
+      },
+      "skill": {
+        "type": "range",
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "name": "Skill",
+        "description": "DOOM skill level. 5 is Nightmare (faster, more aggressive demons)."
+      },
+      "fast_monsters": {
+        "type": "boolean",
+        "name": "Fast monsters",
+        "description": "Demons move and attack faster."
+      },
+      "respawn_monsters": {
+        "type": "boolean",
+        "name": "Respawning monsters",
+        "description": "Killed demons respawn, so a slow solver always has targets."
+      },
+      "time_limit": {
+        "type": "range",
+        "min": 0,
+        "max": 7000,
+        "step": 35,
+        "name": "Time limit (tics)",
+        "description": "Optional solve budget in game tics (35 = 1 second). 0 means no limit."
+      }
+    },
+    "presets": {
+      "default": {
+        "_default": true,
+        "pass_kills": 3,
+        "start_level": 1,
+        "wave_count": 5,
+        "skill": 4,
+        "fast_monsters": false,
+        "respawn_monsters": true,
+        "time_limit": 0
+      },
+      "casual": {
+        "_extends": "default",
+        "pass_kills": 2,
+        "wave_count": 4,
+        "skill": 3
+      },
+      "hardcore": {
+        "_extends": "default",
+        "pass_kills": 5,
+        "wave_count": 8,
+        "fast_monsters": true
+      }
+    }
+  },
+  "skins": {
+    "schema": {
+      "bg": { "type": "color", "name": "Background", "description": "Stage background behind the canvas and overlays." },
+      "fg": { "type": "color", "name": "Foreground", "description": "HUD and overlay text color." },
+      "button_bg": { "type": "color", "name": "Primary button bg", "description": "Background of the Enter button." },
+      "button_text": { "type": "color", "name": "Primary button text", "description": "Text on the Enter button." },
+      "button_hover": { "type": "color", "name": "Primary button hover bg", "description": "Hover background of the Enter button." },
+      "hud_bg": { "type": "color", "name": "HUD background", "description": "Background of the kill counter and touch controls." },
+      "badge_bg": { "type": "color", "name": "Verified badge bg", "description": "Background of the Verified badge shown on success." },
+      "focus_ring": { "type": "color", "name": "Focus ring", "description": "Outline shown on the canvas when keyboard focus enters." }
+    },
+    "presets": {
+      "dark": {
+        "_theme": "dark",
+        "_default": true,
+        "bg": "#101014",
+        "fg": "#e8e6e3",
+        "button_bg": "#9c1f1f",
+        "button_text": "#ffffff",
+        "button_hover": "#bf2a2a",
+        "hud_bg": "rgba(0,0,0,0.55)",
+        "badge_bg": "#2f8f3f",
+        "focus_ring": "#bf2a2a"
+      },
+      "light": {
+        "_theme": "light",
+        "_default": true,
+        "bg": "#f2f0ec",
+        "fg": "#1b1b22",
+        "button_bg": "#9c1f1f",
+        "button_text": "#ffffff",
+        "button_hover": "#bf2a2a",
+        "hud_bg": "rgba(255,255,255,0.65)",
+        "badge_bg": "#2f8f3f",
+        "focus_ring": "#9c1f1f"
+      }
+    }
+  },
+  "locales": {
+    "schema": {
+      "ariaGame": { "name": "Game region label", "description": "Screen-reader label for the whole play area." },
+      "startTitle": { "name": "Start screen title", "description": "Headline on the start screen before the round begins." },
+      "startBody": { "name": "Start screen body", "description": "Short instruction on the start screen telling the visitor to clear the demons to verify." },
+      "startButton": { "name": "Start button", "description": "Label for the button that begins the round." },
+      "controlsHint": { "name": "Controls hint", "description": "Small keyboard/mouse controls reminder under the start button." },
+      "verifiedBadge": { "name": "Verified badge", "description": "Short badge shown once the kill goal is met and the captcha is satisfied." },
+      "ariaForward": { "name": "Forward control label", "description": "Screen-reader / touch-button label for moving forward." },
+      "ariaTurnLeft": { "name": "Turn-left control label", "description": "Screen-reader / touch-button label for turning left." },
+      "ariaTurnRight": { "name": "Turn-right control label", "description": "Screen-reader / touch-button label for turning right." },
+      "ariaFire": { "name": "Fire control label", "description": "Screen-reader / touch-button label for the fire action." },
+      "announceStart": { "name": "Announcer: round started", "description": "Live-region message when the round begins." },
+      "announceVerified": { "name": "Announcer: verified", "description": "Live-region message when the kill goal is reached and the captcha is satisfied; invites the visitor to keep playing." }
+    },
+    "presets": {
+      "English": {
+        "_lang": "en",
+        "_default": true,
+        "ariaGame": "Play DOOM and clear the demons to verify.",
+        "startTitle": "Phobos",
+        "startBody": "Clear the demons to prove you're human.",
+        "startButton": "Enter",
+        "controlsHint": "Arrows or WASD to move, Space or click to fire",
+        "verifiedBadge": "Verified",
+        "ariaForward": "Forward",
+        "ariaTurnLeft": "Turn left",
+        "ariaTurnRight": "Turn right",
+        "ariaFire": "Fire",
+        "announceStart": "Go. Clear the demons.",
+        "announceVerified": "Verified. You may keep playing."
+      },
+      "Chinese (Simplified)": {
+        "_lang": "zh-Hans",
+        "_default": true,
+        "ariaGame": "玩 DOOM，清除恶魔来完成验证。",
+        "startTitle": "Phobos",
+        "startBody": "清除恶魔，证明你是真人。",
+        "startButton": "进入",
+        "controlsHint": "方向键或 WASD 移动，空格或点击开火",
+        "verifiedBadge": "已通过",
+        "ariaForward": "前进",
+        "ariaTurnLeft": "向左转",
+        "ariaTurnRight": "向右转",
+        "ariaFire": "开火",
+        "announceStart": "上。清除恶魔。",
+        "announceVerified": "已通过。你可以继续玩。"
+      },
+      "Spanish": {
+        "_lang": "es",
+        "_default": true,
+        "ariaGame": "Juega a DOOM y limpia los demonios para verificarte.",
+        "startTitle": "Phobos",
+        "startBody": "Limpia los demonios para demostrar que eres humano.",
+        "startButton": "Entrar",
+        "controlsHint": "Flechas o WASD para moverte, Espacio o clic para disparar",
+        "verifiedBadge": "Verificado",
+        "ariaForward": "Avanzar",
+        "ariaTurnLeft": "Girar a la izquierda",
+        "ariaTurnRight": "Girar a la derecha",
+        "ariaFire": "Disparar",
+        "announceStart": "¡Adentro! Limpia los demonios.",
+        "announceVerified": "Verificado. Puedes seguir jugando."
+      },
+      "Arabic": {
+        "_lang": "ar",
+        "_default": true,
+        "ariaGame": "العب DOOM وأبِد الشياطين لإتمام التحقق.",
+        "startTitle": "Phobos",
+        "startBody": "أبِد الشياطين لتثبت أنك إنسان.",
+        "startButton": "ادخل",
+        "controlsHint": "الأسهم أو WASD للحركة، مسافة أو نقرة لإطلاق النار",
+        "verifiedBadge": "تم التحقق",
+        "ariaForward": "للأمام",
+        "ariaTurnLeft": "انعطف يسارًا",
+        "ariaTurnRight": "انعطف يمينًا",
+        "ariaFire": "أطلق النار",
+        "announceStart": "انطلق. أبِد الشياطين.",
+        "announceVerified": "تم التحقق. يمكنك مواصلة اللعب."
+      },
+      "Portuguese": {
+        "_lang": "pt",
+        "_default": true,
+        "ariaGame": "Jogue DOOM e elimine os demônios para se verificar.",
+        "startTitle": "Phobos",
+        "startBody": "Elimine os demônios para provar que você é humano.",
+        "startButton": "Entrar",
+        "controlsHint": "Setas ou WASD para mover, Espaço ou clique para atirar",
+        "verifiedBadge": "Verificado",
+        "ariaForward": "Avançar",
+        "ariaTurnLeft": "Virar à esquerda",
+        "ariaTurnRight": "Virar à direita",
+        "ariaFire": "Atirar",
+        "announceStart": "Vai. Elimine os demônios.",
+        "announceVerified": "Verificado. Você pode continuar jogando."
+      },
+      "French": {
+        "_lang": "fr",
+        "_default": true,
+        "ariaGame": "Jouez à DOOM et éliminez les démons pour vous vérifier.",
+        "startTitle": "Phobos",
+        "startBody": "Éliminez les démons pour prouver que vous êtes humain.",
+        "startButton": "Entrer",
+        "controlsHint": "Flèches ou WASD pour bouger, Espace ou clic pour tirer",
+        "verifiedBadge": "Vérifié",
+        "ariaForward": "Avancer",
+        "ariaTurnLeft": "Tourner à gauche",
+        "ariaTurnRight": "Tourner à droite",
+        "ariaFire": "Tirer",
+        "announceStart": "Allez-y. Éliminez les démons.",
+        "announceVerified": "Vérifié. Vous pouvez continuer à jouer."
+      },
+      "German": {
+        "_lang": "de",
+        "_default": true,
+        "ariaGame": "Spiel DOOM und räum die Dämonen weg, um dich zu verifizieren.",
+        "startTitle": "Phobos",
+        "startBody": "Räum die Dämonen weg, um zu beweisen, dass du ein Mensch bist.",
+        "startButton": "Eintreten",
+        "controlsHint": "Pfeiltasten oder WASD zum Bewegen, Leertaste oder Klick zum Schießen",
+        "verifiedBadge": "Bestätigt",
+        "ariaForward": "Vorwärts",
+        "ariaTurnLeft": "Nach links drehen",
+        "ariaTurnRight": "Nach rechts drehen",
+        "ariaFire": "Schießen",
+        "announceStart": "Los. Räum die Dämonen weg.",
+        "announceVerified": "Bestätigt. Du kannst weiterspielen."
+      },
+      "Russian": {
+        "_lang": "ru",
+        "_default": true,
+        "ariaGame": "Играй в DOOM и зачисти демонов, чтобы пройти проверку.",
+        "startTitle": "Phobos",
+        "startBody": "Зачисти демонов, чтобы доказать, что ты человек.",
+        "startButton": "Войти",
+        "controlsHint": "Стрелки или WASD для движения, Пробел или клик для стрельбы",
+        "verifiedBadge": "Пройдено",
+        "ariaForward": "Вперёд",
+        "ariaTurnLeft": "Поворот влево",
+        "ariaTurnRight": "Поворот вправо",
+        "ariaFire": "Огонь",
+        "announceStart": "Вперёд. Зачисти демонов.",
+        "announceVerified": "Пройдено. Можешь продолжать играть."
+      },
+      "Japanese": {
+        "_lang": "ja",
+        "_default": true,
+        "ariaGame": "DOOM をプレイして悪魔を一掃し、認証を完了しよう。",
+        "startTitle": "Phobos",
+        "startBody": "悪魔を一掃して、人間であることを証明しよう。",
+        "startButton": "入る",
+        "controlsHint": "矢印キーか WASD で移動、スペースかクリックで射撃",
+        "verifiedBadge": "認証済み",
+        "ariaForward": "前進",
+        "ariaTurnLeft": "左を向く",
+        "ariaTurnRight": "右を向く",
+        "ariaFire": "射撃",
+        "announceStart": "行け。悪魔を一掃しろ。",
+        "announceVerified": "認証済み。このまま続けてもいいよ。"
+      },
+      "Korean": {
+        "_lang": "ko",
+        "_default": true,
+        "ariaGame": "DOOM을 플레이하고 악마를 처치해 인증을 완료하세요.",
+        "startTitle": "Phobos",
+        "startBody": "악마를 처치해 사람임을 증명하세요.",
+        "startButton": "입장",
+        "controlsHint": "방향키나 WASD로 이동, 스페이스나 클릭으로 발사",
+        "verifiedBadge": "인증됨",
+        "ariaForward": "전진",
+        "ariaTurnLeft": "왼쪽으로 돌기",
+        "ariaTurnRight": "오른쪽으로 돌기",
+        "ariaFire": "발사",
+        "announceStart": "가세요. 악마를 처치하세요.",
+        "announceVerified": "인증됨. 계속 플레이해도 됩니다."
+      },
+      "Indonesian": {
+        "_lang": "id",
+        "_default": true,
+        "ariaGame": "Mainkan DOOM dan habisi para iblis untuk verifikasi.",
+        "startTitle": "Phobos",
+        "startBody": "Habisi para iblis untuk membuktikan kamu manusia.",
+        "startButton": "Masuk",
+        "controlsHint": "Panah atau WASD untuk bergerak, Spasi atau klik untuk menembak",
+        "verifiedBadge": "Terverifikasi",
+        "ariaForward": "Maju",
+        "ariaTurnLeft": "Belok kiri",
+        "ariaTurnRight": "Belok kanan",
+        "ariaFire": "Tembak",
+        "announceStart": "Maju. Habisi para iblis.",
+        "announceVerified": "Terverifikasi. Kamu boleh terus bermain."
+      }
+    }
+  }
+}

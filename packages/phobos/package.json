@@ -1,0 +1,48 @@
+{
+  "name": "@caputchin/game-phobos",
+  "version": "0.1.0",
+  "description": "Clear the demons to prove you're human. A real DOOM-engine captcha. A Caputchin first-party game.",
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "doom",
+    "fps",
+    "game"
+  ],
+  "homepage": "https://github.com/Caputchin/caputchin-games#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caputchin/caputchin-games",
+    "directory": "packages/phobos"
+  },
+  "license": "GPL-2.0-only",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "caputchin.json",
+    "THIRD-PARTY-NOTICES.md",
+    "TRADEMARK.md"
+  ],
+  "sideEffects": [
+    "./dist/phobos.js"
+  ],
+  "scripts": {
+    "build:engines": "bash scripts/build-engines.sh",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@caputchin/game-sdk": "^2.1.0",
+    "@caputchin/replay-contract": "^0.1.0",
+    "@types/node": "^20.0.0",
+    "happy-dom": "^15.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
