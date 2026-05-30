@@ -34,6 +34,7 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string> | nu
 .phobos-start { position:absolute; inset:0; display:flex; flex-direction:column; gap:8px;
   align-items:center; justify-content:center; text-align:center; padding:16px;
   background:${v(skin, 'bg')}cc; backdrop-filter:blur(2px); }
+.phobos-start[hidden] { display:none; }
 .phobos-start h2 { margin:0; font-size:22px; letter-spacing:0.04em; }
 .phobos-start p { margin:0; max-width:36ch; opacity:0.85; font-size:14px; }
 .phobos-start small { opacity:0.6; font-size:12px; }

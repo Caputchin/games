@@ -1,13 +1,16 @@
 // Ambient declarations for the generated Emscripten glue + the headless WASM
 // module so `tsc` type-checks without the built artifacts present.
+interface EmscriptenFactoryOptions {
+  instantiateWasm?(
+    imports: WebAssembly.Imports,
+    success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,
+  ): WebAssembly.Exports | object;
+  print?(text: string): void;
+  printErr?(text: string): void;
+}
+
 declare module '../build/phobos-headless.js' {
-  interface PhobosFactoryOptions {
-    instantiateWasm?(
-      imports: WebAssembly.Imports,
-      success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,
-    ): WebAssembly.Exports | object;
-  }
-  const createPhobos: (opts?: PhobosFactoryOptions) => Promise<unknown>;
+  const createPhobos: (opts?: EmscriptenFactoryOptions) => Promise<unknown>;
   export default createPhobos;
 }
 
@@ -17,13 +20,7 @@ declare module './phobos.wasm' {
 }
 
 declare module '../build/phobos-live.js' {
-  interface PhobosLiveOptions {
-    instantiateWasm?(
-      imports: WebAssembly.Imports,
-      success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,
-    ): WebAssembly.Exports | object;
-  }
-  const createPhobosLive: (opts?: PhobosLiveOptions) => Promise<unknown>;
+  const createPhobosLive: (opts?: EmscriptenFactoryOptions) => Promise<unknown>;
   export default createPhobosLive;
 }
 

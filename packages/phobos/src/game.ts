@@ -177,6 +177,10 @@ export function runPhobos({ container, bridge, ctx }: {
 
   const wasmBytes = b64ToBytes(liveWasmB64);
   createPhobosLive({
+    // Silence the DOOM engine's printf startup banner (Z_Init / W_Init / ...);
+    // it would otherwise flood the host page's console.
+    print: () => {},
+    printErr: () => {},
     instantiateWasm(
       imports: WebAssembly.Imports,
       success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,

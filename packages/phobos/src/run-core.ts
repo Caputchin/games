@@ -22,6 +22,8 @@ let modulePromise: Promise<EmscriptenModule> | null = null;
 function instantiate(wasmModule: WebAssembly.Module): Promise<EmscriptenModule> {
   if (!modulePromise) {
     modulePromise = createPhobos({
+      print: () => {},      // silence the DOOM engine banner in worker logs
+      printErr: () => {},
       instantiateWasm(
         imports: WebAssembly.Imports,
         success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,
