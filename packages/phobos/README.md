@@ -1,82 +1,69 @@
-# @caputchin/game-phobos
+# Phobos
 
-**Phobos** is a Caputchin captcha game that runs a **real DOOM engine** in the
-browser. The visitor clears a few demons in a seeded arena; the server replays
-the recorded run in a sandboxed WASM isolate and accepts only the recomputed
-verdict, so the challenge is a genuine human-work signal, not a click.
+Clear the demons to prove you're human. A Caputchin first-party game that drops
+the visitor into a real, first-person **DOOM** arena: true 3D, the iconic
+shotgun, and demons closing in.
 
-> DOOM is a trademark of id Software LLC. Phobos is not affiliated with id /
-> ZeniMax / Microsoft. It uses the GPLv2 DOOM engine and **Freedoom** (BSD) game
-> data, not id assets. See `TRADEMARK.md` and `THIRD-PARTY-NOTICES.md`.
+## How it plays
 
-## How it works
+You spawn in the middle of a demon-infested arena, shotgun in hand. Move, turn,
+and fire to clear the wave. It is the genuine DOOM feel: 3D rooms with a raised
+platform and varied tech-base walls, charging imps and pinkies, the heads-up
+display, and DOOM's classic auto-aim (line a demon up horizontally and the shot
+lands, no precise vertical aiming). Kill the target number of demons and the
+round is **Verified** - then keep playing as long as you like.
 
-- **Live game** (`dist/phobos.js`) - the DOOM engine compiled to WASM (SDL-free,
-  a canvas + keyboard/touch platform), base64-inlined into one self-contained
-  iframe bundle. It seeds the engine from `ctx.seed`, spawns the demon wave from
-  that seed, records the player's input, and calls `bridge.pass({ trace })` when
-  the kill goal is met.
-- **Replay artifact** (`dist/run.js` + `dist/phobos.wasm`) - a headless,
-  rendering-free build exporting `run(seed, config, trace) -> verdict`. The
-  replay isolate re-runs the same sim over the same seed and the opaque input
-  trace and counts the kills. Determinism is by construction: DOOM is fixed-point
-  and the engine is seeded identically on both sides.
+Every round is different. The demons are placed fresh from a one-time secret the
+server issues for that attempt, so no two challenges are the same and a layout
+you have seen before will not come back.
 
-The arena ships monster-free; every demon is placed from the per-round seed, so a
-pre-recorded input demo for one round fails under another (the monsters are
-elsewhere).
+| Action | Keyboard | Touch |
+|---|---|---|
+| Move / strafe | `W` `A` `S` `D` or arrow keys | the on-screen pad |
+| Turn | `A` / `D` or `Left` / `Right` | the turn buttons |
+| Fire | `Space`, `Ctrl`, or click | the fire button, or tap the view |
 
-## Building
+## Why it's a strong check
 
-Phobos needs **Emscripten** (the other first-party games are pure TypeScript).
-The engine sources live in `engine/` (a vendored, patched
-[doomgeneric](https://github.com/ozkl/doomgeneric) fork); the game data
-`engine/wad/phobos.wad` is a committed, stripped Freedoom IWAD.
+The score is never taken on trust. When you finish, the server **re-plays your
+actual run** inside a sandboxed copy of the same DOOM sim and accepts only the
+result it recomputes. A bot cannot post a fake "I won" - it has to produce an
+input that genuinely clears the arena. And because the demons are positioned
+from that per-attempt secret, a pre-recorded playthrough fails: the monsters are
+somewhere else, so the recorded shots miss.
 
-```bash
-# 1. Emscripten on PATH (once per shell)
-source /path/to/emsdk/emsdk_env.sh
+## Customization
 
-# 2. Compile the two WASM engines (headless replay + live) and the inlined-wasm
-#    codegen. `prebuild`/`predev` run this automatically when the output is
-#    missing, so `pnpm build` / `pnpm dev` work after the env is sourced.
-pnpm build:engines
+Everything is driven by [`caputchin.json`](caputchin.json) and resolved by the
+widget per site:
 
-# 3. Bundle dist/ (live IIFE + ESM run.js + phobos.wasm)
-pnpm build
-```
+- **Difficulty** - kills required to pass, DOOM skill (1-5), how many demons
+  spawn, fast monsters, respawning monsters, which arena, and an optional time
+  limit. The challenge can be as quick or as punishing as the site wants.
+- **Locales** - all on-screen text (start screen, controls hint, Verified
+  badge) ships in the 11 official languages and is fully overridable.
+- **Skins** - light and dark chrome presets the host picks; colors for the
+  background, HUD, buttons, and the Verified badge.
 
-Rebuilding the IWAD from upstream Freedoom (only when changing the arena/palette)
-needs `omgifol`, a node builder (`zdbsp`), and a local Freedoom WAD:
+## Accessibility and support
 
-```bash
-FREEDOOM_WAD=/path/to/freedoom1.wad python3 engine/wad/build-phobos-wad.py
-zdbsp engine/wad/phobos-min.wad -o engine/wad/phobos.wad
-```
+- **Keyboard and touch**: full WASD / arrow-key play on desktop, and a large
+  on-screen control pad with fire on mobile (multi-touch, so you can turn and
+  fire together).
+- **Responsive**: the view scales to fit wherever the widget is embedded.
+- Phobos is a fast visual shooter, so it is **not** screen-reader solvable -
+  sites that need a non-visual challenge should pair it with an accessible
+  alternative.
 
-## Running in the dev harness
+## Add it to your site
 
-Phobos is registered in the games-root `caputchin.json`, so the local indexer
-picks it up. End to end:
+Phobos runs as a sandboxed widget behind a Caputchin verification check. Preview
+it live and copy the embed snippet, with your locale, skin, and difficulty
+presets, from its [marketplace listing](https://caputchin.com/marketplace).
 
-```bash
-pnpm build:engines && pnpm build        # produce dist/ (needs Emscripten)
-pnpm --filter @caputchin/web db:dev-index-games   # index local builds
-```
+---
 
-Then the harness (`http://localhost:4001`) can load it by id
-`caputchin/games/phobos`, and the full bootstrap -> play -> `/verify/pass` ->
-replay loop runs against the local `apps/replay` worker (the dev artifact server
-serves `dist/phobos.wasm`).
-
-## Configuration
-
-The captcha is tunable per site via the manifest's `configurations` (resolved
-server-side and applied identically in live + replay, so the verdict stays
-reproducible): `pass_kills`, `start_level`, `wave_count`, `skill` (1-5),
-`fast_monsters`, `respawn_monsters`, `time_limit`. Gameplay difficulty knobs are
-server-owned (never read from the trace).
-
-## License
-
-GPL-2.0-only (the engine is GPL). See `THIRD-PARTY-NOTICES.md`.
+DOOM is a trademark of id Software LLC; Phobos is not affiliated with or endorsed
+by id Software, ZeniMax, or Microsoft. It is built on the open-source DOOM engine
+and free, libre **Freedoom** game data - no id artwork or game files. See
+[`TRADEMARK.md`](TRADEMARK.md) and [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
