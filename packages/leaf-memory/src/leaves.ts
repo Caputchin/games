@@ -110,7 +110,7 @@ export function sanitizeSvgMarkup(raw: string): string {
  *       they fall back to the bundled default for that leaf.
  *    2. bundled `DEFAULT_LEAF_URIS[id]` - the build-time-loaded SVG.
  *  In both paths the decoded markup runs through `sanitizeSvgMarkup`. */
-export function resolveLeafSvgs(skin: Readonly<Record<string, string>> | null | undefined): Record<LeafId, string> {
+export function resolveLeafSvgs(skin: Readonly<Record<string, string | boolean | number>> | null | undefined): Record<LeafId, string> {
   const out = {} as Record<LeafId, string>;
   for (const id of LEAF_IDS) {
     const key = LEAF_ASSET_KEY[id];

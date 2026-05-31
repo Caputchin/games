@@ -24,7 +24,7 @@ interface Bridge {
 interface GameContext {
   seed?: readonly number[] | null;
   config?: Record<string, unknown> | null;
-  skin?: Record<string, string> | null;
+  skin?: Record<string, string | boolean | number> | null;
   locale?: Record<string, string> | null;
 }
 interface Live {

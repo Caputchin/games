@@ -16,12 +16,13 @@ const DEFAULTS: Record<string, string> = {
   focus_ring: '#bf2a2a',
 };
 
-function v(skin: Record<string, string> | null | undefined, key: string): string {
-  return (skin && skin[key]) || DEFAULTS[key]!;
+function v(skin: Record<string, string | boolean | number> | null | undefined, key: string): string {
+  const raw = skin?.[key];
+  return typeof raw === 'string' && raw.length > 0 ? raw : DEFAULTS[key]!;
 }
 
 /** Inject scoped styles into the game root, themed by the resolved skin. */
-export function mountStyles(root: HTMLElement, skin: Record<string, string> | null | undefined): void {
+export function mountStyles(root: HTMLElement, skin: Record<string, string | boolean | number> | null | undefined): void {
   const css = `
 .phobos { position:relative; width:100%; max-width:${STAGE_WIDTH}px; margin:0 auto;
   aspect-ratio:${STAGE_WIDTH}/${STAGE_HEIGHT}; background:${v(skin, 'bg')}; color:${v(skin, 'fg')};

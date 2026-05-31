@@ -33,7 +33,7 @@ describe('leaf-memory caputchin.json - skin schema / preset parity', () => {
       const key = `leaf_${id.replace(/-/g, '_')}`;
       const entry = skinSchema[key];
       expect(entry, `schema missing leaf asset "${key}"`).toBeDefined();
-      const type = typeof entry === 'string' ? entry : entry?.type;
+      const type = typeof entry === 'string' ? entry : Array.isArray(entry) ? 'list' : (entry as { type: string }).type;
       expect(type).toBe('image');
     }
   });

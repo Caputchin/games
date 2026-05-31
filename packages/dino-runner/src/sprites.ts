@@ -161,7 +161,7 @@ export function sanitizeSvgMarkup(raw: string): string {
  *    2. bundled `DEFAULT_SPRITE_URIS[id]`.
  *  Both paths run through `sanitizeSvgMarkup`. */
 export function resolveSprites(
-  skin: Readonly<Record<string, string>> | null | undefined,
+  skin: Readonly<Record<string, string | boolean | number>> | null | undefined,
 ): Record<SpriteId, string> {
   const out = {} as Record<SpriteId, string>;
   for (const id of SPRITE_IDS) {
