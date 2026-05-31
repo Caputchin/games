@@ -24,4 +24,18 @@ Building a game for this pack? [CONTRIBUTING.md](CONTRIBUTING.md) covers the rep
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+This is a multi-license monorepo. **Each game ships its own [`LICENSE`](LICENSE)
+file, which is authoritative for that package.** Most games are MIT; Phobos is
+GPL-2.0-only because it links the open-source GPL DOOM engine.
+
+| Game | License |
+|---|---|
+| [Leaf Memory](packages/leaf-memory/) | MIT |
+| [Dino Runner](packages/dino-runner/) | MIT |
+| [Fruit Slash](packages/fruit-slash/) | MIT |
+| [Whack-a-Monkey](packages/whack-a-monkey/) | MIT |
+| [Phobos](packages/phobos/) | GPL-2.0-only |
+
+The repository-level [`LICENSE`](LICENSE) (MIT) covers the repo tooling and the
+MIT games, and records the per-package map in full. Bundled third-party assets
+within a game are documented in that game's `THIRD-PARTY-NOTICES.md`.

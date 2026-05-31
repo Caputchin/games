@@ -11,7 +11,14 @@ versioned and published. Mirror an existing game (`packages/leaf-memory/` or
 1. Create `packages/<game-id>/` mirroring the `packages/leaf-memory/` layout.
 2. Set `name` in `packages/<game-id>/package.json` to the npm coordinate
    (`@caputchin/game-<game-id>`), version `0.1.0`, and `files` to what ships to
-   npm (`dist`, `caputchin.json`, plus any notices).
+   npm (`dist`, `caputchin.json`, `LICENSE`, plus any notices). Add a
+   `packages/<game-id>/LICENSE` file and set the matching SPDX id in both the
+   `package.json` and `caputchin.json` `license` fields. This repo is a
+   multi-license monorepo and each package's own `LICENSE` is authoritative:
+   copy a sibling MIT game's `LICENSE` for a standard first-party game, or, if
+   the game links/bundles copyleft code (the DOOM-based `phobos` links the GPL
+   engine), ship that license's full text as the `LICENSE` and declare the
+   matching id (`phobos` is `GPL-2.0-only`).
 3. Write `packages/<game-id>/caputchin.json` with the [marketplace manifest](https://github.com/Caputchin/caputchin-platform/blob/main/docs/features/marketplace.md) fields.
 4. Implement the game against [`@caputchin/game-sdk`](https://www.npmjs.com/package/@caputchin/game-sdk).
 5. Add the new package path to the collection [`caputchin.json`](caputchin.json) `games` array (the marketplace browses this).

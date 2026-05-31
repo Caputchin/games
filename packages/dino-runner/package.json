@@ -22,6 +22,7 @@
   "files": [
     "dist",
     "caputchin.json",
+    "LICENSE",
     "THIRD-PARTY-NOTICES.md"
   ],
   "sideEffects": [

@@ -20,7 +20,8 @@
   "type": "module",
   "files": [
     "dist",
-    "caputchin.json"
+    "caputchin.json",
+    "LICENSE"
   ],
   "sideEffects": false,
   "scripts": {

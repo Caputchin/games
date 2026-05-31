@@ -19,3 +19,33 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-------------------------------------------------------------------------------
+
+Repository licensing (scope)
+
+This repository is a multi-license monorepo. The MIT License above governs the
+repository-level tooling and configuration and every first-party game that
+declares MIT. It is NOT a blanket license over the whole tree.
+
+Each package under `packages/` ships its OWN `LICENSE` file, and that per-package
+file is authoritative for that package. When a package's license differs from
+the MIT above, the package's own `LICENSE` controls.
+
+| Package                  | License      | Note                                              |
+|--------------------------|--------------|---------------------------------------------------|
+| packages/dino-runner     | MIT          | bundled assets: see its THIRD-PARTY-NOTICES.md    |
+| packages/fruit-slash     | MIT          | no third-party code or assets                     |
+| packages/leaf-memory     | MIT          | no third-party code or assets                     |
+| packages/whack-a-monkey  | MIT          | bundled assets: see its THIRD-PARTY-NOTICES.md    |
+| packages/phobos          | GPL-2.0-only | links the GPL DOOM engine; see packages/phobos/LICENSE + THIRD-PARTY-NOTICES.md |
+
+GPL-2.0-only applies to the `packages/phobos` package only. Under the GNU GPL
+version 2 section 2 (mere aggregation), distributing phobos alongside the MIT
+games in this repository does not place those other games under the GPL: each
+game is a separate work that does not link or derive from the DOOM engine.
+
+For bundled third-party code and assets within a package (for example the
+BSD-3-Clause Chromium sprites in dino-runner, the CC0 Kenney art in
+whack-a-monkey, or the BSD-3-Clause Freedoom data in phobos), see that package's
+`THIRD-PARTY-NOTICES.md`.
