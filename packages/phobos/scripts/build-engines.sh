@@ -36,7 +36,7 @@ echo "[headless] done -> $OUT/phobos-headless.wasm ($(du -h "$OUT/phobos-headles
 echo "[live] compiling $(echo "$LIVE_SRC" | wc -w) files..."
 emcc $COMMON $LIVE_SRC \
   -sEXPORT_NAME=PhobosLive \
-  -sEXPORTED_FUNCTIONS='["_main","_phobos_start","_phobos_frame","_phobos_key","_phobos_fb","_phobos_width","_phobos_height","_phobos_killcount","_phobos_tracelen","_phobos_traceptr","_phobos_leveltime","_malloc","_free"]' \
+  -sEXPORTED_FUNCTIONS='["_main","_phobos_start","_phobos_frame","_phobos_key","_phobos_fb","_phobos_width","_phobos_height","_phobos_killcount","_phobos_tracelen","_phobos_traceptr","_phobos_leveltime","_phobos_player_dead","_malloc","_free"]' \
   -sEXPORTED_RUNTIME_METHODS='["ccall","HEAPU8","HEAPU32"]' \
   -o "$OUT/phobos-live.js"
 # Codegen a clean base64 string of the live wasm (engine + WAD) so the live IIFE

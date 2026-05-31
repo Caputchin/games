@@ -5,7 +5,10 @@
     "name": "Phobos",
     "description": "Clear the demons to prove you're human. A real DOOM-engine captcha.",
     "preview": "preview.png",
-    "categories": ["Arcade", "Action"],
+    "categories": [
+      "Arcade",
+      "Action"
+    ],
     "support": {
       "responsive": true,
       "touch": true,
@@ -23,7 +26,11 @@
   "run": {
     "entry": "dist/run.js",
     "modules": [
-      { "name": "phobos.wasm", "path": "dist/phobos.wasm", "type": "wasm" }
+      {
+        "name": "phobos.wasm",
+        "path": "dist/phobos.wasm",
+        "type": "wasm"
+      }
     ]
   },
   "preferred": {
@@ -84,24 +91,24 @@
       }
     },
     "presets": {
-      "default": {
+      "standard": {
         "_default": true,
         "pass_kills": 3,
         "start_level": 1,
         "wave_count": 5,
         "skill": 4,
         "fast_monsters": false,
-        "respawn_monsters": true,
+        "respawn_monsters": false,
         "time_limit": 0
       },
       "casual": {
-        "_extends": "default",
+        "_extends": "standard",
         "pass_kills": 2,
         "wave_count": 4,
         "skill": 3
       },
       "hardcore": {
-        "_extends": "default",
+        "_extends": "standard",
         "pass_kills": 5,
         "wave_count": 8,
         "fast_monsters": true
@@ -110,14 +117,46 @@
   },
   "skins": {
     "schema": {
-      "bg": { "type": "color", "name": "Background", "description": "Stage background behind the canvas and overlays." },
-      "fg": { "type": "color", "name": "Foreground", "description": "HUD and overlay text color." },
-      "button_bg": { "type": "color", "name": "Primary button bg", "description": "Background of the Enter button." },
-      "button_text": { "type": "color", "name": "Primary button text", "description": "Text on the Enter button." },
-      "button_hover": { "type": "color", "name": "Primary button hover bg", "description": "Hover background of the Enter button." },
-      "hud_bg": { "type": "color", "name": "HUD background", "description": "Background of the kill counter and touch controls." },
-      "badge_bg": { "type": "color", "name": "Verified badge bg", "description": "Background of the Verified badge shown on success." },
-      "focus_ring": { "type": "color", "name": "Focus ring", "description": "Outline shown on the canvas when keyboard focus enters." }
+      "bg": {
+        "type": "color",
+        "name": "Background",
+        "description": "Stage background behind the canvas and overlays."
+      },
+      "fg": {
+        "type": "color",
+        "name": "Foreground",
+        "description": "HUD and overlay text color."
+      },
+      "button_bg": {
+        "type": "color",
+        "name": "Primary button bg",
+        "description": "Background of the Enter button."
+      },
+      "button_text": {
+        "type": "color",
+        "name": "Primary button text",
+        "description": "Text on the Enter button."
+      },
+      "button_hover": {
+        "type": "color",
+        "name": "Primary button hover bg",
+        "description": "Hover background of the Enter button."
+      },
+      "hud_bg": {
+        "type": "color",
+        "name": "HUD background",
+        "description": "Background of the kill counter and touch controls."
+      },
+      "badge_bg": {
+        "type": "color",
+        "name": "Verified badge bg",
+        "description": "Background of the Verified badge shown on success."
+      },
+      "focus_ring": {
+        "type": "color",
+        "name": "Focus ring",
+        "description": "Outline shown on the canvas when keyboard focus enters."
+      }
     },
     "presets": {
       "dark": {
@@ -148,18 +187,89 @@
   },
   "locales": {
     "schema": {
-      "ariaGame": { "name": "Game region label", "description": "Screen-reader label for the whole play area." },
-      "startTitle": { "name": "Start screen title", "description": "Headline on the start screen before the round begins." },
-      "startBody": { "name": "Start screen body", "description": "Short instruction on the start screen telling the visitor to clear the demons to verify." },
-      "startButton": { "name": "Start button", "description": "Label for the button that begins the round." },
-      "controlsHint": { "name": "Controls hint", "description": "Small keyboard/mouse controls reminder under the start button." },
-      "verifiedBadge": { "name": "Verified badge", "description": "Short badge shown once the kill goal is met and the captcha is satisfied." },
-      "ariaForward": { "name": "Forward control label", "description": "Screen-reader / touch-button label for moving forward." },
-      "ariaTurnLeft": { "name": "Turn-left control label", "description": "Screen-reader / touch-button label for turning left." },
-      "ariaTurnRight": { "name": "Turn-right control label", "description": "Screen-reader / touch-button label for turning right." },
-      "ariaFire": { "name": "Fire control label", "description": "Screen-reader / touch-button label for the fire action." },
-      "announceStart": { "name": "Announcer: round started", "description": "Live-region message when the round begins." },
-      "announceVerified": { "name": "Announcer: verified", "description": "Live-region message when the kill goal is reached and the captcha is satisfied; invites the visitor to keep playing." }
+      "ariaGame": {
+        "name": "Game region label",
+        "description": "Screen-reader label for the whole play area."
+      },
+      "startTitle": {
+        "name": "Start screen title",
+        "description": "Headline on the start screen before the round begins."
+      },
+      "startBody": {
+        "name": "Start screen body",
+        "description": "Short instruction on the start screen telling the visitor to clear the demons to verify."
+      },
+      "startButton": {
+        "name": "Start button",
+        "description": "Label for the button that begins the round."
+      },
+      "controlsHint": {
+        "name": "Controls hint",
+        "description": "Small keyboard/mouse controls reminder under the start button."
+      },
+      "verifiedBadge": {
+        "name": "Verified badge",
+        "description": "Short badge shown once the kill goal is met and the captcha is satisfied."
+      },
+      "ariaForward": {
+        "name": "Forward control label",
+        "description": "Screen-reader / touch-button label for moving forward."
+      },
+      "ariaTurnLeft": {
+        "name": "Turn-left control label",
+        "description": "Screen-reader / touch-button label for turning left."
+      },
+      "ariaTurnRight": {
+        "name": "Turn-right control label",
+        "description": "Screen-reader / touch-button label for turning right."
+      },
+      "ariaFire": {
+        "name": "Fire control label",
+        "description": "Screen-reader / touch-button label for the fire action."
+      },
+      "announceStart": {
+        "name": "Announcer: round started",
+        "description": "Live-region message when the round begins."
+      },
+      "announceVerified": {
+        "name": "Announcer: verified",
+        "description": "Live-region message when the kill goal is reached and the captcha is satisfied; invites the visitor to keep playing."
+      },
+      "levelClearTitle": {
+        "name": "Level cleared title",
+        "description": "Headline shown when every demon in the level has been killed. The level number is interpolated.",
+        "tokens": [
+          "level"
+        ]
+      },
+      "levelClearBody": {
+        "name": "Level cleared body",
+        "description": "Short complimentary message shown when a level is cleared."
+      },
+      "nextLevelButton": {
+        "name": "Next level button",
+        "description": "Label for the button that starts the next, harder level."
+      },
+      "loading": {
+        "name": "Loading label",
+        "description": "Shown on the start button while the game engine loads."
+      },
+      "loadError": {
+        "name": "Load error label",
+        "description": "Shown on the start button if the game engine fails to load."
+      },
+      "replayButton": {
+        "name": "Replay button",
+        "description": "Label for the button that restarts the current level from the level-cleared screen."
+      },
+      "diedTitle": {
+        "name": "Died title",
+        "description": "Headline shown when the player is killed before verifying."
+      },
+      "diedBody": {
+        "name": "Died body",
+        "description": "Message prompting the player to try again after dying before verifying."
+      }
     },
     "presets": {
       "English": {
@@ -176,7 +286,15 @@
         "ariaTurnRight": "Turn right",
         "ariaFire": "Fire",
         "announceStart": "Go. Clear the demons.",
-        "announceVerified": "Verified. You may keep playing."
+        "announceVerified": "Verified. You may keep playing.",
+        "levelClearTitle": "Level {level} cleared",
+        "levelClearBody": "Demons cleared. Nice shooting.",
+        "nextLevelButton": "Next level",
+        "loading": "Loading...",
+        "loadError": "Failed to load",
+        "replayButton": "Replay",
+        "diedTitle": "You died",
+        "diedBody": "Try again to verify."
       },
       "Chinese (Simplified)": {
         "_lang": "zh-Hans",
@@ -192,7 +310,15 @@
         "ariaTurnRight": "向右转",
         "ariaFire": "开火",
         "announceStart": "上。清除恶魔。",
-        "announceVerified": "已通过。你可以继续玩。"
+        "announceVerified": "已通过。你可以继续玩。",
+        "levelClearTitle": "第 {level} 关已清除",
+        "levelClearBody": "恶魔已清。打得漂亮。",
+        "nextLevelButton": "下一关",
+        "replayButton": "重玩",
+        "loading": "加载中…",
+        "loadError": "加载失败",
+        "diedTitle": "你死了",
+        "diedBody": "再试一次以完成验证。"
       },
       "Spanish": {
         "_lang": "es",
@@ -208,7 +334,15 @@
         "ariaTurnRight": "Girar a la derecha",
         "ariaFire": "Disparar",
         "announceStart": "¡Adentro! Limpia los demonios.",
-        "announceVerified": "Verificado. Puedes seguir jugando."
+        "announceVerified": "Verificado. Puedes seguir jugando.",
+        "levelClearTitle": "Nivel {level} despejado",
+        "levelClearBody": "Demonios despejados. Buena puntería.",
+        "nextLevelButton": "Siguiente nivel",
+        "replayButton": "Repetir",
+        "loading": "Cargando…",
+        "loadError": "Error al cargar",
+        "diedTitle": "Has muerto",
+        "diedBody": "Inténtalo de nuevo para verificar."
       },
       "Arabic": {
         "_lang": "ar",
@@ -224,7 +358,15 @@
         "ariaTurnRight": "انعطف يمينًا",
         "ariaFire": "أطلق النار",
         "announceStart": "انطلق. أبِد الشياطين.",
-        "announceVerified": "تم التحقق. يمكنك مواصلة اللعب."
+        "announceVerified": "تم التحقق. يمكنك مواصلة اللعب.",
+        "levelClearTitle": "تم تطهير المرحلة {level}",
+        "levelClearBody": "أُبيدت الشياطين. تصويب موفّق.",
+        "nextLevelButton": "المرحلة التالية",
+        "replayButton": "إعادة اللعب",
+        "loading": "جارٍ التحميل…",
+        "loadError": "فشل التحميل",
+        "diedTitle": "لقد مت",
+        "diedBody": "حاول مرة أخرى للتحقق."
       },
       "Portuguese": {
         "_lang": "pt",
@@ -240,7 +382,15 @@
         "ariaTurnRight": "Virar à direita",
         "ariaFire": "Atirar",
         "announceStart": "Vai. Elimine os demônios.",
-        "announceVerified": "Verificado. Você pode continuar jogando."
+        "announceVerified": "Verificado. Você pode continuar jogando.",
+        "levelClearTitle": "Nível {level} concluído",
+        "levelClearBody": "Demônios eliminados. Boa pontaria.",
+        "nextLevelButton": "Próximo nível",
+        "replayButton": "Jogar de novo",
+        "loading": "Carregando…",
+        "loadError": "Falha ao carregar",
+        "diedTitle": "Você morreu",
+        "diedBody": "Tente de novo para verificar."
       },
       "French": {
         "_lang": "fr",
@@ -256,7 +406,15 @@
         "ariaTurnRight": "Tourner à droite",
         "ariaFire": "Tirer",
         "announceStart": "Allez-y. Éliminez les démons.",
-        "announceVerified": "Vérifié. Vous pouvez continuer à jouer."
+        "announceVerified": "Vérifié. Vous pouvez continuer à jouer.",
+        "levelClearTitle": "Niveau {level} nettoyé",
+        "levelClearBody": "Démons nettoyés. Joli tir.",
+        "nextLevelButton": "Niveau suivant",
+        "replayButton": "Rejouer",
+        "loading": "Chargement…",
+        "loadError": "Échec du chargement",
+        "diedTitle": "Vous êtes mort",
+        "diedBody": "Réessayez pour vérifier."
       },
       "German": {
         "_lang": "de",
@@ -272,7 +430,15 @@
         "ariaTurnRight": "Nach rechts drehen",
         "ariaFire": "Schießen",
         "announceStart": "Los. Räum die Dämonen weg.",
-        "announceVerified": "Bestätigt. Du kannst weiterspielen."
+        "announceVerified": "Bestätigt. Du kannst weiterspielen.",
+        "levelClearTitle": "Level {level} geräumt",
+        "levelClearBody": "Dämonen geräumt. Gut geschossen.",
+        "nextLevelButton": "Nächstes Level",
+        "replayButton": "Nochmal spielen",
+        "loading": "Wird geladen…",
+        "loadError": "Laden fehlgeschlagen",
+        "diedTitle": "Du bist gestorben",
+        "diedBody": "Versuch es noch mal, um dich zu verifizieren."
       },
       "Russian": {
         "_lang": "ru",
@@ -288,7 +454,15 @@
         "ariaTurnRight": "Поворот вправо",
         "ariaFire": "Огонь",
         "announceStart": "Вперёд. Зачисти демонов.",
-        "announceVerified": "Пройдено. Можешь продолжать играть."
+        "announceVerified": "Пройдено. Можешь продолжать играть.",
+        "levelClearTitle": "Уровень {level} зачищен",
+        "levelClearBody": "Демоны зачищены. Меткая стрельба.",
+        "nextLevelButton": "Следующий уровень",
+        "replayButton": "Заново",
+        "loading": "Загрузка…",
+        "loadError": "Ошибка загрузки",
+        "diedTitle": "Вы погибли",
+        "diedBody": "Попробуйте снова, чтобы пройти проверку."
       },
       "Japanese": {
         "_lang": "ja",
@@ -304,7 +478,15 @@
         "ariaTurnRight": "右を向く",
         "ariaFire": "射撃",
         "announceStart": "行け。悪魔を一掃しろ。",
-        "announceVerified": "認証済み。このまま続けてもいいよ。"
+        "announceVerified": "認証済み。このまま続けてもいいよ。",
+        "levelClearTitle": "レベル {level} クリア",
+        "levelClearBody": "悪魔を一掃。いい腕だ。",
+        "nextLevelButton": "次のレベル",
+        "replayButton": "もう一度",
+        "loading": "読み込み中…",
+        "loadError": "読み込み失敗",
+        "diedTitle": "やられた",
+        "diedBody": "もう一度挑戦して認証しよう。"
       },
       "Korean": {
         "_lang": "ko",
@@ -320,7 +502,15 @@
         "ariaTurnRight": "오른쪽으로 돌기",
         "ariaFire": "발사",
         "announceStart": "가세요. 악마를 처치하세요.",
-        "announceVerified": "인증됨. 계속 플레이해도 됩니다."
+        "announceVerified": "인증됨. 계속 플레이해도 됩니다.",
+        "levelClearTitle": "레벨 {level} 클리어",
+        "levelClearBody": "악마를 모두 처치했습니다. 명사수네요.",
+        "nextLevelButton": "다음 레벨",
+        "replayButton": "다시 하기",
+        "loading": "불러오는 중…",
+        "loadError": "불러오기 실패",
+        "diedTitle": "사망했습니다",
+        "diedBody": "다시 도전해 인증하세요."
       },
       "Indonesian": {
         "_lang": "id",
@@ -336,7 +526,15 @@
         "ariaTurnRight": "Belok kanan",
         "ariaFire": "Tembak",
         "announceStart": "Maju. Habisi para iblis.",
-        "announceVerified": "Terverifikasi. Kamu boleh terus bermain."
+        "announceVerified": "Terverifikasi. Kamu boleh terus bermain.",
+        "levelClearTitle": "Level {level} tuntas",
+        "levelClearBody": "Iblis habis. Tembakan bagus.",
+        "nextLevelButton": "Level berikutnya",
+        "replayButton": "Main lagi",
+        "loading": "Memuat…",
+        "loadError": "Gagal memuat",
+        "diedTitle": "Kamu mati",
+        "diedBody": "Coba lagi untuk verifikasi."
       }
     }
   }

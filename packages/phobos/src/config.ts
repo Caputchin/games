@@ -38,7 +38,11 @@ export interface RoundConfig {
   timeLimit: number;
 }
 
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
+// The default preset is identified by its `_default` flag, not a fixed name, so
+// the preset can be renamed (e.g. "standard") without breaking the fallbacks.
+const PRESETS = (manifestJson.configurations?.presets ?? {}) as Record<string, Record<string, unknown>>;
+const DEFAULT_PRESET = (Object.values(PRESETS).find((p) => p && p['_default'] === true)
+  ?? {}) as Record<string, unknown>;
 
 function jsonNumber(key: string, hardcoded: number): number {
   const v = DEFAULT_PRESET[key];
@@ -58,7 +62,7 @@ const FALLBACK: RoundConfig = {
   waveCount: jsonNumber('wave_count', 5),
   skill: jsonNumber('skill', 4),
   fastMonsters: jsonBoolean('fast_monsters', false),
-  respawnMonsters: jsonBoolean('respawn_monsters', true),
+  respawnMonsters: jsonBoolean('respawn_monsters', false),
   timeLimit: jsonNumber('time_limit', 0),
 };
 

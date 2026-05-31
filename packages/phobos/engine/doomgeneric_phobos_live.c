@@ -63,6 +63,10 @@ EMSCRIPTEN_KEEPALIVE int phobos_killcount(void) { return phobos_kills(); }
 EMSCRIPTEN_KEEPALIVE int phobos_tracelen(void)  { int n; phobos_get_trace(&n); return n; }
 EMSCRIPTEN_KEEPALIVE int phobos_traceptr(void)  { int n; return (int)(intptr_t)phobos_get_trace(&n); }
 EMSCRIPTEN_KEEPALIVE int phobos_leveltime(void) { return leveltime; }  // tics this round
+EMSCRIPTEN_KEEPALIVE int phobos_player_dead(void)
+{
+    return players[consoleplayer].playerstate == PST_DEAD ? 1 : 0;
+}
 
 static skill_t phobos_skill(int skill)
 {

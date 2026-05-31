@@ -41,6 +41,19 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string> | nu
 .phobos-btn { cursor:pointer; border:none; border-radius:4px; padding:8px 22px; font-size:15px;
   background:${v(skin, 'button_bg')}; color:${v(skin, 'button_text')}; }
 .phobos-btn:hover { background:${v(skin, 'button_hover')}; }
+.phobos-btn[disabled] { opacity:0.55; cursor:default; }
+.phobos-cleared { position:absolute; inset:0; display:flex; flex-direction:column; gap:10px;
+  align-items:center; justify-content:center; text-align:center; padding:16px;
+  background:${v(skin, 'bg')}e6; backdrop-filter:blur(3px); }
+.phobos-cleared[hidden] { display:none; }
+.phobos-cleared-mark { width:46px; height:46px; border-radius:50%; background:${v(skin, 'badge_bg')};
+  color:#fff; font-size:26px; line-height:46px; font-weight:700; }
+.phobos-cleared-title { margin:0; font-size:20px; letter-spacing:0.03em; }
+.phobos-cleared-body { margin:0; max-width:34ch; opacity:0.85; font-size:14px; }
+.phobos-cleared-actions { display:flex; gap:10px; margin-top:4px; flex-wrap:wrap; justify-content:center; }
+.phobos-btn-ghost { cursor:pointer; border:1px solid ${v(skin, 'fg')}55; border-radius:4px;
+  padding:8px 18px; font-size:15px; background:transparent; color:${v(skin, 'fg')}; }
+.phobos-btn-ghost:hover { background:${v(skin, 'hud_bg')}; }
 .phobos-controls { position:absolute; bottom:6px; right:6px; display:flex; gap:6px; }
 .phobos-controls[aria-hidden="true"] { display:none; }
 .phobos-controls button { width:44px; height:44px; border-radius:50%; border:1px solid ${v(skin, 'fg')}55;

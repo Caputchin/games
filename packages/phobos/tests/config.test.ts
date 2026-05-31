@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { resolvePhobosConfig } from '../src/config.js';
 import manifest from '../caputchin.json';
 
+// The default preset is found by its `_default` flag, not its name.
+const presets = manifest.configurations.presets as unknown as Record<string, Record<string, number | boolean>>;
+const def = Object.values(presets).find((p) => p._default === true)!;
+
 // Guards the config wiring: the server sends the manifest's SNAKE_CASE keys, and
 // run-core/game must consume those exact spellings (a camelCase read silently
 // drops every server override -> the gate ignores the site's pass_kills). This
@@ -9,7 +13,6 @@ import manifest from '../caputchin.json';
 describe('resolvePhobosConfig', () => {
   it('falls back to the manifest default preset when config is null', () => {
     const c = resolvePhobosConfig(null);
-    const def = manifest.configurations.presets.default as Record<string, number | boolean>;
     expect(c.passKills).toBe(def.pass_kills);
     expect(c.startLevel).toBe(def.start_level);
     expect(c.waveCount).toBe(def.wave_count);
@@ -41,14 +44,12 @@ describe('resolvePhobosConfig', () => {
   it('ignores camelCase keys (the platform never sends them)', () => {
     // If run-core ever read camelCase, these would leak through; they must not.
     const c = resolvePhobosConfig({ passKills: 99, waveCount: 99 } as Record<string, unknown>);
-    const def = manifest.configurations.presets.default as unknown as Record<string, number>;
     expect(c.passKills).toBe(def.pass_kills);
     expect(c.waveCount).toBe(def.wave_count);
   });
 
   it('ignores malformed values and keeps the fallback', () => {
     const c = resolvePhobosConfig({ pass_kills: 'lots', fast_monsters: 'yes' } as Record<string, unknown>);
-    const def = manifest.configurations.presets.default as Record<string, number | boolean>;
     expect(c.passKills).toBe(def.pass_kills);
     expect(c.fastMonsters).toBe(def.fast_monsters);
   });

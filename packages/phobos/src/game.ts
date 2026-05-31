@@ -67,6 +67,15 @@ export function runPhobos({ container, bridge, ctx }: {
       <button data-k="right" aria-label="${t(locale, 'ariaTurnRight', 'Turn right')}">›</button>
       <button data-k="fire" aria-label="${t(locale, 'ariaFire', 'Fire')}">●</button>
     </div>
+    <div class="phobos-cleared" hidden>
+      <div class="phobos-cleared-mark" aria-hidden="true">✓</div>
+      <h2 class="phobos-cleared-title"></h2>
+      <p class="phobos-cleared-body"></p>
+      <div class="phobos-cleared-actions">
+        <button class="phobos-btn phobos-next" type="button">${t(locale, 'nextLevelButton', 'Next level')}</button>
+        <button class="phobos-btn-ghost phobos-replay" type="button">${t(locale, 'replayButton', 'Replay')}</button>
+      </div>
+    </div>
     <div class="phobos-live" role="status" aria-live="polite"></div>`;
   container.appendChild(root);
   mountStyles(root, skin);
@@ -76,7 +85,12 @@ export function runPhobos({ container, bridge, ctx }: {
   const killsEl = root.querySelector('.phobos-kills') as HTMLElement;
   const badgeEl = root.querySelector('.phobos-badge') as HTMLElement;
   const startEl = root.querySelector('.phobos-start') as HTMLElement;
+  const startBtn = root.querySelector('.phobos-btn') as HTMLButtonElement;
+  const startBody = startEl.querySelector('p') as HTMLElement;
   const liveEl = root.querySelector('.phobos-live') as HTMLElement;
+  const clearedEl = root.querySelector('.phobos-cleared') as HTMLElement;
+  const clearedTitle = root.querySelector('.phobos-cleared-title') as HTMLElement;
+  const clearedBody = root.querySelector('.phobos-cleared-body') as HTMLElement;
 
   let live: Live | null = null;
   let raf = 0;
@@ -84,6 +98,16 @@ export function runPhobos({ container, bridge, ctx }: {
   let passed = false;
   let disposed = false;
   let image: ImageData | null = null;
+  let level = 1;
+  let wave = waveCount;
+  let levelCleared = false;
+
+  // The engine bundle is several MB and takes a moment to instantiate; gate the
+  // Enter button behind a loading state so the round never starts before it is
+  // ready (and the visitor sees progress instead of a frozen button).
+  const startLabel = startBtn.textContent || 'Enter';
+  startBtn.disabled = true;
+  startBtn.textContent = t(locale, 'loading', 'Loading...');
 
   const sendKey = (pressed: number, key: number) =>
     live?.ccall('phobos_key', null, ['number', 'number'], [pressed, key]);
@@ -108,20 +132,65 @@ export function runPhobos({ container, bridge, ctx }: {
     cctx.putImageData(image, 0, 0);
   }
 
-  function checkPass() {
-    if (!live || passed) return;
+  function submitTrace() {
+    const len = live!.ccall('phobos_tracelen', 'number', [], []);
+    const ptr = live!.ccall('phobos_traceptr', 'number', [], []);
+    const bytes = live!.HEAPU8.slice(ptr, ptr + len);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]!);
+    bridge.pass({ trace: btoa(bin) });
+  }
+
+  // End-of-round overlay. `cleared` = every demon down; otherwise the player
+  // died. Either way the framing is a success if the captcha is already
+  // verified; only an unverified death prompts a retry.
+  function showEnd(cleared: boolean) {
+    running = false;
+    cancelAnimationFrame(raf);
+    const nextBtn = root.querySelector('.phobos-next') as HTMLButtonElement;
+    let title: string;
+    let body: string;
+    if (cleared) {
+      title = t(locale, 'levelClearTitle', 'Level {level} cleared').replace('{level}', String(level));
+      body = (passed ? `${t(locale, 'verifiedBadge', 'Verified')}. ` : '')
+        + t(locale, 'levelClearBody', 'Demons cleared. Nice shooting.');
+      nextBtn.hidden = false;
+    } else if (passed) {
+      // Died, but already verified: still a success.
+      title = t(locale, 'verifiedBadge', 'Verified');
+      body = t(locale, 'levelClearBody', 'Demons cleared. Nice shooting.');
+      nextBtn.hidden = false;
+    } else {
+      // Died before verifying: retry only.
+      title = t(locale, 'diedTitle', 'You died');
+      body = t(locale, 'diedBody', 'Try again to verify.');
+      nextBtn.hidden = true;
+    }
+    clearedTitle.textContent = title;
+    clearedBody.textContent = body;
+    clearedEl.hidden = false;
+    liveEl.textContent = title;
+    (nextBtn.hidden
+      ? (root.querySelector('.phobos-replay') as HTMLButtonElement)
+      : nextBtn).focus();
+  }
+
+  function checkProgress() {
+    if (!live) return;
     const kills = live.ccall('phobos_killcount', 'number', [], []);
-    killsEl.textContent = `${Math.min(kills, passKills)} / ${passKills}`;
-    if (kills >= passKills) {
+    killsEl.textContent = `${Math.min(kills, wave)} / ${wave}`;
+    // Captcha gate: release on the server-owned pass threshold (the trace is
+    // captured now, before any next-level reset overwrites it).
+    if (!passed && kills >= passKills) {
       passed = true;
-      const len = live.ccall('phobos_tracelen', 'number', [], []);
-      const ptr = live.ccall('phobos_traceptr', 'number', [], []);
-      const bytes = live.HEAPU8.slice(ptr, ptr + len);
-      let bin = '';
-      for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]!);
-      bridge.pass({ trace: btoa(bin) });
+      submitTrace();
       badgeEl.hidden = false;
-      liveEl.textContent = t(locale, 'announceVerified', 'Verified. You may continue playing.');
+      liveEl.textContent = t(locale, 'announceVerified', 'Verified. You may keep playing.');
+    }
+    // Level cleared: every demon in this wave is down.
+    if (!levelCleared && kills >= wave) {
+      levelCleared = true;
+      showEnd(true);
     }
   }
 
@@ -129,10 +198,16 @@ export function runPhobos({ container, bridge, ctx }: {
     if (disposed || !running) return;
     live!.ccall('phobos_frame', null, [], []);
     blit();
-    checkPass();
-    // Enforce the tic budget so the recorded trace never exceeds what the
-    // server replays (live == replay). If time runs out before the goal, the
-    // round ends without a pass; the visitor can retry.
+    checkProgress();
+    if (!running) return; // a level-clear this frame stopped the loop
+    // Player death ends the round: success if already verified, else a retry.
+    if (live!.ccall('phobos_player_dead', 'number', [], [])) {
+      showEnd(false);
+      return;
+    }
+    // Enforce the captcha tic budget so the recorded trace never exceeds what
+    // the server replays (live == replay). Only the un-passed start level is
+    // timed; once verified, bonus levels are untimed.
     if (!passed && live!.ccall('phobos_leveltime', 'number', [], []) >= maxTics) {
       running = false;
       startEl.hidden = false; // re-show the (localized) start screen to retry
@@ -141,16 +216,33 @@ export function runPhobos({ container, bridge, ctx }: {
     raf = requestAnimationFrame(loop);
   }
 
-  function startRound() {
+  // Level 1 must run under the server-issued seed (it is the replayed captcha
+  // round); bonus levels derive their own so each plays differently.
+  function levelSeed(lvl: number): readonly number[] {
+    if (lvl <= 1) return seed;
+    const m = (lvl * 0x9e3779b9) >>> 0;
+    return [(seed[0]! ^ m) >>> 0, (seed[1]! ^ (m * 3)) >>> 0,
+      (seed[2]! ^ (m * 7)) >>> 0, (seed[3]! ^ (m * 13)) >>> 0];
+  }
+
+  function startLevel(lvl: number) {
     if (!live) return;
-    passed = false;
-    badgeEl.hidden = true;
+    level = lvl;
+    wave = waveCount + (lvl - 1) * 2; // escalate the wave each level
+    levelCleared = false;
+    if (lvl === 1) { passed = false; badgeEl.hidden = true; }
+    // Level 1 honors the configured respawn (it must match the server replay);
+    // bonus levels keep respawn off so the wave stays finite and clearable.
+    const respawn = lvl === 1 ? (cfg.respawnMonsters ? 1 : 0) : 0;
+    const s = levelSeed(lvl);
     live.ccall('phobos_start', null,
       ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-      [seed[0]! >>> 0, seed[1]! >>> 0, seed[2]! >>> 0, seed[3]! >>> 0, startMap, waveCount,
-        cfg.skill, cfg.fastMonsters ? 1 : 0, cfg.respawnMonsters ? 1 : 0]);
+      [s[0]! >>> 0, s[1]! >>> 0, s[2]! >>> 0, s[3]! >>> 0, startMap, wave,
+        cfg.skill, cfg.fastMonsters ? 1 : 0, respawn]);
     startEl.hidden = true;
+    clearedEl.hidden = true;
     (root.querySelector('.phobos-controls') as HTMLElement).removeAttribute('aria-hidden');
+    killsEl.textContent = `0 / ${wave}`;
     running = true;
     liveEl.textContent = t(locale, 'announceStart', 'Go. Clear the demons.');
     canvas.focus();
@@ -172,8 +264,11 @@ export function runPhobos({ container, bridge, ctx }: {
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
 
-  const startBtn = root.querySelector('.phobos-btn') as HTMLButtonElement;
-  startBtn.addEventListener('click', startRound);
+  startBtn.addEventListener('click', () => startLevel(1));
+  (root.querySelector('.phobos-next') as HTMLButtonElement)
+    .addEventListener('click', () => startLevel(level + 1));
+  (root.querySelector('.phobos-replay') as HTMLButtonElement)
+    .addEventListener('click', () => startLevel(level));
 
   const wasmBytes = b64ToBytes(liveWasmB64);
   createPhobosLive({
@@ -196,7 +291,10 @@ export function runPhobos({ container, bridge, ctx }: {
     if (disposed) return;
     live = M;
     blit(); // show the booted arena behind the start overlay
+    startBtn.disabled = false; // engine ready: enable the round
+    startBtn.textContent = startLabel;
   }).catch((e: unknown) => {
+    startBtn.textContent = t(locale, 'loadError', 'Failed to load');
     bridge.error({ code: 'engine-load', message: e instanceof Error ? e.message : 'failed to load' });
   });
 
