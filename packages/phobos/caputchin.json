@@ -35,6 +35,7 @@
   },
   "preferred": {
     "width": 640,
-    "height": 400
+    "height": 400,
+    "layout": "modal"
   }
 }
