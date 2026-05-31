@@ -44,6 +44,16 @@ const PRESETS = (manifestJson.configurations?.presets ?? {}) as Record<string, R
 const DEFAULT_PRESET = (Object.values(PRESETS).find((p) => p && p['_default'] === true)
   ?? {}) as Record<string, unknown>;
 
+// start_level is the captcha arena and is REPLAYED server-side, so it must stay
+// inside the schema-declared range (1..4 = the open arenas). A server-stored
+// config beyond it would make a bonus map (a maze) the captcha -> heavier replay
+// cpuMs. Enforce the schema bound here, the one point live + headless inherit.
+const START_SCHEMA = (manifestJson.configurations?.schema as Record<string, { min?: number; max?: number }>
+  | undefined)?.['start_level'];
+const START_MIN = typeof START_SCHEMA?.min === 'number' ? START_SCHEMA.min : 1;
+const START_MAX = typeof START_SCHEMA?.max === 'number' ? START_SCHEMA.max : 4;
+const clampStart = (n: number): number => Math.min(START_MAX, Math.max(START_MIN, Math.round(n)));
+
 function jsonNumber(key: string, hardcoded: number): number {
   const v = DEFAULT_PRESET[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : hardcoded;
@@ -83,7 +93,7 @@ export function resolvePhobosConfig(cfg: Record<string, unknown> | null | undefi
   const c = cfg ?? null;
   return {
     passKills: readNumber(c, 'pass_kills') ?? FALLBACK.passKills,
-    startLevel: readNumber(c, 'start_level') ?? FALLBACK.startLevel,
+    startLevel: clampStart(readNumber(c, 'start_level') ?? FALLBACK.startLevel),
     waveCount: readNumber(c, 'wave_count') ?? FALLBACK.waveCount,
     skill: readNumber(c, 'skill') ?? FALLBACK.skill,
     fastMonsters: readBoolean(c, 'fast_monsters') ?? FALLBACK.fastMonsters,

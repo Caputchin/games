@@ -756,6 +756,16 @@ void P_SpawnMapThing (mapthing_t* mthing)
 	return;
     }
 
+    // Phobos: custom spawn-point marker (doomednum 4001). Record its position
+    // for the seeded wave and spawn no actual thing. Must intercept BEFORE the
+    // "Unknown type" I_Error below (4001 is not a real mobj doomednum).
+    if (mthing->type == 4001)
+    {
+	extern void phobos_add_spawnpt(int x, int y);
+	phobos_add_spawnpt(mthing->x, mthing->y);
+	return;
+    }
+
     if (mthing->type <= 0)
     {
         // Thing type 0 is actually "player -1 start".  

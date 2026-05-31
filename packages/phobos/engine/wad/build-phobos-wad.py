@@ -12,9 +12,14 @@ Sprites/sounds/graphics are kept whole for now (engine's sprnames[] table
 requires a lump for every sprite; trimming those needs an info.c edit - a later
 optimization). The dominant win is the 9.6MB patch group."""
 import os
+import random
 import struct
 from omg import WAD
 from omg.mapedit import MapEditor, Vertex, Sidedef, Linedef, Sector, Thing
+
+# Custom doomednum the engine intercepts (p_mobj.c) as a seeded-wave spawn point.
+# Placed in every map's walkable floor; phobos.c picks a seeded subset per round.
+SPAWN_DM = 4001
 
 # Source IWAD: the upstream Freedoom phase-1 WAD (a dev build input, not vendored).
 # Point FREEDOOM_WAD at your local copy; see the package README.
@@ -26,7 +31,8 @@ TEXTURES = ['STARGR1', 'STARGR2', 'METAL', 'BROWN1', 'COMPUTE1', 'STEP3',
             'DOOR1', 'SW1BRN1', 'SUPPORT3', 'BIGDOOR2', 'SKY1']  # SKY1 = E1 sky (engine-required)
 FLATS_KEEP = {'FLOOR0_3', 'FLOOR0_5', 'CEIL5_1', 'FLAT1', 'FLAT5_4',
               'F_SKY1', 'FLOOR4_8', 'CEIL3_1'}  # static flats only (no anim starts)
-KEEP_MUSIC = {'D_E1M1', 'D_E1M2', 'D_E1M3', 'D_E1M4'}  # one per campaign map (engine hard-looks-up D_<map>)
+KEEP_MUSIC = {'D_E1M1', 'D_E1M2', 'D_E1M3', 'D_E1M4',
+              'D_E1M5', 'D_E1M6'}  # one per campaign map (engine hard-looks-up D_<map>)
 
 # Arena bounding box. The seeded monster spawn in phobos.c uses the same bounds
 # (keep them in sync). Player starts bottom-center; a raised platform sits in the
@@ -129,9 +135,33 @@ def _inner_box(ed, box, inner_sector, riser_tex):
         ed.linedefs.append(ld)
 
 
+def _arena_marker_things():
+    """Seeded-wave spawn markers (doomednum 4001) on the main arena floor, clear
+    of the central platform box and the player start. A 6x5 grid (30 cells) minus
+    the ~12 cells over the central feature leaves 18; the first 16 are used, so
+    the seeded pick has >= the max wave (16) distinct points on every arena (all
+    arenas share the PLAT footprint, so the same grid is valid on each)."""
+    PX0, PY0, PX1, PY1 = PLAT
+    pts = []
+    for x in range(380, 1157, 155):      # 6 columns across the spawn band
+        for y in range(360, 921, 140):   # 5 rows
+            if PX0 - 48 < x < PX1 + 48 and PY0 - 48 < y < PY1 + 48:
+                continue                 # inside the central feature box
+            if abs(x - AW // 2) < 140 and abs(y - 200) < 140:
+                continue                 # too close to the player start
+            pts.append((x, y))
+    things = []
+    for (x, y) in pts[:16]:
+        m = Thing(x, y, 0, SPAWN_DM, 0)
+        m.easy = m.medium = m.hard = True
+        things.append(m)
+    return things
+
+
 def build_map(outer_pts, walls, feature):
     """A DOOM arena: a convex outer room + one central feature. Ships with only
-    the player start; demons spawn from the per-round seed (phobos.c)."""
+    the player start + seeded-wave spawn markers; demons spawn from the per-round
+    seed (phobos.c)."""
     ed = MapEditor()
     ed.sectors.append(Sector(0, 168, FLOOR, CEIL, 150, 0, 0))   # sector 0 = main floor
     _outer_walls(ed, outer_pts, walls)
@@ -151,18 +181,118 @@ def build_map(outer_pts, walls, feature):
 
     th = Thing(AW // 2, 200, 90, 1, 0)
     th.easy = th.medium = th.hard = True
-    ed.things = [th]
+    ed.things = [th] + _arena_marker_things()
     return ed
 
 
-# The campaign arenas: distinct outer shape + central feature, all reusing the
-# same texture/sprite/sound palette. start_level (config) picks the captcha map;
-# the live game cycles through the rest as bonus levels.
+def _gen_maze(cols, rows, rng):
+    """Perfect maze (recursive backtracker) over a cols x rows cell grid. Returns
+    the set of frozenset({cellA, cellB}) passages between connected cells."""
+    passages = set()
+    visited = {(0, 0)}
+    stack = [(0, 0)]
+    while stack:
+        cx, cy = stack[-1]
+        nbrs = [(cx + dx, cy + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                if 0 <= cx + dx < cols and 0 <= cy + dy < rows and (cx + dx, cy + dy) not in visited]
+        if not nbrs:
+            stack.pop()
+            continue
+        nxt = nbrs[rng.randrange(len(nbrs))]
+        passages.add(frozenset({(cx, cy), nxt}))
+        visited.add(nxt)
+        stack.append(nxt)
+    return passages
+
+
+def build_maze(cols, rows, pitch, hw, wall_tex, seed):
+    """A genuine corridor maze: one walkable floor sector bounded by one-sided
+    walls. A room sits at each cell centre and a (2*hw)-wide corridor joins every
+    connected pair; the void between unconnected cells IS the wall. Player start
+    at cell (0,0) plus 16 seeded-wave markers spread over the other cells.
+
+    Geometry is fixed at build time from its OWN rng `seed` (not the server seed),
+    so the WAD is reproducible and the map is replay-safe. The walkable region is
+    rasterised at hw resolution and its floor/void boundary edges are emitted as
+    one-sided linedefs oriented with the floor sector on the right of v1->v2."""
+    rng = random.Random(seed)
+    passages = _gen_maze(cols, rows, rng)
+    R = hw                                   # raster cell == corridor half-width
+    gw, gh = cols * pitch // R, rows * pitch // R
+    floor = [[False] * gh for _ in range(gw)]
+
+    def fill(x0, y0, x1, y1):
+        for gx in range(max(0, x0 // R), min(gw, (x1 + R - 1) // R)):
+            for gy in range(max(0, y0 // R), min(gh, (y1 + R - 1) // R)):
+                floor[gx][gy] = True
+
+    centers = {}
+    for cx in range(cols):
+        for cy in range(rows):
+            mx, my = cx * pitch + pitch // 2, cy * pitch + pitch // 2
+            centers[(cx, cy)] = (mx, my)
+            fill(mx - hw, my - hw, mx + hw, my + hw)            # room
+    for pr in passages:
+        (ax, ay), (bx, by) = (centers[c] for c in pr)
+        fill(min(ax, bx) - hw, min(ay, by) - hw,
+             max(ax, bx) + hw, max(ay, by) + hw)               # corridor
+
+    ed = MapEditor()
+    ed.sectors.append(Sector(0, 168, FLOOR, CEIL, 150, 0, 0))
+    vert = {}
+
+    def vid(x, y):
+        k = (x, y)
+        if k not in vert:
+            vert[k] = len(ed.vertexes)
+            ed.vertexes.append(Vertex(x, y))
+        return vert[k]
+
+    def wall(x1, y1, x2, y2):
+        sd = len(ed.sidedefs)
+        ed.sidedefs.append(Sidedef(0, 0, '-', '-', wall_tex, 0))
+        ld = Linedef(vid(x1, y1), vid(x2, y2), 0, 0, 0, sd, -1)
+        ld.impassable = True
+        ed.linedefs.append(ld)
+
+    for gx in range(gw):
+        for gy in range(gh):
+            if not floor[gx][gy]:
+                continue
+            x0, y0, x1, y1 = gx * R, gy * R, (gx + 1) * R, (gy + 1) * R
+            if gx + 1 >= gw or not floor[gx + 1][gy]: wall(x1, y1, x1, y0)  # right edge
+            if gx - 1 < 0 or not floor[gx - 1][gy]:   wall(x0, y0, x0, y1)  # left edge
+            if gy + 1 >= gh or not floor[gx][gy + 1]: wall(x0, y1, x1, y1)  # top edge
+            if gy - 1 < 0 or not floor[gx][gy - 1]:   wall(x1, y0, x0, y0)  # bottom edge
+
+    sx, sy = centers[(0, 0)]
+    th = Thing(sx, sy, 90, 1, 0)
+    th.easy = th.medium = th.hard = True
+    things = [th]
+    cells = [c for c in centers if c != (0, 0)]
+    rng.shuffle(cells)
+    for c in cells[:16]:
+        mx, my = centers[c]
+        m = Thing(mx, my, 0, SPAWN_DM, 0)
+        m.easy = m.medium = m.hard = True
+        things.append(m)
+    ed.things = things
+    return ed
+
+
+# The campaign maps, all reusing the same texture/sprite/sound palette.
+# start_level (config, max 4) picks the captcha arena; the live game cycles
+# through the rest as bonus levels. Levels 1-4 are open arenas (the captcha pool,
+# kept cheap for the replay cpuMs budget); levels 5-6 are corridor mazes that
+# feel genuinely different (bonus-only, never the replayed captcha). Each entry
+# is a thunk so arenas and mazes can share one assembly loop.
 CAMPAIGN = [
-    (octagon_pts(), ['METAL', 'BROWN1', 'STARGR1', 'COMPUTE1', 'METAL', 'BROWN1', 'STARGR1', 'SUPPORT3'], 'platform'),
-    (rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'pit'),
-    (octagon_pts(288), ['STARGR1', 'METAL', 'COMPUTE1', 'STARGR2', 'STARGR1', 'METAL', 'COMPUTE1', 'STARGR2'], 'pillars'),
-    (rect_pts(),    ['COMPUTE1', 'METAL', 'STARGR2', 'METAL'], 'platform'),
+    lambda: build_map(octagon_pts(), ['METAL', 'BROWN1', 'STARGR1', 'COMPUTE1', 'METAL', 'BROWN1', 'STARGR1', 'SUPPORT3'], 'platform'),
+    lambda: build_map(rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'pit'),
+    lambda: build_map(octagon_pts(288), ['STARGR1', 'METAL', 'COMPUTE1', 'STARGR2', 'STARGR1', 'METAL', 'COMPUTE1', 'STARGR2'], 'pillars'),
+    lambda: build_map(rect_pts(),    ['COMPUTE1', 'METAL', 'STARGR2', 'METAL'], 'platform'),
+    lambda: build_maze(5, 4, 384, 96, 'BROWN1', 1337),
+    lambda: build_maze(6, 4, 384, 96, 'STARGR1', 2024),
 ]
 
 
@@ -194,8 +324,8 @@ for name in list(w.music):
         del w.music[name]
 for name in list(w.maps):
     del w.maps[name]
-for i, (pts, walls, feature) in enumerate(CAMPAIGN, 1):
-    w.maps['E1M%d' % i] = build_map(pts, walls, feature).to_lumps()
+for i, builder in enumerate(CAMPAIGN, 1):
+    w.maps['E1M%d' % i] = builder().to_lumps()
 w.to_file(OUT)
 
 after = sum(len(l.data) for g in (w.patches, w.flats, w.sprites, w.sounds,

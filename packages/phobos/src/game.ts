@@ -32,9 +32,10 @@ interface Live {
   HEAPU8: Uint8Array;
 }
 
-// Number of campaign arenas baked into the WAD (E1M1..E1M4). Bonus levels cycle
-// through them; keep in sync with the CAMPAIGN list in engine/wad/build-phobos-wad.py.
-const NUM_MAPS = 4;
+// Number of campaign maps baked into the WAD (E1M1..E1M6: 4 arenas + 2 mazes).
+// Bonus levels cycle through them; keep in sync with the CAMPAIGN list in
+// engine/wad/build-phobos-wad.py.
+const NUM_MAPS = 6;
 
 // Speaker glyphs for the mute toggle (sound on / muted).
 const SPK_ON = '\u{1F50A}';   // 🔊

@@ -48,6 +48,15 @@ describe('resolvePhobosConfig', () => {
     expect(c.waveCount).toBe(def.wave_count);
   });
 
+  it('clamps start_level to the schema range (it is the replayed captcha arena)', () => {
+    // A server-stored config beyond the arena range must not make a bonus maze
+    // the captcha (heavier replay cpuMs); the resolver enforces the schema bound.
+    expect(resolvePhobosConfig({ start_level: 6 }).startLevel).toBe(4);
+    expect(resolvePhobosConfig({ start_level: 99 }).startLevel).toBe(4);
+    expect(resolvePhobosConfig({ start_level: 0 }).startLevel).toBe(1);
+    expect(resolvePhobosConfig({ start_level: 3 }).startLevel).toBe(3);
+  });
+
   it('ignores malformed values and keeps the fallback', () => {
     const c = resolvePhobosConfig({ pass_kills: 'lots', fast_monsters: 'yes' } as Record<string, unknown>);
     expect(c.passKills).toBe(def.pass_kills);

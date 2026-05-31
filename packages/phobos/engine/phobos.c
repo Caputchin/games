@@ -57,28 +57,76 @@ static uint32_t phobos_rand(void)
 }
 
 // ---- seeded procedural monster spawn (anti-cheat start state) -------------
-// Called from G_DoLoadLevel after P_SetupLevel. The arena ships monster-free;
-// we place the wave from the seed so every round differs and pre-recorded input
+// Called from G_DoLoadLevel after P_SetupLevel. The maps ship monster-free; we
+// place the wave from the seed so every round differs and pre-recorded input
 // demos fail (the monsters aren't where the recording expects).
 static int phobos_wave_count = 5;
 static const mobjtype_t WAVE[] = { MT_POSSESSED, MT_TROOP, MT_SERGEANT };
 
 void phobos_set_wave(int count) { if (count > 0) phobos_wave_count = count; }
 
-void phobos_spawn_wave(void)
-{
-    if (!phobos_have_seed) return;
+// Spawn-point markers (doomednum 4001) authored into every map and collected at
+// P_SetupLevel (the P_SpawnMapThing intercept calls phobos_add_spawnpt). The
+// seeded wave lands at a seeded subset of these, so spawning is valid in ANY
+// geometry -- open arenas AND tight mazes -- not just a hardcoded rectangle.
+// Static WAD data => deterministic + replay-safe (the server rebuilds the same
+// map). Coords are map units (mapthing_t space), shifted to fixed-point on spawn.
+#define PHOBOS_MAX_SPAWNPTS 64
+typedef struct { int x, y; } phobos_spawnpt_t;
+static phobos_spawnpt_t phobos_spawnpts[PHOBOS_MAX_SPAWNPTS];
+static int phobos_spawnpt_count = 0;
 
-    // Arm the player: pistol start + the level's shotgun (design palette).
+void phobos_reset_spawnpts(void) { phobos_spawnpt_count = 0; }
+
+void phobos_add_spawnpt(int x, int y)
+{
+    if (phobos_spawnpt_count < PHOBOS_MAX_SPAWNPTS)
+    {
+        phobos_spawnpts[phobos_spawnpt_count].x = x;
+        phobos_spawnpts[phobos_spawnpt_count].y = y;
+        phobos_spawnpt_count++;
+    }
+}
+
+static void phobos_arm_player(void)
+{
     player_t *p = &players[consoleplayer];
     p->killcount = 0;                  // deterministic per-round kill baseline
     p->weaponowned[wp_shotgun] = true;
     p->ammo[am_shell] = p->maxammo[am_shell];
     p->ammo[am_clip] = p->maxammo[am_clip];
     p->pendingweapon = wp_shotgun;
+}
 
-    // Octagon arena bounds (match build-phobos-wad.py AW/AH + the central
-    // platform). Spawn on the main floor, clear of the player and the platform.
+void phobos_spawn_wave(void)
+{
+    if (!phobos_have_seed) return;
+    phobos_arm_player();
+
+    if (phobos_spawnpt_count > 0)
+    {
+        // Seeded Fisher-Yates over the authored points, take the first
+        // wave_count (distinct while count <= points, wrapping only if the wave
+        // exceeds the authored markers). Deterministic rand-call count.
+        int idx[PHOBOS_MAX_SPAWNPTS];
+        for (int i = 0; i < phobos_spawnpt_count; i++) idx[i] = i;
+        for (int i = phobos_spawnpt_count - 1; i > 0; i--)
+        {
+            int j = (int)(phobos_rand() % (uint32_t)(i + 1));
+            int t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+        }
+        for (int i = 0; i < phobos_wave_count; i++)
+        {
+            phobos_spawnpt_t *sp = &phobos_spawnpts[idx[i % phobos_spawnpt_count]];
+            mobjtype_t t = WAVE[phobos_rand() % (sizeof(WAVE) / sizeof(WAVE[0]))];
+            mobj_t *m = P_SpawnMobj(sp->x << FRACBITS, sp->y << FRACBITS, ONFLOORZ, t);
+            if (m) m->angle = (angle_t)phobos_rand() & (angle_t)0xE0000000u;
+        }
+        return;
+    }
+
+    // Fallback for a map with no authored markers: legacy hardcoded-bounds
+    // rejection sampling against the original octagon arena + central platform.
     const int LOX = 300, HIX = 1536 - 300, LOY = 300, HIY = 1280 - 300;
     const int PX0 = 576, PY0 = 448, PX1 = 960, PY1 = 832;   // central platform
     mobj_t *pl = players[consoleplayer].mo;

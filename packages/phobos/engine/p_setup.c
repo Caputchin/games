@@ -808,6 +808,7 @@ P_SetupLevel
 
     bodyqueslot = 0;
     deathmatch_p = deathmatchstarts;
+    { extern void phobos_reset_spawnpts(void); phobos_reset_spawnpts(); }  // clear before P_LoadThings refills
     P_LoadThings (lumpnum+ML_THINGS);
     
     // if deathmatch, randomly spawn the active players
