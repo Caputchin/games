@@ -5,6 +5,7 @@
 //! No wasm-bindgen, no Emscripten: the spike showed this compiles to a ~249 KB,
 //! zero-import wasm the replay isolate loads precompiled.
 
+use crate::codec;
 use crate::sim::{Phase, Sim, SimConfig, TICK_HZ};
 use core::slice;
 
@@ -54,28 +55,16 @@ pub extern "C" fn ws_run(
     let mut sim = Sim::new(cfg, [s0, s1, s2, s3]);
     let mut cur_dir = 0i32;
     let mut idx = 0usize;
-    let rec = trace.len() / 5;
+    let rec = trace.len() / codec::REC;
 
     for tick in 0..cfg.timeout_ticks {
         let mut launch = false;
-        while idx < rec {
-            let base = idx * 5;
-            let rt = u32::from_le_bytes([
-                trace[base],
-                trace[base + 1],
-                trace[base + 2],
-                trace[base + 3],
-            ]);
-            if rt != tick {
-                break;
-            }
-            let code = trace[base + 4];
-            cur_dir = match code & 3 {
-                1 => -1,
-                2 => 1,
-                _ => 0,
-            };
-            if code & 4 != 0 {
+        // Apply every input record stamped for this tick (shared codec: the live
+        // recorder writes with the same module, so encode + decode cannot diverge).
+        while idx < rec && codec::record_tick(trace, idx) == tick {
+            let (dir, launch_now) = codec::record_input(trace, idx);
+            cur_dir = dir;
+            if launch_now {
                 launch = true;
             }
             idx += 1;

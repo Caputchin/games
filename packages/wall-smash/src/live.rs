@@ -57,8 +57,6 @@ impl RenderRng {
     }
 }
 
-#[derive(Resource, Clone, Copy)]
-struct Accent(Color);
 
 /// True when rendering the real 3D arena (3D skin on a hardware GPU).
 #[derive(Resource, Clone, Copy)]
@@ -308,6 +306,24 @@ fn brick_color(tint: Option<Color>, row: usize, level: usize) -> Color {
     }
 }
 
+/// Tiled star-field backdrop sprite (flat, behind everything). Shared by both skins.
+fn star_sprite(stars: Handle<Image>, size: f32) -> Sprite {
+    Sprite {
+        image: stars,
+        image_mode: SpriteImageMode::Tiled { tile_x: true, tile_y: true, stretch_value: 1.0 },
+        custom_size: Some(Vec2::splat(size)),
+        ..default()
+    }
+}
+
+/// Top-down brick render footprint (width, depth/height) from the sim half-extent,
+/// with small gaps so bricks read as separate tiles. Shared by both brick systems.
+fn brick_footprint(half: &Half) -> (f32, f32) {
+    let w = (half.hx * 2) as f32 / FP as f32 * SCALE - 2.0;
+    let d = ((half.hy * 2) as f32 / FP as f32 * SCALE - 1.0).max(6.0);
+    (w, d)
+}
+
 /// `paletteFromSkin` (game.ts) packs each key as 0xRRGGBB, or this sentinel when the
 /// customer left that key unset -> the baked default (or, for brick, the ARCADE wall).
 const PAL_UNSET: u32 = 0xFFFF_FFFF;
@@ -369,7 +385,6 @@ pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>) {
     }));
     let is3d = mode == 2;
     app.insert_resource(ClearColor(pal.bg));
-    app.insert_resource(Accent(pal.accent));
     app.insert_resource(pal);
     app.insert_resource(Is3d(is3d));
 
@@ -437,14 +452,10 @@ fn setup_scene(
     ));
 
     // Star backdrop: same procedural starfield as the 3D skin, tiled flat behind all.
-    let stars = images.add(make_stars(0x51A4));
+    // This camera is arena-unit ortho (AutoMin), so size in world units; a generous
+    // multiplier covers wide viewports (it can't use the 3D skin's pixel-space fit).
     commands.spawn((
-        Sprite {
-            image: stars,
-            image_mode: SpriteImageMode::Tiled { tile_x: true, tile_y: true, stretch_value: 1.0 },
-            custom_size: Some(Vec2::splat(aw.max(ah) * 2.5)),
-            ..default()
-        },
+        star_sprite(images.add(make_stars(0x51A4)), aw.max(ah) * 3.0),
         Transform::from_xyz(0.0, 0.0, -20.0),
     ));
 
@@ -505,9 +516,7 @@ fn skin_bricks(
         // same wall (default ARCADE, or the skin brick tint).
         let row = (pos.y / (FP * 10)).max(0) as usize;
         let col = brick_color(pal.brick, row, level.0 as usize);
-        // Real top-down footprint (small gap so bricks read as separate tiles).
-        let w = (half.hx * 2) as f32 / FP as f32 * SCALE - 2.0;
-        let h = ((half.hy * 2) as f32 / FP as f32 * SCALE - 1.0).max(6.0);
+        let (w, h) = brick_footprint(half);
         let p = to_px(pos, &c);
         commands.entity(e).insert((
             Sprite { color: col, custom_size: Some(Vec2::new(w, h)), ..default() },
@@ -573,7 +582,6 @@ fn cam_target(ah: f32) -> Vec3 {
 fn setup_3d(
     mut commands: Commands,
     cfg: Res<Cfg>,
-    accent: Res<Accent>,
     pal: Res<Palette>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -631,23 +639,17 @@ fn setup_3d(
     commands.insert_resource(DebrisArt {
         mesh: meshes.add(Cuboid::new(3.4, 3.4, 3.4)),
         mat: materials.add(StandardMaterial {
-            base_color: accent.0,
-            emissive: LinearRgba::from(accent.0) * 2.5,
+            base_color: pal.accent,
+            emissive: LinearRgba::from(pal.accent) * 2.5,
             ..default()
         }),
     });
 
-    let stars = images.add(make_stars(0x51A4));
     commands.spawn((Camera2d, Camera { order: -1, ..default() }));
     commands.spawn((
-        Sprite {
-            image: stars,
-            image_mode: SpriteImageMode::Tiled { tile_x: true, tile_y: true, stretch_value: 1.0 },
-            custom_size: Some(Vec2::splat(2048.0)),
-            ..default()
-        },
+        star_sprite(images.add(make_stars(0x51A4)), 2048.0),
         Transform::from_xyz(0.0, 0.0, -10.0),
-        StarBg,
+        StarBg, // fit_star_bg resizes this to the viewport (this camera is pixel-space)
     ));
 
     // Fake floor shadows (reliable on any GPU, unlike the real-time shadow pass):
@@ -709,7 +711,7 @@ fn setup_3d(
             Mesh3d(meshes.add(Capsule3d { radius: pr, half_length: hl })),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color: pal.paddle,
-                emissive: LinearRgba::from(accent.0) * 0.12,
+                emissive: LinearRgba::from(pal.accent) * 0.12,
                 metallic: 0.65,
                 perceptual_roughness: 0.28,
                 ..default()
@@ -820,8 +822,7 @@ fn skin_bricks_3d(
         let row = (pos.y / (FP * 10)).max(0) as usize;
         let col = brick_color(pal.brick, row, level.0 as usize);
         let lin = col.to_linear();
-        let w = (half.hx * 2) as f32 / FP as f32 * SCALE - 2.0;
-        let d = ((half.hy * 2) as f32 / FP as f32 * SCALE - 1.0).max(6.0);
+        let (w, d) = brick_footprint(half);
         let (x, z) = to_floor(pos, &c);
         commands
             .entity(e)
@@ -914,10 +915,9 @@ fn record(world: &mut World, dir: i32, launch: bool) {
     if !rec.started || dir != rec.prev_dir || launch {
         rec.started = true;
         rec.prev_dir = dir;
-        let code: u8 =
-            (if dir < 0 { 1 } else if dir > 0 { 2 } else { 0 }) | if launch { 4 } else { 0 };
-        rec.bytes.extend_from_slice(&tick.to_le_bytes());
-        rec.bytes.push(code);
+        // Shared codec: headless replay decodes with the same module, so the wire
+        // format cannot drift between record + replay.
+        crate::codec::write_record(&mut rec.bytes, tick, dir, launch);
     }
 }
 
@@ -1008,7 +1008,7 @@ fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
 }
 
 fn spawn_particles(world: &mut World, x: f32, y: f32) {
-    let accent = world.resource::<Accent>().0;
+    let accent = world.resource::<Palette>().accent;
     world.resource_scope::<RenderRng, _>(|w, mut rng| {
         for _ in 0..8 {
             let ang = rng.frange(0.0, std::f32::consts::TAU);

@@ -5,6 +5,7 @@
 //!   - feature `render` (full Bevy) -> `live`: the WebGL browser game.
 //! The same sim systems run both ends, which is the determinism guarantee.
 
+pub mod codec;
 pub mod sim;
 
 #[cfg(not(feature = "render"))]
