@@ -178,6 +178,15 @@ def build_map(outer_pts, walls, feature):
         for (px, py) in [(cx0, cy0), (cx1 - sz, cy0), (cx0, cy1 - sz), (cx1 - sz, cy1 - sz)]:
             ed.sectors.append(Sector(168, 168, FLOOR, CEIL, 150, 0, 0))  # floor==ceil = solid
             _inner_box(ed, (px, py, px + sz, py + sz), len(ed.sectors) - 1, 'SUPPORT3')
+    elif feature == 'terraces':     # broken terrain: several sunken holes + tall raised steps
+        PITS = [(320, 340, 540, 560), (996, 720, 1216, 940), (660, 884, 876, 1100)]
+        STEPS = [(996, 340, 1216, 560), (320, 720, 540, 940), (660, 470, 876, 686)]
+        for box in PITS:            # sunken nukage holes, dimmer
+            ed.sectors.append(Sector(-40, 168, 'FLAT5_4', CEIL, 110, 0, 0))
+            _inner_box(ed, box, len(ed.sectors) - 1, 'STEP3')
+        for box in STEPS:           # tall raised steps, brighter top
+            ed.sectors.append(Sector(96, 168, 'FLOOR0_5', 'CEIL3_1', 200, 0, 0))
+            _inner_box(ed, box, len(ed.sectors) - 1, 'STEP3')
 
     th = Thing(AW // 2, 200, 90, 1, 0)
     th.easy = th.medium = th.hard = True
@@ -288,7 +297,7 @@ def build_maze(cols, rows, pitch, hw, wall_tex, seed):
 # is a thunk so arenas and mazes can share one assembly loop.
 CAMPAIGN = [
     lambda: build_map(octagon_pts(), ['METAL', 'BROWN1', 'STARGR1', 'COMPUTE1', 'METAL', 'BROWN1', 'STARGR1', 'SUPPORT3'], 'platform'),
-    lambda: build_map(rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'pit'),
+    lambda: build_map(rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'terraces'),
     lambda: build_map(octagon_pts(288), ['STARGR1', 'METAL', 'COMPUTE1', 'STARGR2', 'STARGR1', 'METAL', 'COMPUTE1', 'STARGR2'], 'pillars'),
     lambda: build_map(rect_pts(),    ['COMPUTE1', 'METAL', 'STARGR2', 'METAL'], 'platform'),
     lambda: build_maze(5, 4, 384, 96, 'BROWN1', 1337),
