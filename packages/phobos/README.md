@@ -50,7 +50,11 @@ widget per site:
 - **Keyboard and touch**: full WASD / arrow-key play on desktop, and a large
   on-screen control pad with fire on mobile (multi-touch, so you can turn and
   fire together).
-- **Responsive**: the view scales to fit wherever the widget is embedded.
+- **Fixed size**: a fixed 16:10 view (native 640x400). It scales down to fit a
+  narrower embed but always keeps that aspect ratio and never exceeds its native
+  size; it does not reflow, so it is not a responsive layout. Give it room.
+- **Sound**: short SFX (shots, demons, doors) with an on-screen mute toggle, so
+  audio is optional and off-by-a-tap.
 - Phobos is a fast visual shooter, so it is **not** screen-reader solvable -
   sites that need a non-visual challenge should pair it with an accessible
   alternative.

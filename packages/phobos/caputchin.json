@@ -10,11 +10,11 @@
       "Action"
     ],
     "support": {
-      "responsive": true,
+      "responsive": false,
       "touch": true,
       "keyboard": true,
       "screenReader": false,
-      "audio": "none"
+      "audio": "optional"
     },
     "author": {
       "name": "Caputchin",
