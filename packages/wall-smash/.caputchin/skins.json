@@ -8,7 +8,7 @@
   },
   "presets": {
     "retro": {
-      "_theme": "dark",
+      "_theme": "light",
       "_default": true,
       "background": "#0b0b12",
       "ball": "#e6f2ff",
@@ -17,6 +17,7 @@
     },
     "modern": {
       "_theme": "dark",
+      "_default": true,
       "background": "#06000f",
       "ball": "#ffffff",
       "paddle": "#e6292e",

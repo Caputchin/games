@@ -11,6 +11,7 @@ The official first-party game pack for the [Caputchin](https://caputchin.com) ma
 | [Fruit Slash](packages/fruit-slash/) | Swipe to slice the flying fruit, avoid the bombs. |
 | [Whack-a-Monkey](packages/whack-a-monkey/) | Tap the monkeys as they peek out, leave the jungle animals alone. |
 | [Phobos](packages/phobos/) | Clear the demons to prove you're human. A real DOOM-engine captcha. |
+| [Wall Smash](packages/wall-smash/) | Bounce the ball off your paddle to smash every brick before time runs out. |
 
 More games land here over time. Each one is browsable and embeddable on its own from the [Caputchin marketplace](https://caputchin.com/marketplace).
 
@@ -35,6 +36,7 @@ GPL-2.0-only because it links the open-source GPL DOOM engine.
 | [Fruit Slash](packages/fruit-slash/) | MIT |
 | [Whack-a-Monkey](packages/whack-a-monkey/) | MIT |
 | [Phobos](packages/phobos/) | GPL-2.0-only |
+| [Wall Smash](packages/wall-smash/) | MIT |
 
 The repository-level [`LICENSE`](LICENSE) (MIT) covers the repo tooling and the
 MIT games, and records the per-package map in full. Bundled third-party assets

@@ -5,8 +5,7 @@
     "num_levels": { "type": "range", "min": 1, "max": 5, "step": 1 },
     "lives": { "type": "range", "min": 1, "max": 5, "step": 1 },
     "time_limit_seconds": { "type": "range", "min": 20, "max": 120, "step": 5 },
-    "sound": "boolean",
-    "render_style": { "type": "list", "values": ["retro", "modern"], "name": "Render style", "description": "retro = flat 2D look; modern = lit 3D look." }
+    "sound": "boolean"
   },
   "presets": {
     "default": {
@@ -16,17 +15,7 @@
       "num_levels": 2,
       "lives": 3,
       "time_limit_seconds": 45,
-      "sound": true,
-      "render_style": "retro"
-    },
-    "modern": {
-      "paddle_width": 44,
-      "ball_speed": 270,
-      "num_levels": 2,
-      "lives": 3,
-      "time_limit_seconds": 45,
-      "sound": true,
-      "render_style": "modern"
+      "sound": true
     },
     "casual": {
       "paddle_width": 56,
@@ -34,8 +23,7 @@
       "num_levels": 2,
       "lives": 5,
       "time_limit_seconds": 60,
-      "sound": true,
-      "render_style": "retro"
+      "sound": true
     },
     "hardcore": {
       "paddle_width": 30,
@@ -43,8 +31,7 @@
       "num_levels": 4,
       "lives": 1,
       "time_limit_seconds": 40,
-      "sound": true,
-      "render_style": "modern"
+      "sound": true
     }
   }
 }

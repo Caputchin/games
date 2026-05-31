@@ -47,15 +47,6 @@ const FALLBACK: WallSmashConfig = {
   timeLimitSeconds: jsonNumber('time_limit_seconds', 45),
 };
 
-export type RenderStyle = 'retro' | 'modern';
-
-/** Resolve the render style (render-only; not part of the deterministic sim).
- *  game.ts hands it to the Bevy build to pick the 2D (retro) or 3D (modern) look. */
-export function resolveRenderStyle(config: Record<string, unknown> | null | undefined): RenderStyle {
-  const v = config?.['render_style'];
-  return v === 'modern' ? 'modern' : 'retro';
-}
-
 function readNumber(cfg: Record<string, unknown> | null, key: string): number | null {
   if (!cfg) return null;
   const v = cfg[key];

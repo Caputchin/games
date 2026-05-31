@@ -10,5 +10,5 @@
       "url": "https://caputchin.com"
     }
   },
-  "games": ["./packages/leaf-memory", "./packages/dino-runner", "./packages/fruit-slash", "./packages/whack-a-monkey", "./packages/phobos"]
+  "games": ["./packages/leaf-memory", "./packages/dino-runner", "./packages/fruit-slash", "./packages/whack-a-monkey", "./packages/phobos", "./packages/wall-smash"]
 }

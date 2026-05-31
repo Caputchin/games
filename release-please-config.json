@@ -25,6 +25,10 @@
     "packages/phobos": {
       "component": "phobos",
       "package-name": "@caputchin/game-phobos"
+    },
+    "packages/wall-smash": {
+      "component": "wall-smash",
+      "package-name": "@caputchin/game-wall-smash"
     }
   }
 }

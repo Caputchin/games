@@ -6,7 +6,7 @@
 // it under the same seed to compute the authoritative verdict.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
-import { configToInts, resolveRenderStyle } from './config.js';
+import { configToInts } from './config.js';
 import { applyStyles } from './styles.js';
 import { createSfx } from './audio.js';
 import liveWasmB64 from './generated/live-wasm.js';
@@ -126,10 +126,14 @@ export function runWallSmash(opts: GameOptions): () => void {
 
   const seed = ctx?.seed ?? fallbackSeed();
   const cfgInts = Array.from(configToInts(ctx?.config ?? null));
-  // 0 = retro 2D; 1 = modern 2D fallback (software GL); 2 = modern real 3D (GPU).
-  // The software-GL downgrade is skipped when the test-only force flag is set (see
-  // forceReal3d), letting a GPU-less automated browser render the real 3D scene.
-  const want3d = resolveRenderStyle(ctx?.config ?? null) === 'modern';
+  // The look (2D retro vs 3D modern) is a SKIN choice, not gameplay config: it is a
+  // presentational axis the widget/host can set (the dark-theme skin = the 3D arena,
+  // the light-theme skin = the flat 2D board), and it never touches the deterministic
+  // sim, so it can't affect replay. Render modes: 0 = retro 2D; 1 = modern 2D fallback
+  // (software GL); 2 = modern real 3D (GPU). The software-GL downgrade is skipped when
+  // the test-only force flag is set (forceReal3d), so a GPU-less automated browser can
+  // still render the real 3D scene.
+  const want3d = ctx?.skin?._theme === 'dark';
   const mode = want3d ? (isSoftwareGL() && !forceReal3d() ? 1 : 2) : 0;
   const palette = paletteFromSkin(ctx?.skin ?? null);
 

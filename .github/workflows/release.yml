@@ -19,6 +19,7 @@ jobs:
       fruit_slash_released: ${{ steps.release.outputs['packages/fruit-slash--release_created'] }}
       whack_a_monkey_released: ${{ steps.release.outputs['packages/whack-a-monkey--release_created'] }}
       phobos_released: ${{ steps.release.outputs['packages/phobos--release_created'] }}
+      wall_smash_released: ${{ steps.release.outputs['packages/wall-smash--release_created'] }}
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
@@ -68,6 +69,18 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
       - run: pnpm --filter @caputchin/game-phobos build:engines
 
+      # Wall Smash compiles a Bevy sim to WASM: a tiny zero-import headless replay
+      # module plus the live render bundle. Like Phobos, but the toolchain is Rust +
+      # wasm-bindgen + wasm-opt (no vendored inputs; the source builds from scratch).
+      # build:wasm must run before `pnpm build` so tsup has the wasm + base64 codegen.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@0.2.122,wasm-opt
+      - run: pnpm --filter @caputchin/game-wall-smash build:wasm
+
       - run: pnpm build
 
       - name: Publish @caputchin/game-leaf-memory
@@ -89,3 +102,7 @@ jobs:
       - name: Publish @caputchin/game-phobos
         if: ${{ needs.release-please.outputs.phobos_released == 'true' }}
         run: pnpm --filter @caputchin/game-phobos publish --access public --no-git-checks
+
+      - name: Publish @caputchin/game-wall-smash
+        if: ${{ needs.release-please.outputs.wall_smash_released == 'true' }}
+        run: pnpm --filter @caputchin/game-wall-smash publish --access public --no-git-checks
