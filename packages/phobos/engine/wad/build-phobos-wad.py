@@ -121,7 +121,10 @@ def _outer_walls(ed, pts, walls):
 
 def _inner_box(ed, box, inner_sector, riser_tex):
     """4 two-sided lines around an inner sector (front = main sector 0, back =
-    the inner sector). The riser/face shows on the main-side lower texture."""
+    the inner sector). The riser texture is set on BOTH sides' lower so the wall
+    is drawn whether viewed from the main floor OR from inside a sunken pit / atop
+    a raised step -- a one-sided texturing leaves the inner-facing wall untextured
+    and it renders as HOM the moment the player is inside the feature."""
     x0, y0, x1, y1 = box
     pv = len(ed.vertexes)
     ed.vertexes += [Vertex(x0, y0), Vertex(x1, y0), Vertex(x1, y1), Vertex(x0, y1)]
@@ -129,7 +132,7 @@ def _inner_box(ed, box, inner_sector, riser_tex):
         front = len(ed.sidedefs)
         ed.sidedefs.append(Sidedef(0, 0, '-', riser_tex, '-', 0))
         back = len(ed.sidedefs)
-        ed.sidedefs.append(Sidedef(0, 0, '-', '-', '-', inner_sector))
+        ed.sidedefs.append(Sidedef(0, 0, '-', riser_tex, '-', inner_sector))
         ld = Linedef(a, b, 0, 0, 0, front, back)
         ld.two_sided = True
         ed.linedefs.append(ld)
@@ -184,9 +187,11 @@ def build_map(outer_pts, walls, feature):
             _inner_box(ed, (px, py, px + sz, py + sz), len(ed.sectors) - 1, 'SUPPORT3')
             boxes.append((px, py, px + sz, py + sz))
     elif feature == 'holes':        # simple arena, several sunken nukage holes in the corners
+        # Depth -24 == DOOM's max step-up, so a player who walks into a hole can
+        # still climb out (a deeper pit traps them and breaks the round).
         for box in [(300, 300, 520, 520), (1016, 300, 1236, 520),
                     (300, 760, 520, 980), (1016, 760, 1236, 980)]:
-            ed.sectors.append(Sector(-40, 168, 'FLAT5_4', CEIL, 110, 0, 0))
+            ed.sectors.append(Sector(-24, 168, 'FLAT5_4', CEIL, 110, 0, 0))
             _inner_box(ed, box, len(ed.sectors) - 1, 'STEP3')
             boxes.append(box)
 
