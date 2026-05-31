@@ -1,0 +1,52 @@
+{
+  "name": "@caputchin/game-wall-smash",
+  "version": "0.1.0",
+  "description": "Smash the wall of bricks with the ball to prove you're human. A Bevy-engine captcha. A Caputchin first-party game.",
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "bevy",
+    "breakout",
+    "arkanoid",
+    "game"
+  ],
+  "homepage": "https://github.com/Caputchin/caputchin-games#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caputchin/caputchin-games",
+    "directory": "packages/wall-smash"
+  },
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "caputchin.json",
+    ".caputchin",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": [
+    "./dist/wall-smash.js"
+  ],
+  "scripts": {
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "prebuild": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "build": "tsup",
+    "predev": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@caputchin/game-sdk": "^2.1.0",
+    "@caputchin/replay-contract": "^0.1.0",
+    "@types/node": "^20.0.0",
+    "happy-dom": "^15.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

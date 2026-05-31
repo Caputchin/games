@@ -1,0 +1,55 @@
+#!/bin/bash
+# Build the Wall Smash Bevy wasm. Two targets from one crate (cargo features):
+#   - headless replay (bevy_ecs only)  -> build/wall-smash-headless.wasm
+#     (caputchin.json run.modules; tsup copies it to dist/wall-smash.wasm)
+#   - live render (full Bevy + WebGL2) -> wasm-bindgen glue + base64-inlined wasm
+#     (the live IIFE inlines it; CSP connect-src 'none' forbids a fetch)
+#
+# Requires: rustup + the wasm32-unknown-unknown target, wasm-bindgen-cli (version
+# matching the crate's wasm-bindgen), and wasm-opt (binaryen). Override the opt
+# binary with WASM_OPT=/path/to/wasm-opt.
+#
+# Iteration knobs (local only; CI always does a full release build):
+#   WS_FAST=1       use the `fastdev` cargo profile + skip wasm-opt (much faster
+#                   link + no size pass; bundle is bigger but fine for testing).
+#   WS_LIVE_ONLY=1  skip the headless build (use when only live.rs changed).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# shellcheck disable=SC1090
+source "$HOME/.cargo/env" 2>/dev/null || true
+
+WASMOPT="${WASM_OPT:-wasm-opt}"
+T=wasm32-unknown-unknown
+mkdir -p build build/bindgen src/generated
+
+if [ "${WS_FAST:-0}" = "1" ]; then
+  PROFILE=fastdev
+  PROFILE_DIR=fastdev
+  echo "[wall-smash] WS_FAST: fastdev profile, skipping wasm-opt"
+else
+  PROFILE=release
+  PROFILE_DIR=release
+fi
+
+opt_or_copy() { # $1 in, $2 out
+  if [ "${WS_FAST:-0}" = "1" ]; then
+    cp "$1" "$2"
+  else
+    "$WASMOPT" -Oz --all-features "$1" -o "$2"
+  fi
+}
+
+if [ "${WS_LIVE_ONLY:-0}" != "1" ]; then
+  echo "[wall-smash] headless replay build..."
+  cargo build --profile "$PROFILE" --target "$T"
+  opt_or_copy "target/$T/$PROFILE_DIR/wall_smash.wasm" build/wall-smash-headless.wasm
+fi
+
+echo "[wall-smash] live render build..."
+cargo build --profile "$PROFILE" --target "$T" --features render
+wasm-bindgen --target web --no-typescript --out-dir build/bindgen "target/$T/$PROFILE_DIR/wall_smash.wasm"
+opt_or_copy build/bindgen/wall_smash_bg.wasm build/bindgen/wall_smash_opt.wasm
+# Inline the live wasm as one base64 string the IIFE decodes + instantiates.
+printf 'export default "%s";\n' "$(base64 -w0 build/bindgen/wall_smash_opt.wasm)" > src/generated/live-wasm.ts
+
+echo "[wall-smash] live $(du -h build/bindgen/wall_smash_opt.wasm | cut -f1) (+b64)"

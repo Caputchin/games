@@ -1,0 +1,40 @@
+{
+  "terms_accepted": true,
+  "license": "MIT",
+  "marketplace": {
+    "name": "Wall Smash",
+    "description": "Bounce the ball off your paddle to smash every brick before time runs out.",
+    "preview": "preview.png",
+    "categories": [
+      "Arcade",
+      "Reflex"
+    ],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": false,
+      "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-wall-smash",
+  "entry": "dist/wall-smash.js",
+  "run": {
+    "entry": "dist/run.js",
+    "modules": [
+      {
+        "name": "wall-smash.wasm",
+        "path": "dist/wall-smash.wasm",
+        "type": "wasm"
+      }
+    ]
+  },
+  "preferred": {
+    "width": 440,
+    "height": 340
+  }
+}

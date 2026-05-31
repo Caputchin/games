@@ -1,0 +1,26 @@
+{
+  "schema": {
+    "background": { "type": "color", "name": "Background", "description": "Arena backdrop tint (behind the starfield)." },
+    "brick": { "type": "color", "name": "Brick", "description": "Recolor the whole wall to one hue (shaded per row). Omit to keep the default multi-color arcade wall." },
+    "ball": { "type": "color", "name": "Ball", "description": "Ball color." },
+    "paddle": { "type": "color", "name": "Paddle", "description": "Paddle color." },
+    "accent": { "type": "color", "name": "Accent", "description": "Glow + break-particle accent color." }
+  },
+  "presets": {
+    "retro": {
+      "_theme": "dark",
+      "_default": true,
+      "background": "#0b0b12",
+      "ball": "#e6f2ff",
+      "paddle": "#e6292e",
+      "accent": "#3ad6ff"
+    },
+    "modern": {
+      "_theme": "dark",
+      "background": "#06000f",
+      "ball": "#ffffff",
+      "paddle": "#e6292e",
+      "accent": "#00f7ff"
+    }
+  }
+}

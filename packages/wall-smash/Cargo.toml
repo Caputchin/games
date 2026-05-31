@@ -1,0 +1,59 @@
+[package]
+name = "wall-smash"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Wall Smash deterministic Bevy sim: headless replay + live WebGL render."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# The sim is authored as Bevy ECS (bevy_ecs) and compiles into BOTH builds, so the
+# server replay and the browser run the identical systems. The `render` feature
+# additionally pulls full Bevy (DefaultPlugins -> WebGL2) for the live browser build.
+[dependencies]
+bevy_ecs = { version = "0.18.1", default-features = false }
+
+bevy = { version = "0.18.1", default-features = false, optional = true, features = [
+    "bevy_winit",
+    "bevy_render",
+    "bevy_core_pipeline",
+    "bevy_sprite",        # 2D retro skin (flat sprites; works on software GL too)
+    "bevy_sprite_render",
+    "bevy_pbr",           # 3D skin: PBR materials + shadows (real GPU only)
+    "bevy_light",         # 3D skin: directional / point lights
+    "bevy_post_process",  # 3D skin: bloom
+    "bevy_window",
+    "webgl2",
+] }
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
+
+[dependencies.web-sys]
+version = "0.3"
+optional = true
+features = ["Window", "CustomEvent", "CustomEventInit", "EventTarget"]
+
+[features]
+# Headless replay build is the default (bevy_ecs only -> tiny, zero-import wasm).
+default = []
+# Live browser build: full Bevy render + wasm-bindgen entry + the finish-event bridge.
+render = ["dep:bevy", "dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
+
+# Size-tuned release profile for the SHIPPED artifact (slow to build).
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# Fast iteration profile: skips LTO + size-opt + single-codegen-unit so the live
+# Bevy build links in a fraction of the time. Bundle is bigger but fine for local
+# testing. Use via `build-wasm.sh` with WS_FAST=1; never for the published build.
+[profile.fastdev]
+inherits = "release"
+opt-level = 1
+lto = false
+codegen-units = 16
+strip = true
