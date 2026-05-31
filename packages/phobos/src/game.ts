@@ -180,12 +180,13 @@ export function runPhobos({ container, bridge, ctx }: {
         + t(locale, 'levelClearBody', 'Demons cleared. Nice shooting.');
       nextBtn.hidden = false;
     } else if (passed) {
-      // Died, but verified earlier: the captcha still counts, yet say plainly
-      // that this level was NOT cleared (never reuse the win copy).
+      // Died, but verified earlier: the captcha still counts, but a death is NOT
+      // a level clear -- only clearing advances, so offer Replay only (Next is
+      // reserved for the cleared path). The message acknowledges the verify.
       title = t(locale, 'diedTitle', 'You died');
       body = `${t(locale, 'verifiedBadge', 'Verified')}. `
         + t(locale, 'diedVerifiedBody', 'You already passed, but the demons got you this round.');
-      nextBtn.hidden = false;
+      nextBtn.hidden = true;
     } else {
       // Died before verifying: retry only.
       title = t(locale, 'diedTitle', 'You died');
