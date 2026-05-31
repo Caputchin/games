@@ -797,13 +797,39 @@ fn frame_camera_3d(
     let c = cfg.0;
     let aw = c.arena_w as f32 * SCALE;
     let ah = c.arena_h as f32 * SCALE;
-    let r = ((aw * 0.5).hypot(ah * 0.5)) * 1.2 + BRICK_H3;
-    let half_y = (CAM_FOV * 0.5).tan();
-    let fov_x = 2.0 * (half_y * aspect).atan();
-    let d = (r / (CAM_FOV * 0.5).sin()).max(r / (fov_x * 0.5).sin());
     let target = cam_target(ah);
+    let dir = cam_dir(); // camera sits at target + dir*d, looking back at target
+    let right = (-dir).cross(Vec3::Y).normalize();
+    let up = right.cross(-dir).normalize();
+    let half_y = (CAM_FOV * 0.5).tan();
+    let half_x = half_y * aspect;
+
+    // Tight fit: instead of a bounding sphere (which over-bounds the flat, tilted
+    // arena and leaves big margins), find the smallest camera distance that keeps
+    // every arena corner (floor + brick height, incl. the rail lip) inside the
+    // frustum. For a corner offset `p` from the target, its camera depth is
+    // `d - p.dir`, so it fits vertically when `|p.up| <= (d - p.dir)*half_y` ->
+    // `d >= p.dir + |p.up|/half_y` (and likewise horizontally). The max over all
+    // corners is the fit distance, so the arena fills whichever screen axis is
+    // tighter (height on a wide widget, width on a tall one).
+    let hx = aw * 0.5 + 14.0;
+    let hz = ah * 0.5 + 14.0;
+    let mut d = 0.0_f32;
+    for sx in [-1.0_f32, 1.0] {
+        for sz in [-1.0_f32, 1.0] {
+            for sy in [0.0_f32, BRICK_H3] {
+                let p = Vec3::new(sx * hx, sy, sz * hz) - target;
+                let along = p.dot(dir);
+                d = d
+                    .max(along + p.dot(right).abs() / half_x)
+                    .max(along + p.dot(up).abs() / half_y);
+            }
+        }
+    }
+    d *= 1.05; // small breathing margin so corners aren't flush to the edge
+
     if let Ok(mut t) = cam.single_mut() {
-        *t = Transform::from_translation(target + cam_dir() * d).looking_at(target, Vec3::Y);
+        *t = Transform::from_translation(target + dir * d).looking_at(target, Vec3::Y);
     }
 }
 
