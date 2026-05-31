@@ -17,36 +17,8 @@ function svgDataUri(): Plugin {
   };
 }
 
-// Shim the `import x from './engine.wasm'` syntax for the unit-test
-// environment (vite doesn't ship ESM wasm support without a plugin). At
-// build time tsup keeps the import external (apps/replay provides the
-// precompiled WebAssembly.Module); here we compile from disk synchronously
-// and emit a default-export of the resulting Module so run.ts can be
-// imported the same way both paths see it.
-function wasmAsModule(): Plugin {
-  return {
-    name: 'wasm-as-module',
-    enforce: 'pre',
-    load(id) {
-      const clean = id.split('?')[0]!;
-      if (!clean.endsWith('.wasm')) return null;
-      const bytes = readFileSync(clean);
-      // Hex-encode so the synthesized module is pure JS (no Buffer import
-      // dance in happy-dom). new WebAssembly.Module is synchronous and runs
-      // at load, exactly the shape the production loader provides.
-      const hex = bytes.toString('hex');
-      return [
-        `const _hex = ${JSON.stringify(hex)};`,
-        `const _bytes = new Uint8Array(_hex.length / 2);`,
-        `for (let i = 0; i < _hex.length; i += 2) _bytes[i / 2] = parseInt(_hex.slice(i, i + 2), 16);`,
-        `export default new WebAssembly.Module(_bytes);`,
-      ].join('\n');
-    },
-  };
-}
-
 export default defineConfig({
-  plugins: [svgDataUri(), wasmAsModule()],
+  plugins: [svgDataUri()],
   test: {
     environment: 'happy-dom',
     coverage: {

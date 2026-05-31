@@ -32,21 +32,8 @@ import { engine } from './sim/engine.js';
 import { DEFAULT_SIM_CONFIG } from './sim/config.js';
 import { MAX_TICKS } from './sim/constants.js';
 
-// Precompiled WebAssembly.Module exporting `identity(i32) -> i32` (returns its
-// argument unchanged). The module is loaded by the platform's replay host via
-// the wasm-as-module-entry path (apps/replay buildWorkerCode places it under
-// './engine.wasm' next to artifact.js; Worker Loader cannot compile wasm bytes
-// at runtime, so the precompiled Module entry is the only way in). Using
-// `identity` on the determinism critical path (the `passed` predicate) means
-// the trace cannot verify unless the wasm load succeeded, exercising the
-// platform's wasm-module pipeline end to end.
-import engineModule from './engine.wasm';
-
-const engineInstance = new WebAssembly.Instance(engineModule as WebAssembly.Module);
-const identity = engineInstance.exports.identity as (n: number) => number;
-
 export const run = toRun(engine, {
   defaultConfig: DEFAULT_SIM_CONFIG,
   maxTicks: MAX_TICKS,
-  passed: (outcome, config) => outcome.score >= identity(config.pairs),
+  passed: (outcome, config) => outcome.score >= config.pairs,
 });

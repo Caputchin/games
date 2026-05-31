@@ -61,20 +61,4 @@ describe('run artifact (toRun)', () => {
     expect(verdict.passed).toBe(true);
     expect(verdict.score).toBe(DEFAULT_SIM_CONFIG.pairs);
   });
-
-  // Phase 13: the first-party wasm fixture. run.ts imports `./engine.wasm`,
-  // instantiates it at module-eval time, and calls `identity(pairs)` from the
-  // `passed` predicate. If the wasm load path is broken the module itself
-  // refuses to load and this whole suite fails; this test pins the round-trip
-  // (live → encode → replay → wasm-gated passed) once more so a wasm-module
-  // regression has a focused failure marker.
-  it('wasm-gated passed: a live L1 win replays through the engine.wasm identity gate', () => {
-    const live = play(SEED, DEFAULT_SIM_CONFIG, { maxTicks: MAX_TICKS });
-    const verdict = run(SEED, null, encodeTrace(live.recorded));
-    expect(verdict.passed).toBe(true);
-    // The identity wasm preserves the threshold, so score >= identity(pairs)
-    // gates the same as score >= pairs; the fixture sits ON the critical
-    // path without changing semantics.
-    expect(verdict.score).toBe(DEFAULT_SIM_CONFIG.pairs);
-  });
 });
