@@ -32,6 +32,10 @@ interface Live {
   HEAPU8: Uint8Array;
 }
 
+// Number of campaign arenas baked into the WAD (E1M1..E1M4). Bonus levels cycle
+// through them; keep in sync with the CAMPAIGN list in engine/wad/build-phobos-wad.py.
+const NUM_MAPS = 4;
+
 function t(locale: Record<string, string> | null | undefined, key: string, fallback: string): string {
   return (locale && locale[key]) || fallback;
 }
@@ -231,13 +235,16 @@ export function runPhobos({ container, bridge, ctx }: {
     wave = waveCount + (lvl - 1) * 2; // escalate the wave each level
     levelCleared = false;
     if (lvl === 1) { passed = false; badgeEl.hidden = true; }
-    // Level 1 honors the configured respawn (it must match the server replay);
-    // bonus levels keep respawn off so the wave stays finite and clearable.
+    // Level 1 runs the configured captcha map (server replays it); bonus levels
+    // cycle through the other arenas for variety. Level 1 honors the configured
+    // respawn (must match the replay); bonus levels keep respawn off so the wave
+    // stays finite and clearable.
+    const map = lvl === 1 ? startMap : ((startMap - 1 + (lvl - 1)) % NUM_MAPS) + 1;
     const respawn = lvl === 1 ? (cfg.respawnMonsters ? 1 : 0) : 0;
     const s = levelSeed(lvl);
     live.ccall('phobos_start', null,
       ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-      [s[0]! >>> 0, s[1]! >>> 0, s[2]! >>> 0, s[3]! >>> 0, startMap, wave,
+      [s[0]! >>> 0, s[1]! >>> 0, s[2]! >>> 0, s[3]! >>> 0, map, wave,
         cfg.skill, cfg.fastMonsters ? 1 : 0, respawn]);
     startEl.hidden = true;
     clearedEl.hidden = true;

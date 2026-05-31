@@ -26,7 +26,7 @@ TEXTURES = ['STARGR1', 'STARGR2', 'METAL', 'BROWN1', 'COMPUTE1', 'STEP3',
             'DOOR1', 'SW1BRN1', 'SUPPORT3', 'BIGDOOR2', 'SKY1']  # SKY1 = E1 sky (engine-required)
 FLATS_KEEP = {'FLOOR0_3', 'FLOOR0_5', 'CEIL5_1', 'FLAT1', 'FLAT5_4',
               'F_SKY1', 'FLOOR4_8', 'CEIL3_1'}  # static flats only (no anim starts)
-KEEP_MUSIC = {'D_E1M1'}
+KEEP_MUSIC = {'D_E1M1', 'D_E1M2', 'D_E1M3', 'D_E1M4'}  # one per campaign map (engine hard-looks-up D_<map>)
 
 # Arena bounding box. The seeded monster spawn in phobos.c uses the same bounds
 # (keep them in sync). Player starts bottom-center; a raised platform sits in the
@@ -87,59 +87,83 @@ def build_texture_lumps(texdefs, wanted):
     return tex1, pnames, set(pn_list)
 
 
-def build_arena():
-    """An octagonal DOOM arena: varied wall textures, a moody main floor, and a
-    brighter raised central platform (a step-up island). Ships with only the
-    player start; the demon wave is spawned from the per-round seed (phobos.c)."""
-    ed = MapEditor()
-    cx0, cy0, cx1, cy1 = PLAT
+# Outer-shape vertex rings (CCW so each one-sided wall's front faces the
+# interior). All contain the seeded-spawn rectangle (~300..1236 x 300..980) and
+# the central feature box (PLAT), so the same seeded spawn (phobos.c) is valid
+# on every map.
+def rect_pts():
+    return [(0, 0), (0, AH), (AW, AH), (AW, 0)]
 
-    # Octagon outer boundary (cut-corner square), CCW so the front sidedef faces
-    # the interior (same winding the box used). Cut = 384 corner inset.
-    c = 384
-    oct_pts = [(0, c), (0, AH - c), (c, AH), (AW - c, AH), (AW, AH - c),
-               (AW, c), (AW - c, 0), (c, 0)]
+
+def octagon_pts(c=384):
+    return [(0, c), (0, AH - c), (c, AH), (AW - c, AH),
+            (AW, AH - c), (AW, c), (AW - c, 0), (c, 0)]
+
+
+def _outer_walls(ed, pts, walls):
     base = len(ed.vertexes)
-    for (x, y) in oct_pts:
+    for (x, y) in pts:
         ed.vertexes.append(Vertex(x, y))
-
-    # Sector 0 = main floor (moody), sector 1 = raised platform (brighter).
-    ed.sectors.append(Sector(0, 168, FLOOR, CEIL, 150, 0, 0))      # main
-    ed.sectors.append(Sector(24, 168, 'FLOOR0_5', 'CEIL3_1', 210, 0, 0))  # platform
-
-    # Varied wall textures around the octagon for a built environment.
-    walls = ['METAL', 'BROWN1', 'STARGR1', 'COMPUTE1', 'METAL', 'BROWN1',
-             'STARGR1', 'SUPPORT3']
-    for i in range(8):
+    n = len(pts)
+    for i in range(n):
         sd = len(ed.sidedefs)
-        ed.sidedefs.append(Sidedef(0, 0, '-', '-', walls[i], 0))
-        a, b = base + i, base + (i + 1) % 8
-        ld = Linedef(a, b, 0, 0, 0, sd, -1)
+        ed.sidedefs.append(Sidedef(0, 0, '-', '-', walls[i % len(walls)], 0))
+        ld = Linedef(base + i, base + (i + 1) % n, 0, 0, 0, sd, -1)
         ld.impassable = True
         ed.linedefs.append(ld)
 
-    # Raised central platform: 4 two-sided lines (front = main sector 0, back =
-    # platform sector 1). Walk CW so the outside (main) is on the right/front;
-    # the step riser shows STEP3 on the front lower texture.
-    pv = base + 8
-    ed.vertexes += [Vertex(cx0, cy0), Vertex(cx1, cy0), Vertex(cx1, cy1), Vertex(cx0, cy1)]
-    plat_loop = [(pv + 0, pv + 1), (pv + 1, pv + 2), (pv + 2, pv + 3), (pv + 3, pv + 0)]
-    for (a, b) in plat_loop:
+
+def _inner_box(ed, box, inner_sector, riser_tex):
+    """4 two-sided lines around an inner sector (front = main sector 0, back =
+    the inner sector). The riser/face shows on the main-side lower texture."""
+    x0, y0, x1, y1 = box
+    pv = len(ed.vertexes)
+    ed.vertexes += [Vertex(x0, y0), Vertex(x1, y0), Vertex(x1, y1), Vertex(x0, y1)]
+    for (a, b) in [(pv + 0, pv + 1), (pv + 1, pv + 2), (pv + 2, pv + 3), (pv + 3, pv + 0)]:
         front = len(ed.sidedefs)
-        ed.sidedefs.append(Sidedef(0, 0, '-', 'STEP3', '-', 0))   # main side, riser
+        ed.sidedefs.append(Sidedef(0, 0, '-', riser_tex, '-', 0))
         back = len(ed.sidedefs)
-        ed.sidedefs.append(Sidedef(0, 0, '-', '-', '-', 1))       # platform side
+        ed.sidedefs.append(Sidedef(0, 0, '-', '-', '-', inner_sector))
         ld = Linedef(a, b, 0, 0, 0, front, back)
         ld.two_sided = True
         ed.linedefs.append(ld)
 
-    def th(x, y, t, ang=90):
-        o = Thing(x, y, ang, t, 0); o.easy = o.medium = o.hard = True; return o
-    # ONLY the player start: the arena ships monster-free. Every demon is spawned
-    # from the per-round server seed (phobos_spawn_wave), so the entire start
-    # state is unpredictable and a pre-recorded input demo can't be replayed.
-    ed.things = [th(AW // 2, 200, 1, 90)]
+
+def build_map(outer_pts, walls, feature):
+    """A DOOM arena: a convex outer room + one central feature. Ships with only
+    the player start; demons spawn from the per-round seed (phobos.c)."""
+    ed = MapEditor()
+    ed.sectors.append(Sector(0, 168, FLOOR, CEIL, 150, 0, 0))   # sector 0 = main floor
+    _outer_walls(ed, outer_pts, walls)
+    cx0, cy0, cx1, cy1 = PLAT
+
+    if feature == 'platform':       # raised step-up island, brighter
+        ed.sectors.append(Sector(24, 168, 'FLOOR0_5', 'CEIL3_1', 210, 0, 0))
+        _inner_box(ed, PLAT, len(ed.sectors) - 1, 'STEP3')
+    elif feature == 'pit':          # sunken nukage-floor pit, dimmer
+        ed.sectors.append(Sector(-24, 168, 'FLAT5_4', CEIL, 120, 0, 0))
+        _inner_box(ed, PLAT, len(ed.sectors) - 1, 'STEP3')
+    elif feature == 'pillars':      # four solid floor-to-ceiling columns
+        sz = 112
+        for (px, py) in [(cx0, cy0), (cx1 - sz, cy0), (cx0, cy1 - sz), (cx1 - sz, cy1 - sz)]:
+            ed.sectors.append(Sector(168, 168, FLOOR, CEIL, 150, 0, 0))  # floor==ceil = solid
+            _inner_box(ed, (px, py, px + sz, py + sz), len(ed.sectors) - 1, 'SUPPORT3')
+
+    th = Thing(AW // 2, 200, 90, 1, 0)
+    th.easy = th.medium = th.hard = True
+    ed.things = [th]
     return ed
+
+
+# The campaign arenas: distinct outer shape + central feature, all reusing the
+# same texture/sprite/sound palette. start_level (config) picks the captcha map;
+# the live game cycles through the rest as bonus levels.
+CAMPAIGN = [
+    (octagon_pts(), ['METAL', 'BROWN1', 'STARGR1', 'COMPUTE1', 'METAL', 'BROWN1', 'STARGR1', 'SUPPORT3'], 'platform'),
+    (rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'pit'),
+    (octagon_pts(288), ['STARGR1', 'METAL', 'COMPUTE1', 'STARGR2', 'STARGR1', 'METAL', 'COMPUTE1', 'STARGR2'], 'pillars'),
+    (rect_pts(),    ['COMPUTE1', 'METAL', 'STARGR2', 'METAL'], 'platform'),
+]
 
 
 w = WAD(SRC)
@@ -170,7 +194,8 @@ for name in list(w.music):
         del w.music[name]
 for name in list(w.maps):
     del w.maps[name]
-w.maps['E1M1'] = build_arena().to_lumps()
+for i, (pts, walls, feature) in enumerate(CAMPAIGN, 1):
+    w.maps['E1M%d' % i] = build_map(pts, walls, feature).to_lumps()
 w.to_file(OUT)
 
 after = sum(len(l.data) for g in (w.patches, w.flats, w.sprites, w.sounds,
