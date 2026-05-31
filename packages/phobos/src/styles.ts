@@ -55,10 +55,16 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string> | nu
 .phobos-btn-ghost { cursor:pointer; border:1px solid ${v(skin, 'fg')}55; border-radius:4px;
   padding:8px 18px; font-size:15px; background:transparent; color:${v(skin, 'fg')}; }
 .phobos-btn-ghost:hover { background:${v(skin, 'hud_bg')}; }
-.phobos-controls { position:absolute; bottom:6px; right:6px; display:flex; gap:6px; }
+.phobos-controls { position:absolute; inset:0; pointer-events:none; }
 .phobos-controls[aria-hidden="true"] { display:none; }
-.phobos-controls button { width:44px; height:44px; border-radius:50%; border:1px solid ${v(skin, 'fg')}55;
-  background:${v(skin, 'hud_bg')}; color:${v(skin, 'fg')}; font-size:16px; touch-action:none; }
+.phobos-stick { position:absolute; bottom:18px; left:18px; width:124px; height:124px; border-radius:50%;
+  background:${v(skin, 'fg')}1a; border:2px solid ${v(skin, 'fg')}44; pointer-events:auto; touch-action:none; }
+.phobos-stick-thumb { position:absolute; top:50%; left:50%; width:56px; height:56px; margin:-28px 0 0 -28px;
+  border-radius:50%; background:${v(skin, 'fg')}59; border:2px solid ${v(skin, 'fg')}88; will-change:transform; }
+.phobos-fire { position:absolute; bottom:30px; right:26px; width:86px; height:86px; border-radius:50%;
+  border:2px solid ${v(skin, 'fg')}44; background:${v(skin, 'button_bg')}cc; color:${v(skin, 'button_text')};
+  font-size:30px; line-height:1; pointer-events:auto; touch-action:none; cursor:pointer; }
+.phobos-fire:active { background:${v(skin, 'button_hover')}; }
 .phobos-mute { position:absolute; top:6px; right:6px; z-index:2; width:32px; height:32px; cursor:pointer;
   border:none; border-radius:4px; background:${v(skin, 'hud_bg')}; color:${v(skin, 'fg')}; font-size:16px;
   line-height:1; display:flex; align-items:center; justify-content:center; padding:0; }

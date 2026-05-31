@@ -77,10 +77,10 @@ export function runPhobos({ container, bridge, ctx }: {
       <small>${t(locale, 'controlsHint', 'Arrows or WASD to move, Space or click to fire')}</small>
     </div>
     <div class="phobos-controls" aria-hidden="true">
-      <button data-k="left" aria-label="${t(locale, 'ariaTurnLeft', 'Turn left')}">‹</button>
-      <button data-k="fwd" aria-label="${t(locale, 'ariaForward', 'Forward')}">▲</button>
-      <button data-k="right" aria-label="${t(locale, 'ariaTurnRight', 'Turn right')}">›</button>
-      <button data-k="fire" aria-label="${t(locale, 'ariaFire', 'Fire')}">●</button>
+      <div class="phobos-stick" role="button" aria-label="${t(locale, 'ariaMove', 'Move (drag to walk, turn, and back up)')}">
+        <div class="phobos-stick-thumb" aria-hidden="true"></div>
+      </div>
+      <button class="phobos-fire" type="button" aria-label="${t(locale, 'ariaFire', 'Fire')}">●</button>
     </div>
     <div class="phobos-cleared" hidden>
       <div class="phobos-cleared-mark" aria-hidden="true">✓</div>
@@ -299,15 +299,65 @@ export function runPhobos({ container, bridge, ctx }: {
     }));
   }
 
-  // Touch controls -> held DOOM keys.
-  root.querySelectorAll<HTMLElement>('.phobos-controls button').forEach((btn) => {
-    const k = { left: DOOM_KEYS.left, right: DOOM_KEYS.right, fwd: DOOM_KEYS.forward, fire: DOOM_KEYS.fire }[btn.dataset.k!]!;
-    const down = (e: Event) => { e.preventDefault(); sendKey(1, k); };
-    const up = (e: Event) => { e.preventDefault(); sendKey(0, k); };
-    btn.addEventListener('touchstart', down, { passive: false });
-    btn.addEventListener('touchend', up); btn.addEventListener('touchcancel', up);
-    btn.addEventListener('mousedown', down); btn.addEventListener('mouseup', up);
+  // Touch controls: a left analog stick (drag to walk forward/back + turn) and a
+  // single fire button. The stick maps onto the SAME held DOOM keys the keyboard
+  // uses (forward/back/turn-left/turn-right), so the recorded ticcmd trace is
+  // identical to keyboard play and stays replay-safe -- no new analog input path.
+  // Pointer Events cover touch + mouse + multi-touch: the stick and fire button
+  // carry independent pointerIds, so you can move and shoot at once.
+  const stick = root.querySelector('.phobos-stick') as HTMLElement;
+  const thumb = root.querySelector('.phobos-stick-thumb') as HTMLElement;
+  const fireBtn = root.querySelector('.phobos-fire') as HTMLButtonElement;
+  const held = { fwd: false, back: false, left: false, right: false };
+  const STICK_R = 56;     // thumb travel radius (px)
+  const STICK_DEAD = 16;  // deadzone before a direction engages
+  let stickPtr: number | null = null;
+  function axis(name: keyof typeof held, key: number, on: boolean) {
+    if (held[name] === on) return;
+    held[name] = on;
+    sendKey(on ? 1 : 0, key);
+  }
+  function stickMove(clientX: number, clientY: number) {
+    const r = stick.getBoundingClientRect();
+    let dx = clientX - (r.left + r.width / 2);
+    let dy = clientY - (r.top + r.height / 2);
+    const mag = Math.hypot(dx, dy);
+    if (mag > STICK_R) { dx = (dx / mag) * STICK_R; dy = (dy / mag) * STICK_R; }
+    thumb.style.transform = `translate(${dx}px, ${dy}px)`;
+    // Independent axes -> 8-way: vertical = forward/back, horizontal = turn.
+    axis('fwd', DOOM_KEYS.forward, dy < -STICK_DEAD);
+    axis('back', DOOM_KEYS.back, dy > STICK_DEAD);
+    axis('left', DOOM_KEYS.left, dx < -STICK_DEAD);
+    axis('right', DOOM_KEYS.right, dx > STICK_DEAD);
+  }
+  function stickReset() {
+    thumb.style.transform = 'translate(0px, 0px)';
+    axis('fwd', DOOM_KEYS.forward, false);
+    axis('back', DOOM_KEYS.back, false);
+    axis('left', DOOM_KEYS.left, false);
+    axis('right', DOOM_KEYS.right, false);
+    stickPtr = null;
+  }
+  stick.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    stickPtr = e.pointerId;
+    stick.setPointerCapture(e.pointerId);
+    stickMove(e.clientX, e.clientY);
   });
+  stick.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== stickPtr) return;
+    e.preventDefault();
+    stickMove(e.clientX, e.clientY);
+  });
+  const stickUp = (e: PointerEvent) => { if (e.pointerId === stickPtr) stickReset(); };
+  stick.addEventListener('pointerup', stickUp);
+  stick.addEventListener('pointercancel', stickUp);
+  fireBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); fireBtn.setPointerCapture(e.pointerId); sendKey(1, DOOM_KEYS.fire);
+  });
+  const fireUp = (e: PointerEvent) => { e.preventDefault(); sendKey(0, DOOM_KEYS.fire); };
+  fireBtn.addEventListener('pointerup', fireUp);
+  fireBtn.addEventListener('pointercancel', fireUp);
   canvas.addEventListener('mousedown', () => sendKey(1, DOOM_KEYS.fire));
   canvas.addEventListener('mouseup', () => sendKey(0, DOOM_KEYS.fire));
   canvas.tabIndex = 0;
