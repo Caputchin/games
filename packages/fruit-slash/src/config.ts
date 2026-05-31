@@ -1,12 +1,14 @@
 // Configuration plumbing for Fruit Slash.
 //
-// Maps the runtime `ctx.config` payload (a flat Record<string, scalar> resolved
-// by the widget from caputchin.json) into a typed FruitSlashConfig. Missing or
+// Maps the RAW dashboard config payload (a flat Record<string, scalar> resolved
+// by the widget from caputchin.json) into a typed FruitSlashConfig. Takes the
+// raw config object (or null) directly so the SAME resolver serves the live
+// driver (display) and the headless engine (via resolveSimConfig in
+// sim/config.ts) - one transform site, no live/replay divergence. Missing or
 // malformed keys fall back to defaults derived at module init from the
 // caputchin.json `default` preset, so the two sources can't drift and the game
-// still plays sensibly with `ctx.config === null`. Same pattern as dino-runner.
+// still plays sensibly with `config === null`. Same pattern as dino-runner.
 
-import type { GameContext } from '@caputchin/game-sdk';
 import manifestJson from '../caputchin.json';
 import { GRAVITY } from './sim/constants.js';
 
@@ -57,8 +59,10 @@ function readBoolean(cfg: Record<string, unknown> | null, key: string): boolean 
   return typeof v === 'boolean' ? v : null;
 }
 
-export function resolveFruitSlashConfig(ctx: GameContext | undefined): FruitSlashConfig {
-  const cfg = (ctx?.config ?? null) as Record<string, unknown> | null;
+export function resolveFruitSlashConfig(
+  config: Record<string, unknown> | null | undefined,
+): FruitSlashConfig {
+  const cfg = (config ?? null) as Record<string, unknown> | null;
   return {
     passScore: Math.max(1, Math.round(readNumber(cfg, 'pass_score') ?? FALLBACK.passScore)),
     lives: Math.max(1, Math.round(readNumber(cfg, 'lives') ?? FALLBACK.lives)),

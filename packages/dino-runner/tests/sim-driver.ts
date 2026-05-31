@@ -5,7 +5,7 @@
 // live score; that equivalence is the core guarantee these tests assert.
 
 import { engine } from '../src/sim/engine.js';
-import type { SimAction, SimConfig } from '../src/sim/types.js';
+import type { SimAction } from '../src/sim/types.js';
 import type { Seed, TickInput } from '@caputchin/engine-runtime';
 
 export interface PlayResult {
@@ -26,7 +26,11 @@ export interface PlayOpts {
  *  actions, then advance one logical tick. Mimics the real driver's
  *  fixed-step accumulator - single-tick increments, discrete inputs stamped
  *  with their exact logical tick. */
-export function play(seed: Seed, config: SimConfig, opts: PlayOpts): PlayResult {
+export function play(
+  seed: Seed,
+  config: Record<string, unknown> | null,
+  opts: PlayOpts,
+): PlayResult {
   let state = engine.init({ seed, config });
   const recorded: TickInput<SimAction>[] = [];
   let tick = 0;

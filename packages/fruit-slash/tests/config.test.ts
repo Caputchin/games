@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { GameContext } from '@caputchin/game-sdk';
 import { resolveFruitSlashConfig } from '../src/config.js';
 
 describe('resolveFruitSlashConfig', () => {
-  it('returns the manifest default-preset values when ctx is undefined', () => {
+  it('returns the manifest default-preset values when config is undefined', () => {
     const c = resolveFruitSlashConfig(undefined);
     expect(c.passScore).toBe(8);
     expect(c.lives).toBe(3);
@@ -15,9 +14,8 @@ describe('resolveFruitSlashConfig', () => {
     expect(c.showLives).toBe(true);
   });
 
-  it('applies valid ctx.config overrides', () => {
-    const ctx = { locale: null, skin: null, config: { pass_score: 12, lives: 5, hazard_chance: 0.3 } } as unknown as GameContext;
-    const c = resolveFruitSlashConfig(ctx);
+  it('applies valid config overrides', () => {
+    const c = resolveFruitSlashConfig({ pass_score: 12, lives: 5, hazard_chance: 0.3 });
     expect(c.passScore).toBe(12);
     expect(c.lives).toBe(5);
     expect(c.hazardChance).toBeCloseTo(0.3);
@@ -26,16 +24,14 @@ describe('resolveFruitSlashConfig', () => {
   });
 
   it('falls back per-key on malformed values', () => {
-    const ctx = { locale: null, skin: null, config: { pass_score: 'lots', lives: null, gravity: NaN } } as unknown as GameContext;
-    const c = resolveFruitSlashConfig(ctx);
+    const c = resolveFruitSlashConfig({ pass_score: 'lots', lives: null, gravity: NaN });
     expect(c.passScore).toBe(8);
     expect(c.lives).toBe(3);
     expect(c.gravity).toBe(1400);
   });
 
   it('clamps out-of-range numbers into sane bounds', () => {
-    const ctx = { locale: null, skin: null, config: { hazard_chance: 9, spawn_rate: 999, gravity: 1 } } as unknown as GameContext;
-    const c = resolveFruitSlashConfig(ctx);
+    const c = resolveFruitSlashConfig({ hazard_chance: 9, spawn_rate: 999, gravity: 1 });
     expect(c.hazardChance).toBeLessThanOrEqual(1);
     expect(c.spawnRate).toBeLessThanOrEqual(5);
     expect(c.gravity).toBeGreaterThanOrEqual(200);

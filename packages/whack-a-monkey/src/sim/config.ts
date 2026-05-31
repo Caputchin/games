@@ -1,24 +1,25 @@
-// The sim's default config. Single source for both live driver
-// and replay run, so live play and server replay execute under identical
-// params → identical verdict. Values mirror caputchin.json `default` preset.
+// SimConfig derivation for Whack-a-Monkey. The RAW dashboard config (or null)
+// is turned into the sim's gameplay config HERE, in one place: engine.init
+// calls resolveSimConfig, and both the live driver and the headless replay
+// reach the engine through that same init, so the sim params can't drift
+// between play and verification. Reuses resolveWhackConfig (the display
+// resolver) as the single source of resolution + clamps; this just projects the
+// sim-affecting fields out of it.
 
-import manifestJson from '../../caputchin.json';
+import { resolveWhackConfig } from '../config.js';
 import type { SimConfig } from './types.js';
 
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
-
-function jsonNumber(key: string, hardcoded: number): number {
-  const v = DEFAULT_PRESET[key];
-  return typeof v === 'number' && Number.isFinite(v) ? v : hardcoded;
+/** Resolve the RAW dashboard config (or null) into the headless SimConfig. THE
+ *  single config->sim transform site: engine.init calls this so the live driver
+ *  and the replay derive identical sim params. `null` -> the manifest defaults
+ *  via the shared resolver. The difficulty ladder is built INSIDE one round from
+ *  passHits (engine.buildLadder), so there is no per-round/level pinning. */
+export function resolveSimConfig(raw: Record<string, unknown> | null): SimConfig {
+  const cfg = resolveWhackConfig(raw);
+  return {
+    passHits: cfg.passHits,
+    baseUptimeMs: cfg.baseUptimeMs,
+    baseDecoyChance: cfg.baseDecoyChance,
+    seconds: cfg.seconds,
+  };
 }
-
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
-}
-
-export const DEFAULT_SIM_CONFIG: SimConfig = {
-  passHits: Math.max(3, Math.min(30, Math.round(jsonNumber('pass_hits', 10)))),
-  baseUptimeMs: clamp(jsonNumber('base_uptime_ms', 800), 350, 2000),
-  baseDecoyChance: clamp(jsonNumber('base_decoy_chance', 0.1), 0, 0.5),
-  seconds: Math.max(5, Math.min(90, Math.round(jsonNumber('seconds', 25)))),
-};

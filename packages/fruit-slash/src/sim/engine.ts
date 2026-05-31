@@ -23,7 +23,13 @@ import {
   STEP_S,
   TARGET_RADIUS,
 } from './constants.js';
-import { GOOD, type Fx, type SimAction, type SimConfig, type SimState, type SimView } from './types.js';
+import { resolveSimConfig } from './config.js';
+import { GOOD, type Fx, type SimAction, type SimState, type SimView } from './types.js';
+
+/** The raw dashboard config the engine resolves internally (flat scalar map or
+ *  null). The engine never trusts its shape - resolveSimConfig validates,
+ *  clamps, and resolves null -> defaults. */
+type RawConfig = Record<string, unknown>;
 
 /** Render-cue cap so a long replay (which never drains fx) can't grow it
  *  unbounded. The live driver clears fx every logical tick, so it never nears
@@ -59,21 +65,24 @@ function sliceSegment(state: SimState, ax: number, ay: number, bx: number, by: n
   }
 }
 
-export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
+export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
     const r = cap.rng(seed);
+    // ONE transform site: raw dashboard config (or null) -> this round's
+    // SimConfig. Live play and replay both arrive here, so they cannot diverge.
+    const cfg = resolveSimConfig(config);
     // Draw the first interval BEFORE capturing rng.state, so the stored state
     // reflects that draw and tick()'s rngFromState resumes the exact stream.
-    const interval = pickInterval(() => r.next(), config.spawnRate);
+    const interval = pickInterval(() => r.next(), cfg.spawnRate);
     return {
       rng: r.state,
-      cfg: config,
+      cfg,
       targets: [],
       nextId: 0,
       spawnTimer: 0,
       interval,
       sliced: 0,
-      lives: config.lives,
+      lives: cfg.lives,
       elapsed: 0,
       pointerDown: 0,
       lastX: 0,
@@ -161,7 +170,9 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
   },
 
   result(state) {
-    return { score: state.sliced };
+    // Engine owns the pass decision: `verified` latches (in step) once the
+    // sliced count reaches cfg.passScore. score = good fruit sliced.
+    return { score: state.sliced, passed: state.verified === 1 };
   },
 
   view(state) {

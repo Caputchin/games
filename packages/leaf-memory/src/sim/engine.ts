@@ -13,12 +13,25 @@
 //   - The flip-back delay is a tick countdown in state, not setTimeout.
 //   - No Date / Math.random / DOM / async.
 //
-// Pass gate: all pairs matched AND ticksElapsed < budgetTicks at game-over.
-// Gate reads budgetTicks from config (server-supplied), never from the trace.
+// Pass gate: all pairs matched at game-over (matchCount >= cfg.pairs). The
+// gate lives in `result` beside the state it judges, so the live game and the
+// headless replay share ONE pass decision - never an external gate one path
+// could compute differently.
+//
+// Config: `C` is the RAW dashboard config (a flat Record) or null. `init` is
+// the single transform site - it calls `resolveSimConfig` to turn the raw
+// config into this round's SimConfig, so both execution paths (live driver and
+// replay, both via `init`) derive identical sim params.
 
 import { cap, defineEngine } from '@caputchin/engine-runtime';
 import { LEAF_IDS } from '../leaves.js';
-import type { SimState, SimAction, SimConfig, SimView } from './types.js';
+import { resolveSimConfig } from './config.js';
+import type { SimState, SimAction, SimView } from './types.js';
+
+/** The raw dashboard config the engine resolves internally. Flat scalar map
+ *  (or null); the engine never trusts its shape - `resolveSimConfig` validates
+ *  and clamps every field. */
+type RawConfig = Record<string, unknown>;
 
 /** Seeded Fisher-Yates shuffle. `intInRange(n)` returns a uniform int in [0, n).
  *  Returns a new array. */
@@ -33,13 +46,17 @@ function shuffleDeck(deck: number[], intInRange: (n: number) => number): number[
   return arr;
 }
 
-export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
+export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
     const r = cap.rng(seed);
 
+    // ONE transform site: raw dashboard config (or null) -> this round's
+    // SimConfig. Live play and replay both arrive here, so they cannot diverge.
+    const cfg = resolveSimConfig(config);
+
     // Build the deck: two copies of each leaf kind for the requested pair
     // count, then shuffle. LEAF_IDS.length = 6 (hard cap in leaves.ts).
-    const pairs = Math.min(config.pairs, LEAF_IDS.length);
+    const pairs = Math.min(cfg.pairs, LEAF_IDS.length);
     const deck: number[] = [];
     for (let i = 0; i < pairs; i++) {
       deck.push(i, i); // two cards share the same leaf kind
@@ -55,7 +72,7 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
       flipBackTicks: 0,
       matchCount: 0,
       ticksElapsed: 0,
-      cfg: config,
+      cfg,
     };
   },
 
@@ -121,10 +138,14 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
   },
 
   result(state) {
-    // Score encodes the pass result: > 0 = passed (match count = pairs),
-    // 0 = timed out. The `passed` predicate in run.ts reads the gate
-    // from config (pairs), so the score is just a convenient summary.
-    return { score: state.matchCount };
+    // Engine owns the pass decision: the round passes iff every pair was
+    // matched (matchCount reaches cfg.pairs) before the budget ran out.
+    // isOver fires on allMatched OR timedOut, so at game-over a full match
+    // count is exactly a genuine win. score = matched pairs.
+    return {
+      score: state.matchCount,
+      passed: state.matchCount >= state.cfg.pairs,
+    };
   },
 
   view(state) {
@@ -136,6 +157,7 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
       matchCount: state.matchCount,
       ticksElapsed: state.ticksElapsed,
       budgetTicks: state.cfg.budgetTicks,
+      pairs: state.cfg.pairs,
       allMatched: state.matchCount >= state.cfg.pairs,
       timedOut: state.ticksElapsed >= state.cfg.budgetTicks,
     };

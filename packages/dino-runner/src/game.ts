@@ -80,7 +80,11 @@ export function runDinoRunner(opts: GameOptions): () => void {
 
   const strings = buildStrings(ctx?.locale);
   const sprites = resolveSprites(ctx?.skin ?? null);
-  const cfg = resolveDinoConfig(ctx);
+  // The RAW dashboard config. The display resolver below derives presentation
+  // fields (sound, showScore, showBest) + the pass threshold for the live
+  // resend check; the engine resolves the SAME raw object into its SimConfig.
+  const rawConfig = (ctx?.config ?? null) as Record<string, unknown> | null;
+  const cfg = resolveDinoConfig(rawConfig);
   const reducedMotion = prefersReducedMotion(view);
   const sfx = createSfx(view, cfg.sound, SOUND_CLIPS);
 
@@ -93,20 +97,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
 
   // Per-round seed: server-issued (replayable) or a driver-side random.
   const seed: Seed = ctx?.seed ?? randomSeed();
-
-  // Build the sim config from the resolved DinoConfig so ctx.config is
-  // respected live (server passes the same config to run() on replay).
-  const simConfig = {
-    passScore: cfg.passScore,
-    startSpeed: cfg.startSpeed,
-    maxSpeed: cfg.maxSpeed,
-    acceleration: cfg.acceleration,
-    gravity: cfg.gravity,
-    jumpVelocity: Math.abs(cfg.initialJumpVelocity),
-    gapCoefficient: cfg.gapCoefficient,
-    birdsEnabled: cfg.birdsEnabled,
-    birdMinSpeed: cfg.birdMinSpeed,
-  };
 
   // ---- DOM shell -------------------------------------------------------
   const root = el('div', 'dr-root');
@@ -163,7 +153,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
 
   // ---- driver state ---------------------------------------------------
   let driverStatus: DriverStatus = 'waiting';
-  let simState = engine.init({ seed, config: simConfig });
+  let simState = engine.init({ seed, config: rawConfig });
   let recorded: TickInput<SimAction>[] = [];
   let logicalTick = 0;
   let acc = 0;
@@ -274,7 +264,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   }
 
   function restart(): void {
-    simState = engine.init({ seed, config: simConfig });
+    simState = engine.init({ seed, config: rawConfig });
     recorded = [];
     logicalTick = 0;
     acc = 0;
@@ -313,8 +303,10 @@ export function runDinoRunner(opts: GameOptions): () => void {
     const isNewBest = score > bestScore;
     if (isNewBest) bestScore = score;
 
-    // Resend if this run beat the best already passed.
-    const qualifies = score >= simConfig.passScore && score > bestPassed;
+    // Resend if this run beat the best already passed. passScore comes from the
+    // display resolver (same raw config the engine resolves) - this is a
+    // live-only resend decision, never the verdict (that's the engine's).
+    const qualifies = score >= cfg.passScore && score > bestPassed;
     if (qualifies) {
       bestPassed = score;
       bridge.pass({ trace: encodeTrace(recorded) });

@@ -42,8 +42,10 @@ export interface SimState {
   cfg: SimConfig;
 }
 
-/** Gameplay configuration (server-supplied; gate thresholds live here,
- *  never in the trace). At MVP the server passes null → DefaultSimConfig. */
+/** Resolved gameplay configuration. Derived INSIDE `engine.init` from the raw
+ *  dashboard config via `resolveSimConfig` (one transform site), then baked into
+ *  state so replay carries the exact same sim params. Gate thresholds live here,
+ *  never in the trace. */
 export interface SimConfig {
   /** Total number of pairs on the board (2-6). */
   pairs: number;
@@ -69,6 +71,9 @@ export interface SimView {
   matchCount: number;
   ticksElapsed: number;
   budgetTicks: number;
+  /** Total pairs on the board (from the resolved config). The renderer reads
+   *  card count + the live score formula off this, never a re-derived config. */
+  pairs: number;
   allMatched: boolean;
   timedOut: boolean;
 }

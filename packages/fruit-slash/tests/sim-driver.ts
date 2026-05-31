@@ -5,7 +5,7 @@
 // live score; that equivalence is the core guarantee these tests assert.
 
 import { engine } from '../src/sim/engine.js';
-import { GOOD, type SimAction, type SimConfig } from '../src/sim/types.js';
+import { GOOD, type SimAction } from '../src/sim/types.js';
 import type { Seed, TickInput } from '@caputchin/engine-runtime';
 
 export interface PlayResult {
@@ -16,10 +16,12 @@ export interface PlayResult {
 }
 
 export interface PlayOpts {
-  /** Keep slicing every live good fruit until the score reaches this, then go
-   *  idle (let fruit escape) so the round ends. Default: slice forever (until
-   *  maxTicks). */
-  sliceUntil?: number;
+  /** Keep slicing every live good fruit until the score reaches passScore +
+   *  this margin, then go idle (let fruit escape) so the round ends. The
+   *  threshold is read from the engine's RESOLVED config, so tests express
+   *  intent ("a few past the gate") without building a SimConfig. Omit to slice
+   *  forever (until maxTicks). */
+  sliceMargin?: number;
   maxTicks: number;
 }
 
@@ -34,12 +36,18 @@ function swipeOver(x: number, y: number): SimAction[] {
 
 /** Drive the engine like the live loop: per tick, decide + apply + record the
  *  actions, then advance one logical tick. Slices every live good fruit (dodging
- *  bombs) until `sliceUntil`, then idles to force a game-over. */
-export function play(seed: Seed, config: SimConfig, opts: PlayOpts): PlayResult {
+ *  bombs) until passScore + `sliceMargin`, then idles to force a game-over. */
+export function play(
+  seed: Seed,
+  config: Record<string, unknown> | null,
+  opts: PlayOpts,
+): PlayResult {
   let state = engine.init({ seed, config });
   const recorded: TickInput<SimAction>[] = [];
   let tick = 0;
-  const target = opts.sliceUntil ?? Number.POSITIVE_INFINITY;
+  // Threshold from the engine's own resolved config (it owns the transform now).
+  const target =
+    opts.sliceMargin === undefined ? Number.POSITIVE_INFINITY : state.cfg.passScore + opts.sliceMargin;
 
   while (!engine.isOver(state) && tick < opts.maxTicks) {
     const acts: SimAction[] = [];

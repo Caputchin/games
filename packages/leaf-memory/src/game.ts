@@ -20,11 +20,10 @@
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
 import { encodeTrace, FIXED_TIMESTEP_MS, type TickInput } from '@caputchin/engine-runtime';
 import { engine } from './sim/engine.js';
-import { DEFAULT_SIM_CONFIG, makeSimConfig } from './sim/config.js';
 // engine.view is always defined (see sim/engine.ts). Bind once here so call
 // sites get a non-optional reference without per-call `!` assertions.
 const viewOf: (state: SimState) => SimView = engine.view!;
-import type { SimAction, SimState, SimView, SimConfig } from './sim/types.js';
+import type { SimAction, SimState, SimView } from './sim/types.js';
 import { LEAF_IDS } from './leaves.js';
 import { resolveLeafSvgs } from './leaves.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
@@ -96,7 +95,18 @@ export function runLeafMemory(opts: GameOptions): () => void {
 
   const strings = buildStrings(ctx?.locale);
   const leafSvgs = resolveLeafSvgs(ctx?.skin ?? null);
-  const memoryConfig = resolveLeafMemoryConfig(ctx);
+  // The RAW dashboard config. The display resolver below derives the level
+  // ladder + visibility toggles from it; per round, the engine resolves the
+  // SAME raw object (with start_level pinned to the round) into its SimConfig.
+  const rawConfig = (ctx?.config ?? null) as Record<string, unknown> | null;
+  const memoryConfig = resolveLeafMemoryConfig(rawConfig);
+
+  /** The raw config for a given round's level: the dashboard object with
+   *  `start_level` overridden to the round being played, so `engine.init`
+   *  resolves the matching SimConfig. */
+  function rawConfigForLevel(index: number): Record<string, unknown> {
+    return { ...(rawConfig ?? {}), start_level: index + 1 };
+  }
 
   if (!doc.getElementById('lm-styles')) {
     const style = doc.createElement('style');
@@ -177,7 +187,9 @@ export function runLeafMemory(opts: GameOptions): () => void {
   // ---- driver state -------------------------------------------------------
   type Status = 'waiting' | 'peeking' | 'playing' | 'over';
   let status: Status = 'waiting';
-  let simState: SimState = engine.init({ seed: [0, 0, 0, 0], config: DEFAULT_SIM_CONFIG });
+  // Throwaway init so simState is non-null before the first round; replaced on
+  // startRound. null -> the engine's L1 defaults.
+  let simState: SimState = engine.init({ seed: [0, 0, 0, 0], config: null });
   let recorded: TickInput<SimAction>[] = [];
   let logicalTick = 0;
   let acc = 0;
@@ -227,8 +239,10 @@ export function runLeafMemory(opts: GameOptions): () => void {
   }
 
   // ---- board DOM ----------------------------------------------------------
-  /** Build (or rebuild) the board DOM from the current sim state. */
-  function buildBoard(simCfg: SimConfig): void {
+  /** Build (or rebuild) the board DOM from the current sim view. Card count
+   *  comes from the view's resolved pair count (the engine is authoritative);
+   *  the grid layout (cols) comes from the display ladder. */
+  function buildBoard(v: SimView): void {
     // Remove old grid.
     const existing = stage.querySelector('.lm-grid');
     if (existing) existing.remove();
@@ -241,7 +255,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
     grid.setAttribute('aria-label', strings.t('ariaBoard'));
 
     cells = [];
-    const cardCount = simCfg.pairs * 2;
+    const cardCount = v.pairs * 2;
     for (let i = 0; i < cardCount; i++) {
       const cell = doc.createElement('button');
       cell.type = 'button';
@@ -464,27 +478,23 @@ export function runLeafMemory(opts: GameOptions): () => void {
     const level = memoryConfig.levels[currentIndex]!;
     currentLevel = level;
 
-    // Build the SimConfig from this level's difficulty knobs.
-    const simCfg: SimConfig = makeSimConfig(
-      level.pairs,
-      level.timeSec,
-      memoryConfig.mismatchFlipBackMs,
-    );
-
-    // Init the reducer with the server seed + resolved config.
-    simState = engine.init({ seed, config: simCfg });
+    // Init the reducer with the server seed + the RAW dashboard config pinned
+    // to this round's level. The engine owns the config->sim transform, so the
+    // replay (running the same engine.init over the same raw config) matches.
+    simState = engine.init({ seed, config: rawConfigForLevel(currentIndex) });
     recorded = [];
     logicalTick = 0;
     acc = 0;
     lastMs = null;
     inputQueue = [];
 
+    const initialView = viewOf(simState);
     renderLevel(level);
-    renderTime(viewOf(simState));
+    renderTime(initialView);
     renderBest();
 
-    // Build board DOM from initial simState (cards are face-down).
-    buildBoard(simCfg);
+    // Build board DOM from the initial view (cards are face-down).
+    buildBoard(initialView);
 
     const peekMs = peekMsOverride ?? level.peekMs;
     const reducedMotion = prefersReducedMotion(view);
@@ -524,9 +534,9 @@ export function runLeafMemory(opts: GameOptions): () => void {
   function onRoundCleared(v: SimView): void {
     if (status !== 'playing') return;
     status = 'over';
-    const level = memoryConfig.levels[currentIndex]!;
-    // Score: difficulty × remaining seconds. difficulty = pairs / 2.
-    const difficulty = level.pairs / 2;
+    // Score: difficulty x remaining seconds. difficulty = pairs / 2, read from
+    // the view so the live score matches the engine's resolved board.
+    const difficulty = v.pairs / 2;
     const remainingSec = Math.max(0, (v.budgetTicks - v.ticksElapsed) * FIXED_TIMESTEP_MS / 1000);
     const s = Math.round(difficulty * remainingSec);
 

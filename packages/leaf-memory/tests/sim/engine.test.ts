@@ -2,14 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-runtime';
 import type { Seed } from '@caputchin/engine-runtime';
 import { engine } from '../../src/sim/engine.js';
-import { makeSimConfig } from '../../src/sim/config.js';
 import { MAX_TICKS } from '../../src/sim/constants.js';
-import type { SimConfig } from '../../src/sim/types.js';
 import { play } from '../sim-driver.js';
 
 const SEED: Seed = [0xc0ffee, 0x1234, 0x9abcdef0, 0x42];
-// L1 config (2 pairs, 5s, 600ms flip-back).
-const CFG: SimConfig = makeSimConfig(2, 5, 600);
+// RAW dashboard config selecting L1 (2 pairs, 5s, 600ms flip-back via defaults).
+// The engine resolves it to a SimConfig inside init - tests never build one.
+const CFG: Record<string, unknown> = { start_level: 1 };
 
 describe('reducer determinism', () => {
   it('replaying the same (seed, config, actions) is bit-identical', () => {
@@ -20,10 +19,9 @@ describe('reducer determinism', () => {
   });
 
   it('a different seed yields a different board layout (larger board)', () => {
-    // Use a 4-pair (8-card) board so the shuffle space is large enough that
-    // two different seeds are vanishingly unlikely to produce the same greedy
-    // action stream.
-    const cfg4 = makeSimConfig(4, 30, 600);
+    // L3 = 4 pairs (8 cards): a shuffle space large enough that two seeds are
+    // vanishingly unlikely to produce the same greedy action stream.
+    const cfg4: Record<string, unknown> = { start_level: 3 };
     const p1 = play(SEED, cfg4, { maxTicks: MAX_TICKS });
     const p2 = play([1, 2, 3, 4], cfg4, { maxTicks: MAX_TICKS });
     // Different board layout → at least one action tick differs.
@@ -38,6 +36,8 @@ describe('live == replay (core guarantee)', () => {
     expect(out.score).toBe(live.score);
     expect(out.truncated).toBe(false);
     expect(live.allMatched).toBe(true);
+    // The engine owns the pass decision now; a full clear passes.
+    expect(out.passed).toBe(true);
   });
 
   it('survives the kit codec round-trip (encode -> decode -> replay)', () => {
@@ -50,7 +50,7 @@ describe('live == replay (core guarantee)', () => {
 
   it('passes the gate when all pairs are matched', () => {
     const live = play(SEED, CFG, { maxTicks: MAX_TICKS });
-    expect(live.score).toBe(CFG.pairs);
+    expect(live.score).toBe(2); // L1 = 2 pairs
     expect(live.allMatched).toBe(true);
   });
 });
@@ -60,13 +60,19 @@ describe('idle / empty play', () => {
     const out = replay(engine, { seed: SEED, config: CFG, actions: [], maxTicks: MAX_TICKS });
     expect(out.score).toBe(0);
     expect(out.truncated).toBe(false); // budget ticks drain, round ends
+    expect(out.passed).toBe(false); // nothing matched -> fail
   });
 });
 
 describe('flip-back countdown', () => {
   it('mismatch locks input for flipBackTicks, then clears', () => {
-    // Tiny budget so the sim ends quickly; large flip-back to verify the lock.
-    const cfg: SimConfig = makeSimConfig(2, 30, 1000); // 62 flip-back ticks
+    // L1 with ample budget + a big flip-back to verify the lock. The engine
+    // resolves flipBackTicks from mismatch_flip_back_ms internally.
+    const cfg: Record<string, unknown> = {
+      start_level: 1,
+      solve_seconds_level_1: 30,
+      mismatch_flip_back_ms: 1000,
+    };
     let state = engine.init({ seed: SEED, config: cfg });
 
     // Force first and second picks to be different kinds (mismatch).
@@ -86,7 +92,7 @@ describe('flip-back countdown', () => {
     expect(state.matchCount).toBe(before);
 
     // Drain the countdown.
-    for (let t = 0; t < cfg.flipBackTicks; t++) {
+    for (let t = 0; t < state.cfg.flipBackTicks; t++) {
       state = engine.tick(state);
     }
     expect(state.flipBackTicks).toBe(0);
@@ -97,7 +103,7 @@ describe('flip-back countdown', () => {
 
 describe('L4 (6-pair board)', () => {
   it('live == replay on a larger board', () => {
-    const cfg4: SimConfig = makeSimConfig(6, 30, 600);
+    const cfg4: Record<string, unknown> = { start_level: 4 }; // L4 = 6 pairs
     const live = play(SEED, cfg4, { maxTicks: MAX_TICKS });
     const out = replay(engine, { seed: SEED, config: cfg4, actions: live.recorded, maxTicks: MAX_TICKS });
     expect(out.score).toBe(live.score);

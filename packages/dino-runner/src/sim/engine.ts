@@ -37,7 +37,13 @@ import {
   RUNNER_BOXES_RUNNING,
   RUNNER_BOXES_DUCKING,
 } from './constants.js';
+import { resolveSimConfig } from '../config.js';
 import type { SimState, SimAction, SimConfig, SimView, SimRunner, SimObstacle, SimBox, ObstacleTypeId } from './types.js';
+
+/** The raw dashboard config the engine resolves internally (flat scalar map or
+ *  null). The engine never trusts its shape - resolveSimConfig validates and
+ *  clamps every field, and resolves null -> the game's defaults. */
+type RawConfig = Record<string, unknown>;
 
 // ---- Obstacle type catalog -----------------------------------------------
 // (Verbatim from obstacles.ts - same collision box sets.)
@@ -274,9 +280,12 @@ function checkCollision(runner: SimRunner, obstacles: readonly SimObstacle[]): b
 
 // ---- defineEngine --------------------------------------------------------
 
-export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
+export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
     const r = cap.rng(seed);
+    // ONE transform site: raw dashboard config (or null) -> this round's
+    // SimConfig. Live play and replay both arrive here, so they cannot diverge.
+    const cfg = resolveSimConfig(config);
     const runner: SimRunner = {
       x: RUNNER_START_X,
       y: GROUND_Y,
@@ -293,10 +302,10 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
     };
     return {
       rng: r.state,
-      cfg: config,
+      cfg,
       runner,
       obstacles: [],
-      speed: config.startSpeed,
+      speed: cfg.startSpeed,
       distanceRan: 0,
       verified: false,
       tick: 0,
@@ -403,7 +412,10 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
   },
 
   result(state) {
-    return { score: toScore(state.distanceRan) };
+    // Engine owns the pass decision: `verified` latches once distanceScore
+    // crossed cfg.passScore during the run (set in tick, before collision). The
+    // score is monotonic, so at game-over verified == (score >= passScore).
+    return { score: toScore(state.distanceRan), passed: state.verified };
   },
 
   view(state) {

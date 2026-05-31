@@ -64,7 +64,7 @@ describe('leaf-memory caputchin.json - configurations schema / preset parity', (
   });
 });
 
-describe('resolveLeafMemoryConfig - null ctx (no configurations block)', () => {
+describe('resolveLeafMemoryConfig - null config (no configurations block)', () => {
   it('returns the hardcoded fallbacks', () => {
     const out = resolveLeafMemoryConfig(undefined);
     expect(out.startIndex).toBe(0);
@@ -75,7 +75,7 @@ describe('resolveLeafMemoryConfig - null ctx (no configurations block)', () => {
   });
 
   it('preserves the static difficulty ladder values when no overrides apply', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: null });
+    const out = resolveLeafMemoryConfig(null);
     for (let i = 0; i < DIFFICULTY_LADDER.length; i++) {
       expect(out.levels[i]?.peekMs).toBe(DIFFICULTY_LADDER[i]?.peekMs);
       expect(out.levels[i]?.timeSec).toBe(DIFFICULTY_LADDER[i]?.timeSec);
@@ -86,39 +86,34 @@ describe('resolveLeafMemoryConfig - null ctx (no configurations block)', () => {
 
 describe('resolveLeafMemoryConfig - start_level', () => {
   it('translates start_level=1 to startIndex=0', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 1 } });
+    const out = resolveLeafMemoryConfig({ start_level: 1 });
     expect(out.startIndex).toBe(0);
   });
   it('translates start_level=3 to startIndex=2', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 3 } });
+    const out = resolveLeafMemoryConfig({ start_level: 3 });
     expect(out.startIndex).toBe(2);
   });
   it('translates start_level=4 to startIndex=3 (top of ladder)', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 4 } });
+    const out = resolveLeafMemoryConfig({ start_level: 4 });
     expect(out.startIndex).toBe(3);
   });
   it('clamps start_level=99 to the top of the ladder', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 99 } });
+    const out = resolveLeafMemoryConfig({ start_level: 99 });
     expect(out.startIndex).toBe(MAX_LEVEL - 1);
   });
   it('clamps start_level=0 to the bottom', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 0 } });
+    const out = resolveLeafMemoryConfig({ start_level: 0 });
     expect(out.startIndex).toBe(0);
   });
   it('rounds non-integer start_level (1.7 -> 2 -> index 1)', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { start_level: 1.7 } });
+    const out = resolveLeafMemoryConfig({ start_level: 1.7 });
     expect(out.startIndex).toBe(1);
   });
 });
 
 describe('resolveLeafMemoryConfig - per-level timing overrides', () => {
   it('applies memorize_seconds_level_2 (seconds -> peekMs)', () => {
-    const out = resolveLeafMemoryConfig({
-      seed: null,
-      locale: null,
-      skin: null,
-      config: { memorize_seconds_level_2: 2 },
-    });
+    const out = resolveLeafMemoryConfig({ memorize_seconds_level_2: 2 });
     expect(out.levels[1]?.peekMs).toBe(2000);
     // Untouched levels stay at default ladder values.
     expect(out.levels[0]?.peekMs).toBe(DIFFICULTY_LADDER[0]?.peekMs);
@@ -126,23 +121,13 @@ describe('resolveLeafMemoryConfig - per-level timing overrides', () => {
   });
 
   it('applies solve_seconds_level_3 directly (already seconds)', () => {
-    const out = resolveLeafMemoryConfig({
-      seed: null,
-      locale: null,
-      skin: null,
-      config: { solve_seconds_level_3: 45 },
-    });
+    const out = resolveLeafMemoryConfig({ solve_seconds_level_3: 45 });
     expect(out.levels[2]?.timeSec).toBe(45);
     expect(out.levels[0]?.timeSec).toBe(DIFFICULTY_LADDER[0]?.timeSec);
   });
 
   it('preserves layout fields (pairs/cols/rows) under timing override', () => {
-    const out = resolveLeafMemoryConfig({
-      seed: null,
-      locale: null,
-      skin: null,
-      config: { solve_seconds_level_1: 1 },
-    });
+    const out = resolveLeafMemoryConfig({ solve_seconds_level_1: 1 });
     expect(out.levels[0]?.pairs).toBe(DIFFICULTY_LADDER[0]?.pairs);
     expect(out.levels[0]?.cols).toBe(DIFFICULTY_LADDER[0]?.cols);
     expect(out.levels[0]?.rows).toBe(DIFFICULTY_LADDER[0]?.rows);
@@ -151,11 +136,11 @@ describe('resolveLeafMemoryConfig - per-level timing overrides', () => {
 
 describe('resolveLeafMemoryConfig - boolean toggles', () => {
   it('show_high_score=false propagates', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { show_high_score: false } });
+    const out = resolveLeafMemoryConfig({ show_high_score: false });
     expect(out.showHighScore).toBe(false);
   });
   it('show_level_indicator=false propagates', () => {
-    const out = resolveLeafMemoryConfig({ seed: null, locale: null, skin: null, config: { show_level_indicator: false } });
+    const out = resolveLeafMemoryConfig({ show_level_indicator: false });
     expect(out.showLevelIndicator).toBe(false);
   });
 });
@@ -163,37 +148,31 @@ describe('resolveLeafMemoryConfig - boolean toggles', () => {
 describe('resolveLeafMemoryConfig - type guards (defensive)', () => {
   it('ignores string-form numbers and falls back to defaults', () => {
     const out = resolveLeafMemoryConfig({
-      seed: null,
-      locale: null,
-      skin: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      config: { start_level: '3' as any, mismatch_flip_back_ms: '200' as any },
+      start_level: '3' as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mismatch_flip_back_ms: '200' as any,
     });
     expect(out.startIndex).toBe(0);
     expect(out.mismatchFlipBackMs).toBe(600);
   });
   it('ignores string-form booleans', () => {
-    const out = resolveLeafMemoryConfig({
-      seed: null,
-      locale: null,
-      skin: null,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      config: { show_high_score: 'false' as any },
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = resolveLeafMemoryConfig({ show_high_score: 'false' as any });
     expect(out.showHighScore).toBe(true);
   });
 });
 
 describe('bundled preset behaviors', () => {
   it('start_at_3 preset starts at level 3 with default everything else', () => {
+    // Raw preset payload mirroring what the widget resolver hands the game.
+    // The widget would have flattened _extends already; we feed the
+    // post-flatten shape here.
     const out = resolveLeafMemoryConfig({
-      seed: null,
-      locale: null,
-      skin: null,
-      // Use raw preset payload to mirror what the widget resolver hands the game.
-      // The resolver in widget would have flattened _extends already; we feed
-      // the post-flatten shape here.
-      config: { start_level: 3, mismatch_flip_back_ms: 600, show_high_score: true, show_level_indicator: true },
+      start_level: 3,
+      mismatch_flip_back_ms: 600,
+      show_high_score: true,
+      show_level_indicator: true,
     });
     expect(out.startIndex).toBe(2);
   });

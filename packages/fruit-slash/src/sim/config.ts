@@ -1,34 +1,25 @@
-// The sim's default config. This is the SINGLE source both the live
-// driver (engine.init) and the replay run (toRun's defaultConfig) use, so live
-// play and server replay execute under identical gameplay params -> identical
-// verdict. Values mirror the caputchin.json `default` preset; the in-code
-// fallbacks guard against a manifest edit dropping a key.
-//
-// At MVP the server passes `null` config to `run`, so `defaultConfig` is what
-// actually runs; per-site server config injection is a deferred phase (the run
-// already accepts it as an input, so that phase is server-only).
+// SimConfig derivation for Fruit Slash. The RAW dashboard config (or null) is
+// turned into the sim's gameplay config HERE, in one place: engine.init calls
+// resolveSimConfig, and both the live driver and the headless replay reach the
+// engine through that same init, so the sim params can't drift between play and
+// verification. Reuses resolveFruitSlashConfig (the display resolver) as the
+// single source of resolution + clamps; this just projects the sim-affecting
+// fields out of it.
 
-import manifestJson from '../../caputchin.json';
-import { GRAVITY } from './constants.js';
+import { resolveFruitSlashConfig } from '../config.js';
 import type { SimConfig } from './types.js';
 
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
-
-function jsonNumber(key: string, hardcoded: number): number {
-  const v = DEFAULT_PRESET[key];
-  return typeof v === 'number' && Number.isFinite(v) ? v : hardcoded;
+/** Resolve the RAW dashboard config (or null) into the headless SimConfig. THE
+ *  single config->sim transform site: engine.init calls this so the live driver
+ *  and the replay derive identical sim params. `null` -> the manifest defaults
+ *  via the shared resolver. */
+export function resolveSimConfig(raw: Record<string, unknown> | null): SimConfig {
+  const cfg = resolveFruitSlashConfig(raw);
+  return {
+    passScore: cfg.passScore,
+    lives: cfg.lives,
+    spawnRate: cfg.spawnRate,
+    gravity: cfg.gravity,
+    hazardChance: cfg.hazardChance,
+  };
 }
-
-/** Clamp + round the same way the live driver resolves config, so the sim
- *  defaults are exactly the values the round runs under. */
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
-}
-
-export const DEFAULT_SIM_CONFIG: SimConfig = {
-  passScore: Math.max(1, Math.round(jsonNumber('pass_score', 8))),
-  lives: Math.max(1, Math.round(jsonNumber('lives', 3))),
-  spawnRate: clamp(jsonNumber('spawn_rate', 0.9), 0.1, 5),
-  gravity: clamp(jsonNumber('gravity', GRAVITY), 200, 4000),
-  hazardChance: clamp(jsonNumber('hazard_chance', 0.18), 0, 1),
-};

@@ -15,7 +15,6 @@
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
 import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
 import { engine } from './sim/engine.js';
-import { DEFAULT_SIM_CONFIG } from './sim/config.js';
 import { WORLD_WIDTH, WORLD_HEIGHT, TARGET_RADIUS, STEP_S } from './sim/constants.js';
 import { GOOD, type Fx, type SimAction, type SimState, type SimView } from './sim/types.js';
 import { buildStrings } from './strings.js';
@@ -91,9 +90,12 @@ export function runFruitSlash(opts: GameOptions): () => void {
   const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
 
   const strings = buildStrings(ctx?.locale);
-  // Presentation config (sound + HUD toggles + display thresholds). The SIM runs
-  // under DEFAULT_SIM_CONFIG so live == replay; these displayed values mirror it.
-  const pres = resolveFruitSlashConfig(ctx);
+  // The RAW dashboard config. The display resolver below derives presentation
+  // fields (sound, HUD toggles, displayed thresholds) + the render-only gravity;
+  // the engine resolves the SAME raw object into its SimConfig, so the live sim
+  // now honors the dashboard gameplay knobs and matches the replay.
+  const rawConfig = (ctx?.config ?? null) as Record<string, unknown> | null;
+  const pres = resolveFruitSlashConfig(rawConfig);
   const palette: Palette = resolvePalette(ctx?.skin ?? null);
   const reducedMotion = prefersReducedMotion(view);
   const sfx = createSfx(view, pres.sound);
@@ -147,7 +149,7 @@ export function runFruitSlash(opts: GameOptions): () => void {
 
   // ---- driver state ----------------------------------------------------
   let status: Status = 'waiting';
-  let state: SimState = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+  let state: SimState = engine.init({ seed, config: rawConfig });
   let recorded: TickInput<SimAction>[] = [];
   let logicalTick = 0;
   let acc = 0;
@@ -244,7 +246,7 @@ export function runFruitSlash(opts: GameOptions): () => void {
   }
   function start(): void {
     overlay.replaceChildren();
-    state = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+    state = engine.init({ seed, config: rawConfig });
     recorded = [];
     logicalTick = 0;
     acc = 0;
@@ -336,7 +338,7 @@ export function runFruitSlash(opts: GameOptions): () => void {
   /** Age the render-only particles + blade trail by real `dt` (cosmetic). */
   function renderStep(dt: number): void {
     for (const p of particles) {
-      p.vy += DEFAULT_SIM_CONFIG.gravity * dt;
+      p.vy += pres.gravity * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.ttl -= dt;

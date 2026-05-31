@@ -42,7 +42,13 @@ import {
   DECOY_TIME_PENALTY_S,
   DECOY_PENALTY,
 } from './constants.js';
+import { resolveSimConfig } from './config.js';
 import type { SimState, SimConfig, SimAction, SimView, SimMole, SimMolePhase, SimFx } from './types.js';
+
+/** The raw dashboard config the engine resolves internally (flat scalar map or
+ *  null). The engine never trusts its shape - resolveSimConfig validates,
+ *  clamps, and resolves null -> defaults. */
+type RawConfig = Record<string, unknown>;
 
 /** Render-cue cap so a long replay (which never drains fx) can't grow it
  *  unbounded. The live driver clears fx every logical tick before applying
@@ -148,24 +154,27 @@ function timingFraction(m: SimMole): number {
 
 // ── Engine ────────────────────────────────────────────────────────────────────
 
-export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
+export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
     const r = cap.rng(seed);
-    const ladder = buildLadder(config);
+    // ONE transform site: raw dashboard config (or null) -> this round's
+    // SimConfig. Live play and replay both arrive here, so they cannot diverge.
+    const cfg = resolveSimConfig(config);
+    const ladder = buildLadder(cfg);
     const spawnRate = ladder[0]!.spawnRate;
     // Draw first interval before capturing state, so tick's rngFromState resumes
     // the exact stream.
     const interval = pickInterval(() => r.next(), spawnRate);
     return {
       rng: r.state,
-      cfg: config,
+      cfg,
       moles: [],
       nextId: 0,
       spawnTimer: 0,
       interval,
       goodHits: 0,
       score: 0,
-      timeLeft: config.seconds,
+      timeLeft: cfg.seconds,
       levelIndex: 0,
       hitsInLevel: 0,
       holeCooldowns: Array.from({ length: HOLE_COUNT }, () => 0),
@@ -297,7 +306,9 @@ export const engine = defineEngine<SimState, SimAction, SimConfig, SimView>({
   },
 
   result(state) {
-    return { score: state.goodHits };
+    // Engine owns the pass decision: `verified` latches (in step) once goodHits
+    // reaches cfg.passHits. score = good monkeys whacked.
+    return { score: state.goodHits, passed: state.verified === 1 };
   },
 
   view(state) {

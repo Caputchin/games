@@ -1,14 +1,15 @@
 // Configuration plumbing for Whack-a-Monkey.
 //
-// Maps the runtime `ctx.config` payload (a flat Record<string, scalar> resolved
-// by the widget from caputchin.json) into a typed WhackConfig. Missing or
-// malformed keys fall back to defaults derived at module init from the
-// caputchin.json `default` preset, so the two sources can't drift and the game
-// still plays sensibly with `ctx.config === null`. Every knob is clamped to a
-// humane range: a captcha that locks out humans is worse than a lenient one.
-// Same pattern as fruit-slash.
+// Maps the RAW dashboard config payload (a flat Record<string, scalar> resolved
+// by the widget from caputchin.json) into a typed WhackConfig. Takes the raw
+// config object (or null) directly so the SAME resolver serves the live driver
+// (display) and the headless engine (via resolveSimConfig in sim/config.ts) -
+// one transform site, no live/replay divergence. Missing or malformed keys fall
+// back to defaults derived at module init from the caputchin.json `default`
+// preset, so the two sources can't drift and the game still plays sensibly with
+// `config === null`. Every knob is clamped to a humane range: a captcha that
+// locks out humans is worse than a lenient one. Same pattern as fruit-slash.
 
-import type { GameContext } from '@caputchin/game-sdk';
 import manifestJson from '../caputchin.json';
 
 export interface WhackConfig {
@@ -55,8 +56,10 @@ function readBoolean(cfg: Record<string, unknown> | null, key: string): boolean 
   return typeof v === 'boolean' ? v : null;
 }
 
-export function resolveWhackConfig(ctx: GameContext | undefined): WhackConfig {
-  const cfg = (ctx?.config ?? null) as Record<string, unknown> | null;
+export function resolveWhackConfig(
+  config: Record<string, unknown> | null | undefined,
+): WhackConfig {
+  const cfg = (config ?? null) as Record<string, unknown> | null;
   return {
     passHits: Math.max(3, Math.min(30, Math.round(readNumber(cfg, 'pass_hits') ?? FALLBACK.passHits))),
     baseUptimeMs: clamp(readNumber(cfg, 'base_uptime_ms') ?? FALLBACK.baseUptimeMs, 350, 2000),

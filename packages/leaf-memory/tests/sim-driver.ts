@@ -5,7 +5,7 @@
 // the live score; that equivalence is the core guarantee these tests assert.
 
 import { engine } from '../src/sim/engine.js';
-import type { SimAction, SimConfig } from '../src/sim/types.js';
+import type { SimAction } from '../src/sim/types.js';
 import type { Seed, TickInput } from '@caputchin/engine-runtime';
 
 export interface PlayResult {
@@ -29,11 +29,16 @@ export interface PlayOpts {
  *  available pair of matching cards (cards with the same kind) from state,
  *  submitting both as separate step() actions on the same tick to mirror how
  *  the live driver queues two clicks. */
-export function play(seed: Seed, config: SimConfig, opts: PlayOpts): PlayResult {
+export function play(
+  seed: Seed,
+  config: Record<string, unknown> | null,
+  opts: PlayOpts,
+): PlayResult {
   let state = engine.init({ seed, config });
   const recorded: TickInput<SimAction>[] = [];
   let tick = 0;
-  const stopAfter = opts.stopAfterPairs ?? config.pairs;
+  // Pairs come from the engine's resolved config (it owns the transform now).
+  const stopAfter = opts.stopAfterPairs ?? state.cfg.pairs;
 
   while (!engine.isOver(state) && tick < opts.maxTicks) {
     const acts: SimAction[] = [];

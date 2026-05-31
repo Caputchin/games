@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { resolveDinoConfig } from '../src/config.js';
-import type { GameContext } from '@caputchin/game-sdk';
 
 describe('resolveDinoConfig', () => {
-  it('falls back to the manifest default preset when ctx is undefined', () => {
+  it('falls back to the manifest default preset when config is undefined', () => {
     const c = resolveDinoConfig(undefined);
     expect(c.startSpeed).toBe(6);
     expect(c.maxSpeed).toBe(13);
@@ -17,12 +16,12 @@ describe('resolveDinoConfig', () => {
   });
 
   it('applies config overrides and negates jump_velocity', () => {
-    const ctx = {
-      locale: null,
-      skin: null,
-      config: { start_speed: 4, jump_velocity: 12, sound: false, birds_enabled: false },
-    } as unknown as GameContext;
-    const c = resolveDinoConfig(ctx);
+    const c = resolveDinoConfig({
+      start_speed: 4,
+      jump_velocity: 12,
+      sound: false,
+      birds_enabled: false,
+    });
     expect(c.startSpeed).toBe(4);
     expect(c.initialJumpVelocity).toBe(-12);
     expect(c.sound).toBe(false);
@@ -32,12 +31,7 @@ describe('resolveDinoConfig', () => {
   });
 
   it('ignores malformed config values and keeps the fallback', () => {
-    const ctx = {
-      locale: null,
-      skin: null,
-      config: { start_speed: 'fast', sound: 'yes' },
-    } as unknown as GameContext;
-    const c = resolveDinoConfig(ctx);
+    const c = resolveDinoConfig({ start_speed: 'fast', sound: 'yes' });
     expect(c.startSpeed).toBe(6);
     expect(c.sound).toBe(true);
   });

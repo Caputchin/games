@@ -16,7 +16,6 @@
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
 import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
 import { engine } from './sim/engine.js';
-import { DEFAULT_SIM_CONFIG } from './sim/config.js';
 import {
   WORLD_WIDTH,
   WORLD_HEIGHT,
@@ -120,9 +119,12 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
 
   const strings = buildStrings(ctx?.locale);
-  // Presentation config (sound + HUD toggles). The SIM runs under
-  // DEFAULT_SIM_CONFIG so live == replay; these values mirror it.
-  const pres = resolveWhackConfig(ctx);
+  // The RAW dashboard config. The display resolver below derives presentation
+  // fields (sound, HUD toggles, the displayed pass goal); the engine resolves
+  // the SAME raw object into its SimConfig, so the live sim now honors the
+  // dashboard gameplay knobs and matches the replay.
+  const rawConfig = (ctx?.config ?? null) as Record<string, unknown> | null;
+  const pres = resolveWhackConfig(rawConfig);
   const palette: Palette = resolvePalette(ctx?.skin ?? null);
   const reducedMotion = prefersReducedMotion(view);
   const sfx = createSfx(view, pres.sound);
@@ -193,7 +195,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
 
   // ---- driver state ----------------------------------------------------
   let status: Status = 'waiting';
-  let simState: SimState = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+  let simState: SimState = engine.init({ seed, config: rawConfig });
   let recorded: TickInput<SimAction>[] = [];
   let logicalTick = 0;
   let acc = 0;
@@ -271,7 +273,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   }
   function start(): void {
     overlay.replaceChildren();
-    simState = engine.init({ seed, config: DEFAULT_SIM_CONFIG });
+    simState = engine.init({ seed, config: rawConfig });
     recorded = [];
     logicalTick = 0;
     acc = 0;
@@ -578,7 +580,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     if (showCounters) {
       const goalText = verifiedFired
         ? `${simState.goodHits}`
-        : `${simState.goodHits} / ${DEFAULT_SIM_CONFIG.passHits}`;
+        : `${simState.goodHits} / ${pres.passHits}`;
       hud.goal.innerHTML = `<span class="label">${strings.t('headerGoal')}</span>${goalText}`;
       hud.level.innerHTML = `<span class="label">${strings.t('headerLevel')}</span>${simState.levelIndex + 1}`;
       hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${simState.score}`;

@@ -1,39 +1,27 @@
-// The conforming run artifact. This is the headless entry the
-// marketplace pins (caputchin.json `run.entry`) and the replay host loads in
-// an isolate: it exports `run(seed, config, trace) -> verdict`, and nothing
-// else. No DOM, no rendering - `toRun` turns the pure reducer in sim/engine
-// into the contract function.
+// The conforming run artifact. This is the headless entry the marketplace
+// pins (caputchin.json `run.entry`) and the replay host loads in an isolate:
+// it exports `run(seed, config, trace) -> verdict`, and nothing else. No DOM,
+// no rendering - `toRun` wires the pure reducer in sim/engine into the contract
+// function.
 //
-// `passed` reads the gate from `config` (server-supplied, safe): all pairs
-// must be matched (matchCount >= pairs). At MVP the server passes `null`, so
-// DEFAULT_SIM_CONFIG (L1 defaults) is what the gate uses.
+// Self-contained by construction: `config` is the RAW server-resolved dashboard
+// config (or null) and flows STRAIGHT into `engine.init`, which owns both the
+// config->sim transform (`resolveSimConfig`) and the pass decision
+// (`engine.result`). The live driver runs the SAME `engine.init` over the SAME
+// raw config, so the replayed verdict equals live play - there is no external
+// transform or gate that one path could compute differently.
 //
-// MVP captcha path (how this fits the live game):
-//   - The server issues one seed per verify session (ctx.seed).
-//   - The manifest default start_level=1 → the live driver always starts on L1.
-//   - The live driver calls bridge.pass only on the first new-best round; that
-//     first pass is the L1 trace (recorded under L1's SimConfig).
-//   - The server replays that trace with config=null → resolves to DEFAULT_SIM_CONFIG
-//     (L1) → correctly gates against pairs=2.
-//   - Consequence: in-game rounds beyond L1 (Harder button) are record-only; the
-//     server does NOT replay them at MVP. Per-level replay with server-authoritative
-//     config (start_level>1 support) is deferred to P11.
-//   - There is no false-reject at MVP because the first submitted trace is always
-//     L1 and config=null == L1.
+// `toRun` adds only the truncated guard (a non-terminating run fails) and the
+// trace decode (a malformed blob yields a failing verdict, never a throw).
 //
-// P11 requirement (per-round replay):
-//   Replayed round is L1-only while server config injection is deferred.
-//   Enabling start_level>1 or per-round (bigger-board) replay REQUIRES
-//   threading the per-round SimConfig (pairs + budgetTicks + flipBackTicks)
-//   into run() - otherwise a non-L1 win false-rejects.
+// Per-round level note: the live driver records the trace under the round's
+// `start_level`; the server replays with the dashboard config whose
+// `start_level` selects that same level. For the MVP captcha the first
+// `bridge.pass` round is the configured start level, so the replay resolves to
+// the matching SimConfig and the win verifies.
 
 import { toRun } from '@caputchin/engine-runtime';
 import { engine } from './sim/engine.js';
-import { DEFAULT_SIM_CONFIG } from './sim/config.js';
 import { MAX_TICKS } from './sim/constants.js';
 
-export const run = toRun(engine, {
-  defaultConfig: DEFAULT_SIM_CONFIG,
-  maxTicks: MAX_TICKS,
-  passed: (outcome, config) => outcome.score >= config.pairs,
-});
+export const run = toRun(engine, { maxTicks: MAX_TICKS });

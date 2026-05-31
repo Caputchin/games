@@ -1,16 +1,18 @@
 // Configuration plumbing for Leaf Memory.
 //
-// Maps the runtime `ctx.config` payload (a flat `Record<string, scalar>`
+// Maps the RAW dashboard config payload (a flat `Record<string, scalar>`
 // resolved by the widget from caputchin.json) into a typed `LeafMemoryConfig`
-// the game can apply directly. Missing or malformed keys fall back to the
-// hardcoded defaults below, which mirror the `default` preset in
-// caputchin.json so the game still plays sensibly with `ctx.config === null`
+// the game can apply directly. Takes the raw config object (or `null`) so the
+// SAME resolver serves the live driver (display ladder + level navigation) and
+// the headless engine (which calls it inside `init` to derive the sim params) -
+// one transform site, no live/replay divergence. Missing or malformed keys
+// fall back to the hardcoded defaults below, which mirror the `default` preset
+// in caputchin.json so the game still plays sensibly with `config === null`
 // (e.g. authors who haven't shipped a configurations block).
 //
 // Per-level fields are flat (e.g. `memorize_seconds_level_3`) rather than
 // nested because the schema DSL doesn't support nested objects.
 
-import type { GameContext } from '@caputchin/game-sdk';
 import manifestJson from '../caputchin.json';
 import { DIFFICULTY_LADDER, MAX_LEVEL, type DifficultyLevel } from './difficulty.js';
 
@@ -58,8 +60,10 @@ function readBoolean(cfg: Record<string, unknown> | null, key: string): boolean 
   return typeof v === 'boolean' ? v : null;
 }
 
-export function resolveLeafMemoryConfig(ctx: GameContext | undefined): LeafMemoryConfig {
-  const cfg = (ctx?.config ?? null) as Record<string, unknown> | null;
+export function resolveLeafMemoryConfig(
+  config: Record<string, unknown> | null | undefined,
+): LeafMemoryConfig {
+  const cfg = (config ?? null) as Record<string, unknown> | null;
 
   const startLevel = readNumber(cfg, 'start_level');
   const startIndex = startLevel === null

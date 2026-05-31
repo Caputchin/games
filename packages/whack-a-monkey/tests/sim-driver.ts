@@ -5,7 +5,7 @@
 // the live score; that equivalence is the core guarantee these tests assert.
 
 import { engine } from '../src/sim/engine.js';
-import type { SimAction, SimConfig } from '../src/sim/types.js';
+import type { SimAction } from '../src/sim/types.js';
 import type { Seed, TickInput } from '@caputchin/engine-runtime';
 
 export interface PlayResult {
@@ -16,19 +16,28 @@ export interface PlayResult {
 }
 
 export interface PlayOpts {
-  /** Keep tapping monkeys until goodHits reaches this, then idle. Default: tap forever. */
-  tapUntil?: number;
+  /** Keep tapping monkeys until goodHits reaches passHits + this margin, then
+   *  idle. The threshold is read from the engine's RESOLVED config, so tests
+   *  express intent ("a few past the gate") without building a SimConfig. Omit
+   *  to tap forever. */
+  tapMargin?: number;
   maxTicks: number;
 }
 
 /** Drive the engine like the live loop: per tick, decide + apply + record the
  *  actions, then advance one logical tick. Taps every live monkey (not decoys)
- *  until `tapUntil`, then idles to let the clock run out. */
-export function play(seed: Seed, config: SimConfig, opts: PlayOpts): PlayResult {
+ *  until passHits + `tapMargin`, then idles to let the clock run out. */
+export function play(
+  seed: Seed,
+  config: Record<string, unknown> | null,
+  opts: PlayOpts,
+): PlayResult {
   let state = engine.init({ seed, config });
   const recorded: TickInput<SimAction>[] = [];
   let tick = 0;
-  const target = opts.tapUntil ?? Number.POSITIVE_INFINITY;
+  // Threshold from the engine's own resolved config (it owns the transform now).
+  const target =
+    opts.tapMargin === undefined ? Number.POSITIVE_INFINITY : state.cfg.passHits + opts.tapMargin;
 
   while (!engine.isOver(state) && tick < opts.maxTicks) {
     const acts: SimAction[] = [];

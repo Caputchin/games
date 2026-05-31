@@ -7,13 +7,13 @@ import { describe, it, expect } from 'vitest';
 import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-runtime';
 import type { Seed } from '@caputchin/engine-runtime';
 import { engine, toScore, SIM_GROUND_Y } from '../src/sim/engine.js';
-import { DEFAULT_SIM_CONFIG } from '../src/sim/config.js';
 import { RUNNER_START_X } from '../src/sim/constants.js';
-import type { SimConfig } from '../src/sim/types.js';
 import { play } from './sim-driver.js';
 
 const SEED: Seed = [0xc0ffee, 0x1234, 0x9abcdef0, 0x42];
-const CFG: SimConfig = DEFAULT_SIM_CONFIG;
+// null = no dashboard override; the engine resolves it to the manifest defaults
+// internally (same path the server takes at MVP). Tests never build a SimConfig.
+const CFG: Record<string, unknown> | null = null;
 const MAX = 6000;
 
 // ---- Runner physics via the reducer -------------------------------------
@@ -119,6 +119,8 @@ describe('live == replay (core guarantee)', () => {
     const out = replay(engine, { seed: SEED, config: CFG, actions: live.recorded, maxTicks: MAX });
     expect(out.score).toBe(live.score);
     expect(out.truncated).toBe(false);
+    // Engine owns the pass decision now: verified == score reached passScore.
+    expect(out.passed).toBe(live.score >= 100); // default passScore = 100
   });
 
   it('survives the kit codec round-trip (encode -> decode -> replay)', () => {

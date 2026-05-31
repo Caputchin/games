@@ -1,15 +1,19 @@
 // Configuration plumbing for Dino Runner.
 //
-// Maps the runtime `ctx.config` payload (a flat `Record<string, scalar>`
-// resolved by the widget from caputchin.json) into a typed `DinoConfig` the
-// engine applies directly. Missing or malformed keys fall back to the
-// hardcoded defaults below, which mirror the `default` preset in
-// caputchin.json so the game still plays sensibly with `ctx.config === null`
-// (e.g. a manifest shipped without a configurations block).
+// Maps the RAW dashboard config payload (a flat `Record<string, scalar>`
+// resolved by the widget from caputchin.json) into a typed `DinoConfig` (the
+// display/render resolution) and, via resolveSimConfig, into the headless
+// `SimConfig` the engine runs under. Both resolvers take the raw config object
+// (or `null`) directly, so the SAME code serves the live driver and the
+// headless engine (which calls resolveSimConfig inside init) - one transform
+// site, no live/replay divergence. Missing or malformed keys fall back to the
+// hardcoded defaults below, which mirror the `default` preset in caputchin.json
+// so the game still plays sensibly with `config === null` (e.g. a manifest
+// shipped without a configurations block).
 
-import type { GameContext } from '@caputchin/game-sdk';
 import manifestJson from '../caputchin.json';
 import { SPEED, JUMP, GAP_COEFFICIENT } from './constants.js';
+import type { SimConfig } from './sim/types.js';
 
 export interface DinoConfig {
   startSpeed: number;
@@ -69,8 +73,10 @@ function readBoolean(cfg: Record<string, unknown> | null, key: string): boolean 
   return typeof v === 'boolean' ? v : null;
 }
 
-export function resolveDinoConfig(ctx: GameContext | undefined): DinoConfig {
-  const cfg = (ctx?.config ?? null) as Record<string, unknown> | null;
+export function resolveDinoConfig(
+  config: Record<string, unknown> | null | undefined,
+): DinoConfig {
+  const cfg = (config ?? null) as Record<string, unknown> | null;
   const jumpMagnitude = readNumber(cfg, 'jump_velocity') ?? FALLBACK.jumpMagnitude;
 
   return {
@@ -89,5 +95,29 @@ export function resolveDinoConfig(ctx: GameContext | undefined): DinoConfig {
     showScore: readBoolean(cfg, 'show_score') ?? FALLBACK.showScore,
     showBest: readBoolean(cfg, 'show_best') ?? FALLBACK.showBest,
     sound: readBoolean(cfg, 'sound') ?? FALLBACK.sound,
+  };
+}
+
+/** Resolve the RAW dashboard config (or null) into the headless SimConfig the
+ *  engine runs under. THE single config->sim transform site: engine.init calls
+ *  this, so the live driver and the replay derive identical sim params (no
+ *  external/duplicated transform). Reuses resolveDinoConfig so the gameplay
+ *  knobs can't drift from the display resolution; the only extra step is the
+ *  jumpVelocity sign bridge. */
+export function resolveSimConfig(config: Record<string, unknown> | null): SimConfig {
+  const cfg = resolveDinoConfig(config);
+  return {
+    passScore: cfg.passScore,
+    startSpeed: cfg.startSpeed,
+    maxSpeed: cfg.maxSpeed,
+    acceleration: cfg.acceleration,
+    gravity: cfg.gravity,
+    // DinoConfig stores the upward (negative-y) velocity; the sim wants the
+    // positive magnitude (it negates internally in step). Math.abs bridges the
+    // sign convention - reproduce it EXACTLY or live and replay jump arcs diverge.
+    jumpVelocity: Math.abs(cfg.initialJumpVelocity),
+    gapCoefficient: cfg.gapCoefficient,
+    birdsEnabled: cfg.birdsEnabled,
+    birdMinSpeed: cfg.birdMinSpeed,
   };
 }
