@@ -28,6 +28,7 @@
   },
   "preferred": {
     "width": 600,
-    "height": 150
+    "height": 150,
+    "layout": "inline"
   }
 }
