@@ -1,0 +1,115 @@
+{
+  "schema": {
+    "bg": {
+      "type": "color",
+      "name": "Background",
+      "description": "Stage background, full-bleed behind the play field."
+    },
+    "fg": {
+      "type": "color",
+      "name": "Foreground",
+      "description": "Header text and generic foreground color."
+    },
+    "blade": {
+      "type": "color",
+      "name": "Blade trail",
+      "description": "Color of the slice trail that follows the pointer."
+    },
+    "good_1": {
+      "type": "color",
+      "name": "Fruit color 1",
+      "description": "First fruit fill color in the spawn palette."
+    },
+    "good_2": {
+      "type": "color",
+      "name": "Fruit color 2",
+      "description": "Second fruit fill color in the spawn palette."
+    },
+    "good_3": {
+      "type": "color",
+      "name": "Fruit color 3",
+      "description": "Third fruit fill color in the spawn palette."
+    },
+    "good_stroke": {
+      "type": "color",
+      "name": "Fruit outline",
+      "description": "Outline / rind color drawn around each fruit."
+    },
+    "hazard": {
+      "type": "color",
+      "name": "Bomb color",
+      "description": "Fill color of the bomb the player must not slice."
+    },
+    "hazard_stroke": {
+      "type": "color",
+      "name": "Bomb outline",
+      "description": "Outline color drawn around the bomb."
+    },
+    "button_bg": {
+      "type": "color",
+      "name": "Primary button bg",
+      "description": "Background of the Start / Try again primary button."
+    },
+    "button_text": {
+      "type": "color",
+      "name": "Primary button text",
+      "description": "Text on the primary button."
+    },
+    "button_hover": {
+      "type": "color",
+      "name": "Primary button hover bg",
+      "description": "Hover background of the primary button."
+    },
+    "focus_ring": {
+      "type": "color",
+      "name": "Focus ring",
+      "description": "Outline shown on buttons / the stage when keyboard focus enters."
+    },
+    "art_good": {
+      "type": "image",
+      "name": "Fruit art (optional)",
+      "description": "Optional image drawn for each fruit instead of the built-in shape. Absent means the drawn shape is used."
+    },
+    "art_hazard": {
+      "type": "image",
+      "name": "Bomb art (optional)",
+      "description": "Optional image drawn for the bomb instead of the built-in shape. Absent means the drawn shape is used."
+    }
+  },
+  "presets": {
+    "light": {
+      "_theme": "light",
+      "_default": true,
+      "bg": "#FBF7EF",
+      "fg": "#3A3A38",
+      "blade": "#2E6FB7",
+      "good_1": "#E8623B",
+      "good_2": "#F2A33C",
+      "good_3": "#6FBF5B",
+      "good_stroke": "#3A3A38",
+      "hazard": "#3A3A38",
+      "hazard_stroke": "#1B1B1A",
+      "button_bg": "#3A3A38",
+      "button_text": "#FBF7EF",
+      "button_hover": "#222220",
+      "focus_ring": "#3A3A38"
+    },
+    "dark": {
+      "_theme": "dark",
+      "_default": true,
+      "bg": "#161814",
+      "fg": "#F2EEE4",
+      "blade": "#6FB7FF",
+      "good_1": "#FF7A52",
+      "good_2": "#FFC15E",
+      "good_3": "#8FD46E",
+      "good_stroke": "#0E0F0C",
+      "hazard": "#0E0F0C",
+      "hazard_stroke": "#000000",
+      "button_bg": "#F2EEE4",
+      "button_text": "#161814",
+      "button_hover": "#D7D2C4",
+      "focus_ring": "#F2EEE4"
+    }
+  }
+}

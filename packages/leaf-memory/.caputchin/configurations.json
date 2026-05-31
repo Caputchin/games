@@ -1,0 +1,139 @@
+{
+  "schema": {
+    "start_level": {
+      "type": "range",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "name": "Starting level",
+      "description": "Which level (1-4) the round starts on. Subsequent rounds advance / retreat per the in-game buttons."
+    },
+    "show_high_score": {
+      "type": "boolean",
+      "name": "Show best score",
+      "description": "Display the Best chip in the header."
+    },
+    "show_level_indicator": {
+      "type": "boolean",
+      "name": "Show level indicator",
+      "description": "Display the Level chip in the header."
+    },
+    "mismatch_flip_back_ms": {
+      "type": "range",
+      "min": 100,
+      "max": 2000,
+      "step": 50,
+      "name": "Mismatch flip-back delay (ms)",
+      "description": "Milliseconds a mismatched pair stays revealed before flipping back face-down."
+    },
+    "memorize_seconds_level_1": {
+      "type": "range",
+      "min": 0.1,
+      "max": 10,
+      "step": 0.1,
+      "name": "Memorize time, level 1",
+      "description": "Seconds the cards stay revealed before the round timer starts on level 1."
+    },
+    "solve_seconds_level_1": {
+      "type": "range",
+      "min": 1,
+      "max": 300,
+      "step": 1,
+      "name": "Solve time, level 1",
+      "description": "Total seconds the player has to clear level 1 once the timer starts."
+    },
+    "memorize_seconds_level_2": {
+      "type": "range",
+      "min": 0.1,
+      "max": 10,
+      "step": 0.1,
+      "name": "Memorize time, level 2",
+      "description": "Seconds the cards stay revealed before the round timer starts on level 2."
+    },
+    "solve_seconds_level_2": {
+      "type": "range",
+      "min": 1,
+      "max": 300,
+      "step": 1,
+      "name": "Solve time, level 2",
+      "description": "Total seconds the player has to clear level 2 once the timer starts."
+    },
+    "memorize_seconds_level_3": {
+      "type": "range",
+      "min": 0.1,
+      "max": 10,
+      "step": 0.1,
+      "name": "Memorize time, level 3",
+      "description": "Seconds the cards stay revealed before the round timer starts on level 3."
+    },
+    "solve_seconds_level_3": {
+      "type": "range",
+      "min": 1,
+      "max": 300,
+      "step": 1,
+      "name": "Solve time, level 3",
+      "description": "Total seconds the player has to clear level 3 once the timer starts."
+    },
+    "memorize_seconds_level_4": {
+      "type": "range",
+      "min": 0.1,
+      "max": 10,
+      "step": 0.1,
+      "name": "Memorize time, level 4",
+      "description": "Seconds the cards stay revealed before the round timer starts on level 4."
+    },
+    "solve_seconds_level_4": {
+      "type": "range",
+      "min": 1,
+      "max": 300,
+      "step": 1,
+      "name": "Solve time, level 4",
+      "description": "Total seconds the player has to clear level 4 once the timer starts."
+    }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "start_level": 1,
+      "show_high_score": true,
+      "show_level_indicator": true,
+      "mismatch_flip_back_ms": 600,
+      "memorize_seconds_level_1": 0.4,
+      "memorize_seconds_level_2": 0.6,
+      "memorize_seconds_level_3": 0.9,
+      "memorize_seconds_level_4": 1.25,
+      "solve_seconds_level_1": 5,
+      "solve_seconds_level_2": 10,
+      "solve_seconds_level_3": 17,
+      "solve_seconds_level_4": 30
+    },
+    "casual": {
+      "_extends": "default",
+      "memorize_seconds_level_1": 1,
+      "memorize_seconds_level_2": 1.5,
+      "memorize_seconds_level_3": 2,
+      "memorize_seconds_level_4": 3,
+      "solve_seconds_level_1": 8,
+      "solve_seconds_level_2": 16,
+      "solve_seconds_level_3": 28,
+      "solve_seconds_level_4": 50,
+      "mismatch_flip_back_ms": 900
+    },
+    "speedrun": {
+      "_extends": "default",
+      "memorize_seconds_level_1": 0.25,
+      "memorize_seconds_level_2": 0.35,
+      "memorize_seconds_level_3": 0.5,
+      "memorize_seconds_level_4": 0.7,
+      "solve_seconds_level_1": 4,
+      "solve_seconds_level_2": 7,
+      "solve_seconds_level_3": 12,
+      "solve_seconds_level_4": 20,
+      "mismatch_flip_back_ms": 400
+    },
+    "start_at_3": {
+      "_extends": "default",
+      "start_level": 3
+    }
+  }
+}

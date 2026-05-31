@@ -1,0 +1,163 @@
+{
+  "schema": {
+    "bg": {
+      "type": "color",
+      "name": "Stage background",
+      "description": "Root iframe background; full-bleed under the header, board, and actions."
+    },
+    "text": {
+      "type": "color",
+      "name": "Primary text",
+      "description": "Header values, screen body text, neutral copy."
+    },
+    "label": {
+      "type": "color",
+      "name": "Header labels",
+      "description": "The Best / Level / Time chip labels (deemphasized)."
+    },
+    "title": {
+      "type": "color",
+      "name": "Screen title",
+      "description": "Headline color on the start / win / loss screens."
+    },
+    "card_back_bg": {
+      "type": "color",
+      "name": "Card back background",
+      "description": "Background of a face-down card."
+    },
+    "card_back_text": {
+      "type": "color",
+      "name": "Card back text",
+      "description": "Color of the question mark on a face-down card."
+    },
+    "card_front_bg": {
+      "type": "color",
+      "name": "Card front background",
+      "description": "Background of a face-up card behind the leaf."
+    },
+    "card_front_text": {
+      "type": "color",
+      "name": "Card front leaf color",
+      "description": "currentColor for the leaf SVG. Decides the leaf tint."
+    },
+    "card_border": {
+      "type": "color",
+      "name": "Card border",
+      "description": "Border on the face-up card."
+    },
+    "card_match_accent": {
+      "type": "color",
+      "name": "Match accent",
+      "description": "Border + pulse color around a freshly matched pair."
+    },
+    "button_bg": {
+      "type": "color",
+      "name": "Primary button bg",
+      "description": "Background of the Start / Retry primary button."
+    },
+    "button_text": {
+      "type": "color",
+      "name": "Primary button text",
+      "description": "Text on the primary button."
+    },
+    "button_hover": {
+      "type": "color",
+      "name": "Primary button hover bg",
+      "description": "Hover state of the primary button."
+    },
+    "button_secondary_text": {
+      "type": "color",
+      "name": "Secondary button text",
+      "description": "Text + border color of the secondary button (Try easier / Level up)."
+    },
+    "button_secondary_border": {
+      "type": "color",
+      "name": "Secondary button border",
+      "description": "Outline color of the secondary button."
+    },
+    "button_secondary_hover_bg": {
+      "type": "color",
+      "name": "Secondary button hover bg",
+      "description": "Hover background of the secondary button."
+    },
+    "focus_ring": {
+      "type": "color",
+      "name": "Focus ring",
+      "description": "Outline color shown on cards / buttons when keyboard focus enters."
+    },
+    "leaf_fern": {
+      "type": "image",
+      "name": "Fern leaf",
+      "description": "Card art for the fern pair. currentColor inside the SVG drives the tint, which comes from card_front_text."
+    },
+    "leaf_monstera_a": {
+      "type": "image",
+      "name": "Monstera A",
+      "description": "Card art for the first monstera variant."
+    },
+    "leaf_monstera_b": {
+      "type": "image",
+      "name": "Monstera B",
+      "description": "Card art for the second monstera variant."
+    },
+    "leaf_monstera_c": {
+      "type": "image",
+      "name": "Monstera C",
+      "description": "Card art for the third monstera variant."
+    },
+    "leaf_banana_hand": {
+      "type": "image",
+      "name": "Banana hand",
+      "description": "Card art for the banana-hand pair."
+    },
+    "leaf_heart": {
+      "type": "image",
+      "name": "Heart leaf",
+      "description": "Card art for the heart-shaped pair."
+    }
+  },
+  "presets": {
+    "light": {
+      "_theme": "light",
+      "_default": true,
+      "bg": "#F7F5F2",
+      "text": "#2B2926",
+      "label": "#7C7B78",
+      "title": "#2F6640",
+      "card_back_bg": "#3A7D4F",
+      "card_back_text": "#E0F2DA",
+      "card_front_bg": "#E0F2DA",
+      "card_front_text": "#2F6640",
+      "card_border": "#C2E3BB",
+      "card_match_accent": "#C2410C",
+      "button_bg": "#3A7D4F",
+      "button_text": "#E0F2DA",
+      "button_hover": "#2F6640",
+      "button_secondary_text": "#2F6640",
+      "button_secondary_border": "#3A7D4F",
+      "button_secondary_hover_bg": "#E0F2DA",
+      "focus_ring": "#2F6640"
+    },
+    "dark": {
+      "_theme": "dark",
+      "_default": true,
+      "bg": "#0F1810",
+      "text": "#F7F5F2",
+      "label": "#9ACE9B",
+      "title": "#F7F5F2",
+      "card_back_bg": "#243526",
+      "card_back_text": "#9ACE9B",
+      "card_front_bg": "#182518",
+      "card_front_text": "#9ACE9B",
+      "card_border": "#2F6640",
+      "card_match_accent": "#FCA5A5",
+      "button_bg": "#4E9B65",
+      "button_text": "#0F1810",
+      "button_hover": "#3A7D4F",
+      "button_secondary_text": "#9ACE9B",
+      "button_secondary_border": "#4E9B65",
+      "button_secondary_hover_bg": "#243526",
+      "focus_ring": "#4E9B65"
+    }
+  }
+}

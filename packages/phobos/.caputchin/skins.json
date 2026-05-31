@@ -1,0 +1,70 @@
+{
+  "schema": {
+    "bg": {
+      "type": "color",
+      "name": "Background",
+      "description": "Stage background behind the canvas and overlays."
+    },
+    "fg": {
+      "type": "color",
+      "name": "Foreground",
+      "description": "HUD and overlay text color."
+    },
+    "button_bg": {
+      "type": "color",
+      "name": "Primary button bg",
+      "description": "Background of the primary action button."
+    },
+    "button_text": {
+      "type": "color",
+      "name": "Primary button text",
+      "description": "Text on the primary action button."
+    },
+    "button_hover": {
+      "type": "color",
+      "name": "Primary button hover bg",
+      "description": "Hover background of the primary action button."
+    },
+    "hud_bg": {
+      "type": "color",
+      "name": "HUD background",
+      "description": "Background of the kill counter and touch controls."
+    },
+    "badge_bg": {
+      "type": "color",
+      "name": "Verified badge bg",
+      "description": "Background of the Verified badge shown on success."
+    },
+    "focus_ring": {
+      "type": "color",
+      "name": "Focus ring",
+      "description": "Outline shown on the canvas when keyboard focus enters."
+    }
+  },
+  "presets": {
+    "dark": {
+      "_theme": "dark",
+      "_default": true,
+      "bg": "#101014",
+      "fg": "#e8e6e3",
+      "button_bg": "#9c1f1f",
+      "button_text": "#ffffff",
+      "button_hover": "#bf2a2a",
+      "hud_bg": "rgba(0,0,0,0.55)",
+      "badge_bg": "#2f8f3f",
+      "focus_ring": "#bf2a2a"
+    },
+    "light": {
+      "_theme": "light",
+      "_default": true,
+      "bg": "#f2f0ec",
+      "fg": "#1b1b22",
+      "button_bg": "#9c1f1f",
+      "button_text": "#ffffff",
+      "button_hover": "#bf2a2a",
+      "hud_bg": "rgba(255,255,255,0.65)",
+      "badge_bg": "#2f8f3f",
+      "focus_ring": "#9c1f1f"
+    }
+  }
+}

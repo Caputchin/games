@@ -1,0 +1,74 @@
+{
+  "schema": {
+    "pass_hits": {
+      "type": "range",
+      "min": 3,
+      "max": 30,
+      "step": 1,
+      "name": "Pass goal",
+      "description": "Number of monkeys a round must whack to count as a pass, spread across the levels."
+    },
+    "base_uptime_ms": {
+      "type": "range",
+      "min": 350,
+      "max": 2000,
+      "step": 50,
+      "name": "Mole uptime",
+      "description": "How long a monkey stays up on level 1, in milliseconds. Shorter is harder. Later levels shorten it further, with a fair floor."
+    },
+    "base_decoy_chance": {
+      "type": "range",
+      "min": 0,
+      "max": 0.5,
+      "step": 0.01,
+      "name": "Decoy chance",
+      "description": "Probability a pop-up is a decoy animal (do not tap) on level 1. Later levels raise it, up to a cap."
+    },
+    "seconds": {
+      "type": "range",
+      "min": 5,
+      "max": 90,
+      "step": 1,
+      "name": "Round time",
+      "description": "Seconds on the clock to whack the goal number of monkeys. A wrong tap knocks 2 seconds off; running out before the goal loses the round."
+    },
+    "sound": {
+      "type": "boolean",
+      "name": "Sound effects",
+      "description": "Play whack / miss / verify sound effects. Players can also toggle sound with the in-game mute button."
+    },
+    "show_score": {
+      "type": "boolean",
+      "name": "Show counters",
+      "description": "Display the monkeys-whacked goal counter and the level in the header."
+    }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "pass_hits": 10,
+      "base_uptime_ms": 800,
+      "base_decoy_chance": 0.1,
+      "seconds": 25,
+      "sound": true,
+      "show_score": true
+    },
+    "easy": {
+      "_extends": "default",
+      "pass_hits": 8,
+      "base_uptime_ms": 1100,
+      "base_decoy_chance": 0.05,
+      "seconds": 35
+    },
+    "medium": {
+      "_extends": "default"
+    },
+    "hard": {
+      "_extends": "default",
+      "pass_hits": 14,
+      "base_uptime_ms": 550,
+      "base_decoy_chance": 0.25,
+      "seconds": 18
+    }
+  }
+}

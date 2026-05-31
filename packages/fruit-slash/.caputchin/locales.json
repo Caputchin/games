@@ -1,0 +1,354 @@
+{
+  "schema": {
+    "ariaGame": {
+      "name": "Game region label",
+      "description": "Screen-reader label for the whole play area."
+    },
+    "headerScore": {
+      "name": "Score label",
+      "description": "Label preceding the live count of fruit sliced in the header."
+    },
+    "headerLives": {
+      "name": "Lives label",
+      "description": "Label preceding the remaining-lives indicator in the header."
+    },
+    "startTitle": {
+      "name": "Start screen title",
+      "description": "Headline shown on the start screen before the first round."
+    },
+    "startBody": {
+      "name": "Start screen body",
+      "description": "Short instructions shown on the start screen."
+    },
+    "startButton": {
+      "name": "Start button",
+      "description": "Label for the button that begins the round."
+    },
+    "controlsHint": {
+      "name": "Controls hint",
+      "description": "Small reminder of how to slice, shown under the start button."
+    },
+    "winTitle": {
+      "name": "Success title",
+      "description": "Headline shown when the player slices enough fruit to pass."
+    },
+    "winBody": {
+      "name": "Success body",
+      "description": "Line shown on the success screen with the final sliced count.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "gameOverTitle": {
+      "name": "Game over title",
+      "description": "Headline shown when the player runs out of lives."
+    },
+    "gameOverBody": {
+      "name": "Game over body",
+      "description": "Line shown on the game-over screen inviting another attempt.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "retryButton": {
+      "name": "Retry button",
+      "description": "Label for the button that restarts after a win or a loss."
+    },
+    "ariaSound": {
+      "name": "Sound toggle label",
+      "description": "Accessible label for the in-game button that turns sound on / off."
+    },
+    "verifiedBadge": {
+      "name": "Verified badge",
+      "description": "Short label shown in the header once the player has sliced enough fruit to pass; the round keeps going for score."
+    },
+    "announceStart": {
+      "name": "Announcer: round started",
+      "description": "Live-region message when the round begins."
+    },
+    "announceSlice": {
+      "name": "Announcer: fruit sliced",
+      "description": "Live-region message after a fruit is sliced.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "announceLife": {
+      "name": "Announcer: life lost",
+      "description": "Live-region message when a life is lost.",
+      "tokens": [
+        "lives"
+      ]
+    },
+    "announceWin": {
+      "name": "Announcer: verified",
+      "description": "Live-region message when the player passes.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "announceGameOver": {
+      "name": "Announcer: out of lives",
+      "description": "Live-region message when the round is lost.",
+      "tokens": [
+        "score"
+      ]
+    }
+  },
+  "presets": {
+    "English": {
+      "_lang": "en",
+      "_default": true,
+      "ariaGame": "Slice the flying fruit and avoid the bombs. Slice enough fruit to verify you are human.",
+      "headerScore": "Sliced",
+      "headerLives": "Lives",
+      "startTitle": "Fruit Slash",
+      "startBody": "Swipe across the flying fruit to slice it. Avoid the bombs. Slice enough to verify you are human, then keep going for a high score.",
+      "startButton": "Start",
+      "controlsHint": "Swipe or drag across the fruit to slice it",
+      "winTitle": "Verified",
+      "winBody": "Nice slicing. You sliced {score} fruit.",
+      "gameOverTitle": "Out of lives",
+      "gameOverBody": "You sliced {score} fruit. Give it another go.",
+      "retryButton": "Try again",
+      "ariaSound": "Sound",
+      "verifiedBadge": "Verified",
+      "announceStart": "Go",
+      "announceSlice": "Sliced {score}.",
+      "announceLife": "Careful. {lives} lives left.",
+      "announceWin": "Verified. You sliced {score} fruit. Keep going for a high score.",
+      "announceGameOver": "Out of lives. You sliced {score} fruit."
+    },
+    "中文": {
+      "_lang": "zh-Hans",
+      "_default": true,
+      "ariaGame": "切开飞起的水果，避开炸弹。切够水果即可验证你是真人。",
+      "headerScore": "已切",
+      "headerLives": "生命",
+      "startTitle": "切水果",
+      "startBody": "划过飞起的水果把它切开，避开炸弹。切够即可验证你是真人，然后继续冲刺高分。",
+      "startButton": "开始",
+      "controlsHint": "划过或拖过水果即可切开",
+      "winTitle": "已验证",
+      "winBody": "切得漂亮！你切了 {score} 个水果。",
+      "gameOverTitle": "生命用尽",
+      "gameOverBody": "你切了 {score} 个水果。再来一局吧。",
+      "retryButton": "再试一次",
+      "ariaSound": "声音",
+      "verifiedBadge": "已验证",
+      "announceStart": "开始",
+      "announceSlice": "已切 {score}。",
+      "announceLife": "小心，还剩 {lives} 条命。",
+      "announceWin": "已验证。你切了 {score} 个水果。继续冲刺高分。",
+      "announceGameOver": "生命用尽。你切了 {score} 个水果。"
+    },
+    "Español": {
+      "_lang": "es",
+      "_default": true,
+      "ariaGame": "Corta la fruta que vuela y esquiva las bombas. Corta fruta suficiente para verificar que eres humano.",
+      "headerScore": "Cortadas",
+      "headerLives": "Vidas",
+      "startTitle": "Corta Frutas",
+      "startBody": "Desliza el dedo sobre la fruta que vuela para cortarla. Esquiva las bombas. Corta suficiente para verificar que eres humano y sigue para batir tu récord.",
+      "startButton": "Empezar",
+      "controlsHint": "Desliza o arrastra sobre la fruta para cortarla",
+      "winTitle": "Verificado",
+      "winBody": "¡Buen corte! Cortaste {score} frutas.",
+      "gameOverTitle": "Sin vidas",
+      "gameOverBody": "Cortaste {score} frutas. Inténtalo otra vez.",
+      "retryButton": "Reintentar",
+      "ariaSound": "Sonido",
+      "verifiedBadge": "Verificado",
+      "announceStart": "¡Ya!",
+      "announceSlice": "Cortadas {score}.",
+      "announceLife": "¡Cuidado! Te quedan {lives} vidas.",
+      "announceWin": "Verificado. Cortaste {score} frutas. Sigue para batir tu récord.",
+      "announceGameOver": "Sin vidas. Cortaste {score} frutas."
+    },
+    "العربية": {
+      "_lang": "ar",
+      "_direction": "rtl",
+      "_default": true,
+      "ariaGame": "قطّع الفاكهة الطائرة وتجنّب القنابل. قطّع ما يكفي لتثبت أنك إنسان.",
+      "headerScore": "المقطوع",
+      "headerLives": "المحاولات",
+      "startTitle": "قطّع الفاكهة",
+      "startBody": "مرّر إصبعك فوق الفاكهة الطائرة لتقطعها، وتجنّب القنابل. قطّع ما يكفي لتثبت أنك إنسان، ثم تابع لتسجّل أعلى نتيجة.",
+      "startButton": "ابدأ",
+      "controlsHint": "مرّر أو اسحب إصبعك فوق الفاكهة لتقطعها",
+      "winTitle": "تم التحقق",
+      "winBody": "قطعٌ رائع! قطّعت {score} ثمرة.",
+      "gameOverTitle": "انتهت المحاولات",
+      "gameOverBody": "قطّعت {score} ثمرة. حاول مرة أخرى.",
+      "retryButton": "حاول مجددًا",
+      "ariaSound": "الصوت",
+      "verifiedBadge": "تم التحقق",
+      "announceStart": "هيا",
+      "announceSlice": "المقطوع {score}.",
+      "announceLife": "انتبه، تبقّى لك {lives} محاولات.",
+      "announceWin": "تم التحقق. قطّعت {score} ثمرة. تابع لتسجّل أعلى نتيجة.",
+      "announceGameOver": "انتهت المحاولات. قطّعت {score} ثمرة."
+    },
+    "Português": {
+      "_lang": "pt",
+      "_default": true,
+      "ariaGame": "Corte as frutas que voam e desvie das bombas. Corte frutas suficientes para confirmar que você é humano.",
+      "headerScore": "Cortadas",
+      "headerLives": "Vidas",
+      "startTitle": "Corta Frutas",
+      "startBody": "Deslize o dedo sobre as frutas que voam para cortá-las. Desvie das bombas. Corte o suficiente para confirmar que você é humano e continue para fazer a maior pontuação.",
+      "startButton": "Começar",
+      "controlsHint": "Deslize ou arraste sobre a fruta para cortá-la",
+      "winTitle": "Confirmado",
+      "winBody": "Belo corte! Você cortou {score} frutas.",
+      "gameOverTitle": "Sem vidas",
+      "gameOverBody": "Você cortou {score} frutas. Tente de novo.",
+      "retryButton": "Tentar de novo",
+      "ariaSound": "Som",
+      "verifiedBadge": "Confirmado",
+      "announceStart": "Já!",
+      "announceSlice": "Cortadas {score}.",
+      "announceLife": "Cuidado! Restam {lives} vidas.",
+      "announceWin": "Confirmado. Você cortou {score} frutas. Continue para fazer a maior pontuação.",
+      "announceGameOver": "Sem vidas. Você cortou {score} frutas."
+    },
+    "Français": {
+      "_lang": "fr",
+      "_default": true,
+      "ariaGame": "Tranche les fruits qui volent et évite les bombes. Tranche assez de fruits pour prouver que tu es humain.",
+      "headerScore": "Tranchés",
+      "headerLives": "Vies",
+      "startTitle": "Tranche-Fruits",
+      "startBody": "Glisse le doigt sur les fruits qui volent pour les trancher. Évite les bombes. Tranches-en assez pour prouver que tu es humain, puis continue pour battre ton record.",
+      "startButton": "Commencer",
+      "controlsHint": "Glisse ou fais glisser sur le fruit pour le trancher",
+      "winTitle": "Vérifié",
+      "winBody": "Joli coup ! Tu as tranché {score} fruits.",
+      "gameOverTitle": "Plus de vies",
+      "gameOverBody": "Tu as tranché {score} fruits. Retente ta chance.",
+      "retryButton": "Réessayer",
+      "ariaSound": "Son",
+      "verifiedBadge": "Vérifié",
+      "announceStart": "Go",
+      "announceSlice": "Tranchés {score}.",
+      "announceLife": "Attention ! Il te reste {lives} vies.",
+      "announceWin": "Vérifié. Tu as tranché {score} fruits. Continue pour battre ton record.",
+      "announceGameOver": "Plus de vies. Tu as tranché {score} fruits."
+    },
+    "Deutsch": {
+      "_lang": "de",
+      "_default": true,
+      "ariaGame": "Zerschneide die fliegenden Früchte und weiche den Bomben aus. Zerschneide genug Früchte, um zu bestätigen, dass du ein Mensch bist.",
+      "headerScore": "Geschnitten",
+      "headerLives": "Leben",
+      "startTitle": "Frucht-Schnitt",
+      "startBody": "Wisch über die fliegenden Früchte, um sie zu zerschneiden. Weiche den Bomben aus. Schneide genug, um zu bestätigen, dass du ein Mensch bist, und mach weiter für einen Highscore.",
+      "startButton": "Starten",
+      "controlsHint": "Wisch oder zieh über die Frucht, um sie zu zerschneiden",
+      "winTitle": "Bestätigt",
+      "winBody": "Sauber geschnitten! Du hast {score} Früchte zerschnitten.",
+      "gameOverTitle": "Keine Leben mehr",
+      "gameOverBody": "Du hast {score} Früchte zerschnitten. Versuch es noch mal.",
+      "retryButton": "Nochmal",
+      "ariaSound": "Ton",
+      "verifiedBadge": "Bestätigt",
+      "announceStart": "Los",
+      "announceSlice": "Geschnitten {score}.",
+      "announceLife": "Vorsicht! Noch {lives} Leben übrig.",
+      "announceWin": "Bestätigt. Du hast {score} Früchte zerschnitten. Mach weiter für einen Highscore.",
+      "announceGameOver": "Keine Leben mehr. Du hast {score} Früchte zerschnitten."
+    },
+    "Русский": {
+      "_lang": "ru",
+      "_default": true,
+      "ariaGame": "Разрезай летящие фрукты и уклоняйся от бомб. Разрежь достаточно фруктов, чтобы подтвердить, что ты человек.",
+      "headerScore": "Разрезано",
+      "headerLives": "Жизни",
+      "startTitle": "Режь Фрукты",
+      "startBody": "Проводи пальцем по летящим фруктам, чтобы их разрезать. Уклоняйся от бомб. Разрежь достаточно, чтобы подтвердить, что ты человек, и продолжай ради рекорда.",
+      "startButton": "Начать",
+      "controlsHint": "Проведи или потяни по фрукту, чтобы его разрезать",
+      "winTitle": "Подтверждено",
+      "winBody": "Отличный срез! Ты разрезал {score} фруктов.",
+      "gameOverTitle": "Жизни кончились",
+      "gameOverBody": "Ты разрезал {score} фруктов. Попробуй ещё раз.",
+      "retryButton": "Ещё раз",
+      "ariaSound": "Звук",
+      "verifiedBadge": "Подтверждено",
+      "announceStart": "Начали",
+      "announceSlice": "Разрезано {score}.",
+      "announceLife": "Осторожно! Осталось {lives} жизней.",
+      "announceWin": "Подтверждено. Ты разрезал {score} фруктов. Продолжай ради рекорда.",
+      "announceGameOver": "Жизни кончились. Ты разрезал {score} фруктов."
+    },
+    "日本語": {
+      "_lang": "ja",
+      "_default": true,
+      "ariaGame": "飛んでくるフルーツを切り、爆弾は避けましょう。十分に切れば人間だと認証されます。",
+      "headerScore": "切った数",
+      "headerLives": "ライフ",
+      "startTitle": "フルーツスラッシュ",
+      "startBody": "飛んでくるフルーツをなぞって切りましょう。爆弾は避けてください。十分に切れば人間だと認証され、その後はハイスコアを目指して続けられます。",
+      "startButton": "スタート",
+      "controlsHint": "フルーツをなぞるかドラッグして切る",
+      "winTitle": "認証完了",
+      "winBody": "お見事！フルーツを {score} 個切りました。",
+      "gameOverTitle": "ライフ切れ",
+      "gameOverBody": "フルーツを {score} 個切りました。もう一度どうぞ。",
+      "retryButton": "もう一度",
+      "ariaSound": "サウンド",
+      "verifiedBadge": "認証完了",
+      "announceStart": "スタート",
+      "announceSlice": "{score} 個切りました。",
+      "announceLife": "注意。残りライフは {lives} です。",
+      "announceWin": "認証完了。フルーツを {score} 個切りました。ハイスコアを目指して続けましょう。",
+      "announceGameOver": "ライフ切れ。フルーツを {score} 個切りました。"
+    },
+    "한국어": {
+      "_lang": "ko",
+      "_default": true,
+      "ariaGame": "날아오는 과일을 베고 폭탄은 피하세요. 충분히 베면 사람임을 인증합니다.",
+      "headerScore": "벤 개수",
+      "headerLives": "목숨",
+      "startTitle": "과일 베기",
+      "startBody": "날아오는 과일을 쓸어서 베세요. 폭탄은 피하세요. 충분히 베면 사람임을 인증하고, 이후엔 최고 점수에 도전할 수 있어요.",
+      "startButton": "시작",
+      "controlsHint": "과일을 쓸거나 끌어서 베기",
+      "winTitle": "인증 완료",
+      "winBody": "멋지게 베었어요! 과일 {score} 개를 베었어요.",
+      "gameOverTitle": "목숨 소진",
+      "gameOverBody": "과일 {score} 개를 베었어요. 다시 도전해 보세요.",
+      "retryButton": "다시 하기",
+      "ariaSound": "소리",
+      "verifiedBadge": "인증 완료",
+      "announceStart": "시작",
+      "announceSlice": "{score} 개 베었어요.",
+      "announceLife": "조심하세요. 목숨이 {lives} 개 남았어요.",
+      "announceWin": "인증 완료. 과일 {score} 개를 베었어요. 최고 점수에 도전해 보세요.",
+      "announceGameOver": "목숨 소진. 과일 {score} 개를 베었어요."
+    },
+    "Bahasa Indonesia": {
+      "_lang": "id",
+      "_default": true,
+      "ariaGame": "Tebas buah yang melayang dan hindari bomnya. Tebas cukup banyak buah untuk membuktikan kamu manusia.",
+      "headerScore": "Tertebas",
+      "headerLives": "Nyawa",
+      "startTitle": "Tebas Buah",
+      "startBody": "Geser jarimu pada buah yang melayang untuk menebasnya. Hindari bomnya. Tebas cukup banyak untuk membuktikan kamu manusia, lalu lanjutkan untuk mengejar skor tertinggi.",
+      "startButton": "Mulai",
+      "controlsHint": "Geser atau tarik pada buah untuk menebasnya",
+      "winTitle": "Terverifikasi",
+      "winBody": "Tebasan mantap! Kamu menebas {score} buah.",
+      "gameOverTitle": "Nyawa habis",
+      "gameOverBody": "Kamu menebas {score} buah. Coba lagi, yuk.",
+      "retryButton": "Coba lagi",
+      "ariaSound": "Suara",
+      "verifiedBadge": "Terverifikasi",
+      "announceStart": "Mulai",
+      "announceSlice": "Tertebas {score}.",
+      "announceLife": "Hati-hati. Sisa {lives} nyawa.",
+      "announceWin": "Terverifikasi. Kamu menebas {score} buah. Lanjutkan untuk mengejar skor tertinggi.",
+      "announceGameOver": "Nyawa habis. Kamu menebas {score} buah."
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schema": {
+    "pass_kills": {
+      "type": "range",
+      "min": 1,
+      "max": 20,
+      "step": 1,
+      "name": "Kills to pass",
+      "description": "Demons the visitor must kill for the round to count as solved."
+    },
+    "start_level": {
+      "type": "range",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "name": "Start arena",
+      "description": "Which campaign arena the captcha round runs on. The server rebuilds this exact arena when it replays the run."
+    },
+    "wave_count": {
+      "type": "range",
+      "min": 1,
+      "max": 16,
+      "step": 1,
+      "name": "Monster count",
+      "description": "How many demons spawn into the arena from the per-round seed."
+    },
+    "skill": {
+      "type": "range",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "name": "Skill",
+      "description": "DOOM skill level. 5 is Nightmare (faster, more aggressive demons)."
+    },
+    "fast_monsters": {
+      "type": "boolean",
+      "name": "Fast monsters",
+      "description": "Demons move and attack faster."
+    },
+    "respawn_monsters": {
+      "type": "boolean",
+      "name": "Respawning monsters",
+      "description": "Killed demons respawn, so a slow solver always has targets."
+    },
+    "time_limit": {
+      "type": "range",
+      "min": 0,
+      "max": 7000,
+      "step": 35,
+      "name": "Time limit (tics)",
+      "description": "Optional solve budget in game tics (35 = 1 second). 0 means no limit."
+    }
+  },
+  "presets": {
+    "standard": {
+      "_default": true,
+      "pass_kills": 3,
+      "start_level": 1,
+      "wave_count": 5,
+      "skill": 4,
+      "fast_monsters": false,
+      "respawn_monsters": false,
+      "time_limit": 0
+    },
+    "casual": {
+      "_extends": "standard",
+      "pass_kills": 2,
+      "wave_count": 4,
+      "skill": 3
+    },
+    "hardcore": {
+      "_extends": "standard",
+      "pass_kills": 5,
+      "wave_count": 8,
+      "fast_monsters": true
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "schema": {
+    "bg": {
+      "type": "color",
+      "name": "Background",
+      "description": "Stage background, full-bleed behind the play field."
+    },
+    "fg": {
+      "type": "color",
+      "name": "Foreground",
+      "description": "Header text and generic foreground color."
+    },
+    "canopy_top": {
+      "type": "color",
+      "name": "Canopy top",
+      "description": "Top color of the jungle background gradient."
+    },
+    "canopy_bottom": {
+      "type": "color",
+      "name": "Canopy bottom",
+      "description": "Bottom color of the jungle background gradient."
+    },
+    "foliage": {
+      "type": "color",
+      "name": "Foliage",
+      "description": "Tint of the bushes the monkeys peek out from behind."
+    },
+    "foliage_dark": {
+      "type": "color",
+      "name": "Distant foliage",
+      "description": "Tint of the darker, distant foliage layer drawn for depth."
+    },
+    "good_tint": {
+      "type": "color",
+      "name": "Hit particles",
+      "description": "Color of the burst particles when a monkey is tapped."
+    },
+    "decoy_flash": {
+      "type": "color",
+      "name": "Decoy flash",
+      "description": "Overlay color flashed when the player taps the wrong animal."
+    },
+    "button_bg": {
+      "type": "color",
+      "name": "Primary button bg",
+      "description": "Background of the Start / Try again primary button."
+    },
+    "button_text": {
+      "type": "color",
+      "name": "Primary button text",
+      "description": "Text on the primary button."
+    },
+    "button_hover": {
+      "type": "color",
+      "name": "Primary button hover bg",
+      "description": "Hover background of the primary button."
+    },
+    "focus_ring": {
+      "type": "color",
+      "name": "Focus ring",
+      "description": "Outline shown on buttons / the stage when keyboard focus enters."
+    },
+    "art_monkey": {
+      "type": "image",
+      "name": "Monkey art (optional)",
+      "description": "Optional image drawn for the monkey target instead of the built-in sprite. Absent means the bundled sprite is used."
+    },
+    "art_frog": {
+      "type": "image",
+      "name": "Frog decoy art (optional)",
+      "description": "Optional image drawn for the frog decoy instead of the built-in sprite."
+    },
+    "art_parrot": {
+      "type": "image",
+      "name": "Parrot decoy art (optional)",
+      "description": "Optional image drawn for the parrot decoy instead of the built-in sprite."
+    },
+    "art_snake": {
+      "type": "image",
+      "name": "Snake decoy art (optional)",
+      "description": "Optional image drawn for the snake decoy instead of the built-in sprite."
+    },
+    "art_sloth": {
+      "type": "image",
+      "name": "Sloth decoy art (optional)",
+      "description": "Optional image drawn for the sloth decoy instead of the built-in sprite."
+    }
+  },
+  "presets": {
+    "light": {
+      "_theme": "light",
+      "_default": true,
+      "bg": "#357A2E",
+      "fg": "#F2F7EC",
+      "canopy_top": "#8FD15A",
+      "canopy_bottom": "#357A2E",
+      "foliage": "#2E6B27",
+      "foliage_dark": "#1E471B",
+      "good_tint": "#F5C842",
+      "decoy_flash": "#E74C3C",
+      "button_bg": "#1E471B",
+      "button_text": "#F2F7EC",
+      "button_hover": "#143312",
+      "focus_ring": "#F2F7EC"
+    },
+    "dark": {
+      "_theme": "dark",
+      "_default": true,
+      "bg": "#0A1F0E",
+      "fg": "#EAF3E6",
+      "canopy_top": "#16361A",
+      "canopy_bottom": "#0A1F0E",
+      "foliage": "#143D18",
+      "foliage_dark": "#0C260F",
+      "good_tint": "#F5C842",
+      "decoy_flash": "#FF5733",
+      "button_bg": "#EAF3E6",
+      "button_text": "#0A1F0E",
+      "button_hover": "#C9DCC3",
+      "focus_ring": "#EAF3E6"
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schema": {
+    "pass_score": {
+      "type": "range",
+      "min": 3,
+      "max": 999,
+      "step": 1,
+      "name": "Pass score",
+      "description": "Number of fruit a round must slice to count as a pass. The round keeps going past it for score, so a high bar is fine."
+    },
+    "lives": {
+      "type": "range",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "name": "Lives",
+      "description": "Starting lives. A missed fruit or a sliced bomb costs one."
+    },
+    "spawn_rate": {
+      "type": "range",
+      "min": 0.4,
+      "max": 2,
+      "step": 0.1,
+      "name": "Spawn rate",
+      "description": "How many fruit launch per second. Higher means a busier field."
+    },
+    "gravity": {
+      "type": "range",
+      "min": 700,
+      "max": 2400,
+      "step": 100,
+      "name": "Gravity",
+      "description": "Downward pull on the arc, in units per second squared. Higher means faster, snappier arcs."
+    },
+    "hazard_chance": {
+      "type": "range",
+      "min": 0,
+      "max": 0.5,
+      "step": 0.02,
+      "name": "Bomb chance",
+      "description": "Probability a launched object is a bomb instead of fruit."
+    },
+    "sound": {
+      "type": "boolean",
+      "name": "Sound effects",
+      "description": "Play slice / miss / verify sound effects. Players can also toggle sound with the in-game mute button."
+    },
+    "show_score": {
+      "type": "boolean",
+      "name": "Show score",
+      "description": "Display the live sliced count in the header."
+    },
+    "show_lives": {
+      "type": "boolean",
+      "name": "Show lives",
+      "description": "Display the remaining-lives indicator in the header."
+    }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "pass_score": 8,
+      "lives": 3,
+      "spawn_rate": 0.9,
+      "gravity": 1400,
+      "hazard_chance": 0.18,
+      "sound": true,
+      "show_score": true,
+      "show_lives": true
+    },
+    "casual": {
+      "_extends": "default",
+      "pass_score": 5,
+      "lives": 4,
+      "spawn_rate": 0.7,
+      "hazard_chance": 0.1
+    },
+    "hardcore": {
+      "_extends": "default",
+      "pass_score": 14,
+      "lives": 2,
+      "spawn_rate": 1.4,
+      "gravity": 1650,
+      "hazard_chance": 0.3
+    },
+    "calm": {
+      "_extends": "default",
+      "hazard_chance": 0,
+      "pass_score": 6,
+      "spawn_rate": 0.7
+    }
+  }
+}

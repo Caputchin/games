@@ -1,0 +1,133 @@
+{
+  "schema": {
+    "start_speed": {
+      "type": "range",
+      "min": 3,
+      "max": 10,
+      "step": 0.5,
+      "name": "Starting speed",
+      "description": "Run speed at the start of a run, in logical units per reference frame."
+    },
+    "max_speed": {
+      "type": "range",
+      "min": 6,
+      "max": 20,
+      "step": 0.5,
+      "name": "Max speed",
+      "description": "Speed cap the run accelerates toward."
+    },
+    "acceleration": {
+      "type": "range",
+      "min": 0.0002,
+      "max": 0.004,
+      "step": 0.0002,
+      "name": "Acceleration",
+      "description": "Speed gained per frame until the cap is hit. Higher means the run ramps up faster."
+    },
+    "gravity": {
+      "type": "range",
+      "min": 0.3,
+      "max": 1,
+      "step": 0.05,
+      "name": "Gravity",
+      "description": "Downward pull on the jump arc. Higher means shorter, snappier jumps."
+    },
+    "jump_velocity": {
+      "type": "range",
+      "min": 6,
+      "max": 16,
+      "step": 0.5,
+      "name": "Jump strength",
+      "description": "Initial upward velocity of a jump. Higher means the runner jumps higher."
+    },
+    "gap_coefficient": {
+      "type": "range",
+      "min": 0.3,
+      "max": 1.5,
+      "step": 0.1,
+      "name": "Obstacle spacing",
+      "description": "Multiplier on the gap between obstacles. Higher means more breathing room."
+    },
+    "pass_score": {
+      "type": "range",
+      "min": 10,
+      "max": 2000,
+      "step": 10,
+      "name": "Pass score",
+      "description": "Score a run must reach to count as a pass. The first qualifying crash (and each new best after) reports success."
+    },
+    "birds_enabled": {
+      "type": "boolean",
+      "name": "Flying obstacles",
+      "description": "Spawn birds (flying obstacles) once the run is fast enough."
+    },
+    "bird_min_speed": {
+      "type": "range",
+      "min": 5,
+      "max": 15,
+      "step": 0.5,
+      "name": "Bird unlock speed",
+      "description": "Run speed at which birds start to appear."
+    },
+    "show_score": {
+      "type": "boolean",
+      "name": "Show score",
+      "description": "Display the live score in the header."
+    },
+    "show_best": {
+      "type": "boolean",
+      "name": "Show best score",
+      "description": "Display the session-best score in the header."
+    },
+    "sound": {
+      "type": "boolean",
+      "name": "Sound effects",
+      "description": "Play the jump / milestone / crash sound effects (starts after the first interaction)."
+    }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "start_speed": 6,
+      "max_speed": 13,
+      "acceleration": 0.0022,
+      "gravity": 0.6,
+      "jump_velocity": 10,
+      "gap_coefficient": 0.6,
+      "pass_score": 100,
+      "birds_enabled": true,
+      "bird_min_speed": 7,
+      "show_score": true,
+      "show_best": true,
+      "sound": true
+    },
+    "classic": {
+      "_extends": "default",
+      "acceleration": 0.001,
+      "bird_min_speed": 8.5
+    },
+    "casual": {
+      "_extends": "default",
+      "start_speed": 5,
+      "max_speed": 10,
+      "acceleration": 0.0006,
+      "gap_coefficient": 0.9,
+      "pass_score": 60,
+      "bird_min_speed": 10
+    },
+    "hardcore": {
+      "_extends": "default",
+      "start_speed": 7,
+      "max_speed": 16,
+      "acceleration": 0.0016,
+      "gap_coefficient": 0.5,
+      "pass_score": 250
+    },
+    "calm": {
+      "_extends": "default",
+      "birds_enabled": false,
+      "sound": false,
+      "pass_score": 60
+    }
+  }
+}

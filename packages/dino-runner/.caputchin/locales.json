@@ -1,0 +1,365 @@
+{
+  "schema": {
+    "ariaGame": {
+      "name": "Game region label",
+      "description": "Screen-reader label for the whole play area."
+    },
+    "headerScore": {
+      "name": "Score label",
+      "description": "Label preceding the live distance score in the header."
+    },
+    "headerBest": {
+      "name": "Best score label",
+      "description": "Label preceding the session-best score in the header."
+    },
+    "verifiedBadge": {
+      "name": "Verified badge",
+      "description": "Short HUD badge shown once the run reaches the pass score; the captcha is satisfied and the visitor may keep running."
+    },
+    "startTitle": {
+      "name": "Start screen title",
+      "description": "Headline shown on the start screen before the first run."
+    },
+    "startBody": {
+      "name": "Start screen body",
+      "description": "Short instructions shown on the start screen."
+    },
+    "startButton": {
+      "name": "Start button",
+      "description": "Label for the button that begins the run."
+    },
+    "controlsHint": {
+      "name": "Controls hint",
+      "description": "Small keyboard-controls reminder shown under the start button."
+    },
+    "gameOverTitle": {
+      "name": "Game over title",
+      "description": "Headline shown when the runner crashes. This is the text the host fully controls (the original Chrome game hard-coded it)."
+    },
+    "verifiedTitle": {
+      "name": "Verified end-screen title",
+      "description": "End-screen headline shown instead of the game-over title when the run cleared the pass score (success framing)."
+    },
+    "gameOverScore": {
+      "name": "Game over score line",
+      "description": "Final score shown on the game-over screen.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "gameOverBest": {
+      "name": "Game over best line",
+      "description": "Session-best score shown on the game-over screen.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "restartButton": {
+      "name": "Restart button",
+      "description": "Label for the button that restarts after a crash."
+    },
+    "ariaJump": {
+      "name": "Jump control label",
+      "description": "Screen-reader / touch-button label for the jump action."
+    },
+    "ariaDuck": {
+      "name": "Duck control label",
+      "description": "Screen-reader / touch-button label for the duck action."
+    },
+    "ariaSound": {
+      "name": "Sound toggle label",
+      "description": "Accessible label for the in-game button that turns sound on / off."
+    },
+    "announceStart": {
+      "name": "Announcer: run started",
+      "description": "Live-region message when the run begins."
+    },
+    "announceVerified": {
+      "name": "Announcer: verified",
+      "description": "Live-region message when the run reaches the pass score and the captcha is satisfied; encourages continuing for a higher score.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "announceGameOver": {
+      "name": "Announcer: game over",
+      "description": "Live-region message when the runner crashes.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "announceNewBest": {
+      "name": "Announcer: new best",
+      "description": "Live-region message when the run sets a new session best.",
+      "tokens": [
+        "score"
+      ]
+    }
+  },
+  "presets": {
+    "English": {
+      "_lang": "en",
+      "_default": true,
+      "ariaGame": "Endless runner. Jump the cactus, duck the birds, and run as far as you can.",
+      "headerScore": "Score",
+      "headerBest": "Best",
+      "verifiedBadge": "Verified",
+      "startTitle": "Dino Runner",
+      "startBody": "Jump the cactus and duck the birds. Run as far as you can without crashing.",
+      "startButton": "Start",
+      "controlsHint": "Space or Up to jump, Down to duck",
+      "gameOverTitle": "Game over",
+      "verifiedTitle": "Verified",
+      "gameOverScore": "Score {score}",
+      "gameOverBest": "Best {score}",
+      "restartButton": "Restart",
+      "ariaJump": "Jump",
+      "ariaDuck": "Duck",
+      "ariaSound": "Sound",
+      "announceStart": "Go",
+      "announceVerified": "Verified. Score {score}. Keep going.",
+      "announceGameOver": "Game over. You scored {score}.",
+      "announceNewBest": "New best score: {score}."
+    },
+    "Chinese (Simplified)": {
+      "_lang": "zh-Hans",
+      "_default": true,
+      "ariaGame": "无尽跑酷。跳过仙人掌，躲开飞鸟，尽量跑得更远。",
+      "headerScore": "得分",
+      "headerBest": "最佳",
+      "verifiedBadge": "已通过",
+      "startTitle": "小恐龙快跑",
+      "startBody": "跳过仙人掌，躲开飞鸟。在不撞上障碍的情况下尽量跑得更远。",
+      "startButton": "开始",
+      "controlsHint": "空格或上键跳跃，下键下蹲",
+      "gameOverTitle": "游戏结束",
+      "verifiedTitle": "已通过",
+      "gameOverScore": "得分 {score}",
+      "gameOverBest": "最佳 {score}",
+      "restartButton": "重新开始",
+      "ariaJump": "跳跃",
+      "ariaDuck": "下蹲",
+      "ariaSound": "声音",
+      "announceStart": "出发",
+      "announceVerified": "已通过。得分 {score}。继续加油。",
+      "announceGameOver": "游戏结束。你得了 {score} 分。",
+      "announceNewBest": "新的最佳成绩：{score}。"
+    },
+    "Spanish": {
+      "_lang": "es",
+      "_default": true,
+      "ariaGame": "Carrera sin fin. Salta los cactus, esquiva los pájaros y corre lo más lejos que puedas.",
+      "headerScore": "Puntos",
+      "headerBest": "Mejor",
+      "verifiedBadge": "Verificado",
+      "startTitle": "Dino Runner",
+      "startBody": "Salta los cactus y esquiva los pájaros. Corre lo más lejos que puedas sin chocar.",
+      "startButton": "Empezar",
+      "controlsHint": "Espacio o flecha arriba para saltar, abajo para agacharte",
+      "gameOverTitle": "Fin del juego",
+      "verifiedTitle": "Verificado",
+      "gameOverScore": "Puntos {score}",
+      "gameOverBest": "Mejor {score}",
+      "restartButton": "Reiniciar",
+      "ariaJump": "Saltar",
+      "ariaDuck": "Agacharse",
+      "ariaSound": "Sonido",
+      "announceStart": "¡Ya!",
+      "announceVerified": "Verificado. {score} puntos. Sigue corriendo.",
+      "announceGameOver": "Fin del juego. Hiciste {score} puntos.",
+      "announceNewBest": "Nueva mejor puntuación: {score}."
+    },
+    "Arabic": {
+      "_lang": "ar",
+      "_default": true,
+      "ariaGame": "جري بلا نهاية. اقفز فوق الصبار، وتفادَ الطيور، واركض أبعد ما تستطيع.",
+      "headerScore": "النقاط",
+      "headerBest": "الأفضل",
+      "verifiedBadge": "تم التحقق",
+      "startTitle": "عداء الديناصور",
+      "startBody": "اقفز فوق الصبار وتفادَ الطيور. اركض أبعد ما تستطيع دون أن تصطدم.",
+      "startButton": "ابدأ",
+      "controlsHint": "مسافة أو السهم العلوي للقفز، السهم السفلي للانحناء",
+      "gameOverTitle": "انتهت اللعبة",
+      "verifiedTitle": "تم التحقق",
+      "gameOverScore": "النقاط {score}",
+      "gameOverBest": "الأفضل {score}",
+      "restartButton": "أعد المحاولة",
+      "ariaJump": "اقفز",
+      "ariaDuck": "انحنِ",
+      "ariaSound": "الصوت",
+      "announceStart": "انطلق",
+      "announceVerified": "تم التحقق. النقاط {score}. واصِل الركض.",
+      "announceGameOver": "انتهت اللعبة. حصلت على {score} نقطة.",
+      "announceNewBest": "أفضل نتيجة جديدة: {score}."
+    },
+    "Portuguese": {
+      "_lang": "pt",
+      "_default": true,
+      "ariaGame": "Corrida sem fim. Pule os cactos, desvie dos pássaros e corra o mais longe que conseguir.",
+      "headerScore": "Pontos",
+      "headerBest": "Melhor",
+      "verifiedBadge": "Verificado",
+      "startTitle": "Dino Runner",
+      "startBody": "Pule os cactos e desvie dos pássaros. Corra o mais longe que conseguir sem bater.",
+      "startButton": "Começar",
+      "controlsHint": "Espaço ou seta para cima para pular, para baixo para abaixar",
+      "gameOverTitle": "Fim de jogo",
+      "verifiedTitle": "Verificado",
+      "gameOverScore": "Pontos {score}",
+      "gameOverBest": "Melhor {score}",
+      "restartButton": "Reiniciar",
+      "ariaJump": "Pular",
+      "ariaDuck": "Abaixar",
+      "ariaSound": "Som",
+      "announceStart": "Já!",
+      "announceVerified": "Verificado. {score} pontos. Continue correndo.",
+      "announceGameOver": "Fim de jogo. Você fez {score} pontos.",
+      "announceNewBest": "Novo recorde: {score}."
+    },
+    "French": {
+      "_lang": "fr",
+      "_default": true,
+      "ariaGame": "Course sans fin. Sautez par-dessus les cactus, esquivez les oiseaux et courez le plus loin possible.",
+      "headerScore": "Score",
+      "headerBest": "Record",
+      "verifiedBadge": "Vérifié",
+      "startTitle": "Dino Runner",
+      "startBody": "Sautez par-dessus les cactus et esquivez les oiseaux. Courez le plus loin possible sans vous écraser.",
+      "startButton": "Commencer",
+      "controlsHint": "Espace ou flèche haut pour sauter, bas pour se baisser",
+      "gameOverTitle": "Partie terminée",
+      "verifiedTitle": "Vérifié",
+      "gameOverScore": "Score {score}",
+      "gameOverBest": "Record {score}",
+      "restartButton": "Recommencer",
+      "ariaJump": "Sauter",
+      "ariaDuck": "Se baisser",
+      "ariaSound": "Son",
+      "announceStart": "Partez !",
+      "announceVerified": "Vérifié. Score {score}. Continuez.",
+      "announceGameOver": "Partie terminée. Vous avez fait {score}.",
+      "announceNewBest": "Nouveau record : {score}."
+    },
+    "German": {
+      "_lang": "de",
+      "_default": true,
+      "ariaGame": "Endlos-Lauf. Spring über die Kakteen, duck dich unter den Vögeln und lauf so weit du kannst.",
+      "headerScore": "Punkte",
+      "headerBest": "Rekord",
+      "verifiedBadge": "Bestätigt",
+      "startTitle": "Dino Runner",
+      "startBody": "Spring über die Kakteen und duck dich unter den Vögeln. Lauf so weit du kannst, ohne zu verunglücken.",
+      "startButton": "Start",
+      "controlsHint": "Leertaste oder Pfeil hoch zum Springen, runter zum Ducken",
+      "gameOverTitle": "Spiel vorbei",
+      "verifiedTitle": "Bestätigt",
+      "gameOverScore": "Punkte {score}",
+      "gameOverBest": "Rekord {score}",
+      "restartButton": "Neustart",
+      "ariaJump": "Springen",
+      "ariaDuck": "Ducken",
+      "ariaSound": "Ton",
+      "announceStart": "Los",
+      "announceVerified": "Bestätigt. Punkte {score}. Lauf weiter.",
+      "announceGameOver": "Spiel vorbei. Du hast {score} Punkte erreicht.",
+      "announceNewBest": "Neuer Rekord: {score}."
+    },
+    "Russian": {
+      "_lang": "ru",
+      "_default": true,
+      "ariaGame": "Бесконечный забег. Перепрыгивай кактусы, уворачивайся от птиц и беги как можно дальше.",
+      "headerScore": "Очки",
+      "headerBest": "Рекорд",
+      "verifiedBadge": "Пройдено",
+      "startTitle": "Дино Раннер",
+      "startBody": "Перепрыгивай кактусы и уворачивайся от птиц. Беги как можно дальше, не врезаясь.",
+      "startButton": "Начать",
+      "controlsHint": "Пробел или стрелка вверх, чтобы прыгнуть, вниз, чтобы пригнуться",
+      "gameOverTitle": "Игра окончена",
+      "verifiedTitle": "Пройдено",
+      "gameOverScore": "Очки {score}",
+      "gameOverBest": "Рекорд {score}",
+      "restartButton": "Заново",
+      "ariaJump": "Прыжок",
+      "ariaDuck": "Пригнуться",
+      "ariaSound": "Звук",
+      "announceStart": "Вперёд",
+      "announceVerified": "Пройдено. Очки {score}. Беги дальше.",
+      "announceGameOver": "Игра окончена. Ваш счёт: {score}.",
+      "announceNewBest": "Новый рекорд: {score}."
+    },
+    "Japanese": {
+      "_lang": "ja",
+      "_default": true,
+      "ariaGame": "エンドレスラン。サボテンを飛び越え、鳥をかわして、できるだけ遠くまで走ろう。",
+      "headerScore": "スコア",
+      "headerBest": "ベスト",
+      "verifiedBadge": "認証済み",
+      "startTitle": "ダイノランナー",
+      "startBody": "サボテンを飛び越え、鳥をかわそう。ぶつからずに、できるだけ遠くまで走ってね。",
+      "startButton": "スタート",
+      "controlsHint": "スペースか上キーでジャンプ、下キーでしゃがむ",
+      "gameOverTitle": "ゲームオーバー",
+      "verifiedTitle": "認証済み",
+      "gameOverScore": "スコア {score}",
+      "gameOverBest": "ベスト {score}",
+      "restartButton": "もう一度",
+      "ariaJump": "ジャンプ",
+      "ariaDuck": "しゃがむ",
+      "ariaSound": "サウンド",
+      "announceStart": "スタート",
+      "announceVerified": "認証済み。スコア {score}。その調子。",
+      "announceGameOver": "ゲームオーバー。スコアは {score} でした。",
+      "announceNewBest": "自己ベスト更新：{score}。"
+    },
+    "Korean": {
+      "_lang": "ko",
+      "_default": true,
+      "ariaGame": "끝없는 달리기. 선인장을 뛰어넘고, 새를 피하며, 최대한 멀리 달리세요.",
+      "headerScore": "점수",
+      "headerBest": "최고",
+      "verifiedBadge": "인증됨",
+      "startTitle": "다이노 러너",
+      "startBody": "선인장을 뛰어넘고 새를 피하세요. 부딪히지 않고 최대한 멀리 달리세요.",
+      "startButton": "시작",
+      "controlsHint": "스페이스나 위쪽 키로 점프, 아래쪽 키로 숙이기",
+      "gameOverTitle": "게임 오버",
+      "verifiedTitle": "인증됨",
+      "gameOverScore": "점수 {score}",
+      "gameOverBest": "최고 {score}",
+      "restartButton": "다시 하기",
+      "ariaJump": "점프",
+      "ariaDuck": "숙이기",
+      "ariaSound": "소리",
+      "announceStart": "출발",
+      "announceVerified": "인증됨. 점수 {score}. 계속 달리세요.",
+      "announceGameOver": "게임 오버. 점수는 {score}점이에요.",
+      "announceNewBest": "최고 기록 경신: {score}."
+    },
+    "Indonesian": {
+      "_lang": "id",
+      "_default": true,
+      "ariaGame": "Lari tanpa henti. Lompati kaktus, hindari burung, dan berlarilah sejauh mungkin.",
+      "headerScore": "Skor",
+      "headerBest": "Terbaik",
+      "verifiedBadge": "Terverifikasi",
+      "startTitle": "Dino Runner",
+      "startBody": "Lompati kaktus dan hindari burung. Berlarilah sejauh mungkin tanpa menabrak.",
+      "startButton": "Mulai",
+      "controlsHint": "Spasi atau panah atas untuk lompat, bawah untuk menunduk",
+      "gameOverTitle": "Permainan selesai",
+      "verifiedTitle": "Terverifikasi",
+      "gameOverScore": "Skor {score}",
+      "gameOverBest": "Terbaik {score}",
+      "restartButton": "Ulangi",
+      "ariaJump": "Lompat",
+      "ariaDuck": "Menunduk",
+      "ariaSound": "Suara",
+      "announceStart": "Lari!",
+      "announceVerified": "Terverifikasi. Skor {score}. Terus berlari.",
+      "announceGameOver": "Permainan selesai. Skor kamu {score}.",
+      "announceNewBest": "Rekor baru: {score}."
+    }
+  }
+}
