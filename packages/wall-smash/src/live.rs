@@ -875,12 +875,33 @@ fn read_input(world: &mut World) -> (i32, bool) {
     if touch_just {
         launch = true;
     }
+    // Touch steering = drag-to-position: the paddle chases the finger's horizontal
+    // position (put your finger where you want the paddle and slide). Keyboard wins
+    // if a key is held. This stays in the {-1,0,1} dir model, so the recorded trace
+    // and headless replay are unchanged; only the live steering feel improves.
     if dir == 0 {
         if let Some(tx) = touch_x {
-            let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
-            if let Ok(win) = wq.single(&*world) {
-                let mid = win.width() / 2.0;
-                dir = if tx < mid { -1 } else { 1 };
+            let c = world.resource::<Cfg>().0;
+            let win_w = {
+                let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
+                wq.single(&*world).ok().map(|w| w.width()).unwrap_or(0.0)
+            };
+            let paddle_x = {
+                let mut pq = world.query_filtered::<&Pos, With<Paddle>>();
+                pq.iter(&*world).next().map(|p| p.x)
+            };
+            if let (true, Some(px)) = (win_w > 0.0, paddle_x) {
+                // map touch x across the window -> target paddle x in arena space.
+                let f = (tx / win_w).clamp(0.0, 1.0);
+                let target = (f * c.arena_w as f32 * FP as f32) as i32;
+                // dead zone = one paddle step, so it settles under the finger instead
+                // of oscillating by +/- a step around the target.
+                let dead = c.paddle_speed;
+                if target - px > dead {
+                    dir = 1;
+                } else if px - target > dead {
+                    dir = -1;
+                }
             }
         }
     }
