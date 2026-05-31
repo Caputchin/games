@@ -105,6 +105,7 @@ export function runPhobos({ container, bridge, ctx }: {
   const clearedEl = root.querySelector('.phobos-cleared') as HTMLElement;
   const clearedTitle = root.querySelector('.phobos-cleared-title') as HTMLElement;
   const clearedBody = root.querySelector('.phobos-cleared-body') as HTMLElement;
+  const markEl = root.querySelector('.phobos-cleared-mark') as HTMLElement;
   const muteEl = root.querySelector('.phobos-mute') as HTMLButtonElement;
   const loadingEl = root.querySelector('.phobos-loading') as HTMLElement;
 
@@ -159,9 +160,10 @@ export function runPhobos({ container, bridge, ctx }: {
     bridge.pass({ trace: btoa(bin) });
   }
 
-  // End-of-round overlay. `cleared` = every demon down; otherwise the player
-  // died. Either way the framing is a success if the captcha is already
-  // verified; only an unverified death prompts a retry.
+  // End-of-round overlay. Three distinct outcomes so a win never reads like a
+  // loss: (1) cleared every demon, (2) DIED but already verified earlier, (3)
+  // died before verifying. The check mark tracks verification state (verified =
+  // tick, unverified = cross); the title/body distinguish winning from dying.
   function showEnd(cleared: boolean) {
     if (ended) return;   // one overlay per round (clear-delay timer vs death path)
     ended = true;
@@ -171,14 +173,17 @@ export function runPhobos({ container, bridge, ctx }: {
     let title: string;
     let body: string;
     if (cleared) {
+      // Won the level: cleared the wave (and, normally, verified along the way).
       title = t(locale, 'levelClearTitle', 'Level {level} cleared').replace('{level}', String(level));
       body = (passed ? `${t(locale, 'verifiedBadge', 'Verified')}. ` : '')
         + t(locale, 'levelClearBody', 'Demons cleared. Nice shooting.');
       nextBtn.hidden = false;
     } else if (passed) {
-      // Died, but already verified: still a success.
-      title = t(locale, 'verifiedBadge', 'Verified');
-      body = t(locale, 'levelClearBody', 'Demons cleared. Nice shooting.');
+      // Died, but verified earlier: the captcha still counts, yet say plainly
+      // that this level was NOT cleared (never reuse the win copy).
+      title = t(locale, 'diedTitle', 'You died');
+      body = `${t(locale, 'verifiedBadge', 'Verified')}. `
+        + t(locale, 'diedVerifiedBody', 'You already passed, but the demons got you this round.');
       nextBtn.hidden = false;
     } else {
       // Died before verifying: retry only.
@@ -186,6 +191,8 @@ export function runPhobos({ container, bridge, ctx }: {
       body = t(locale, 'diedBody', 'Try again to verify.');
       nextBtn.hidden = true;
     }
+    markEl.textContent = passed ? '✓' : '✗';   // ✓ verified / ✗ not
+    markEl.classList.toggle('died', !cleared);
     clearedTitle.textContent = title;
     clearedBody.textContent = body;
     clearedEl.hidden = false;

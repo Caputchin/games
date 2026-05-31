@@ -48,6 +48,7 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string> | nu
 .phobos-cleared[hidden] { display:none; }
 .phobos-cleared-mark { width:46px; height:46px; border-radius:50%; background:${v(skin, 'badge_bg')};
   color:#fff; font-size:26px; line-height:46px; font-weight:700; }
+.phobos-cleared-mark.died { background:${v(skin, 'button_bg')}; }
 .phobos-cleared-title { margin:0; font-size:20px; letter-spacing:0.03em; }
 .phobos-cleared-body { margin:0; max-width:34ch; opacity:0.85; font-size:14px; }
 .phobos-cleared-actions { display:flex; gap:10px; margin-top:4px; flex-wrap:wrap; justify-content:center; }

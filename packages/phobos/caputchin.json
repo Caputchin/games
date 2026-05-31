@@ -270,6 +270,10 @@
         "name": "Died body",
         "description": "Message prompting the player to try again after dying before verifying."
       },
+      "diedVerifiedBody": {
+        "name": "Died-but-verified body",
+        "description": "Message when the player dies on a level AFTER already passing the captcha. Must acknowledge both that verification still counts and that this level was not cleared (do not reuse the win copy)."
+      },
       "muteSound": {
         "name": "Mute sound label",
         "description": "Screen-reader label for the speaker button when sound is on (clicking it mutes)."
@@ -309,7 +313,8 @@
         "loadError": "Failed to load",
         "replayButton": "Replay",
         "diedTitle": "You died",
-        "diedBody": "Try again to verify."
+        "diedBody": "Try again to verify.",
+        "diedVerifiedBody": "You already passed, but the demons got you this round."
       },
       "Chinese (Simplified)": {
         "_lang": "zh-Hans",
@@ -336,7 +341,8 @@
         "loading": "加载中…",
         "loadError": "加载失败",
         "diedTitle": "你死了",
-        "diedBody": "再试一次以完成验证。"
+        "diedBody": "再试一次以完成验证。",
+        "diedVerifiedBody": "你已经通过验证了，但这一关被恶魔翻了盘。"
       },
       "Spanish": {
         "_lang": "es",
@@ -363,7 +369,8 @@
         "loading": "Cargando…",
         "loadError": "Error al cargar",
         "diedTitle": "Has muerto",
-        "diedBody": "Inténtalo de nuevo para verificar."
+        "diedBody": "Inténtalo de nuevo para verificar.",
+        "diedVerifiedBody": "Ya estás verificado, pero los demonios te alcanzaron en esta ronda."
       },
       "Arabic": {
         "_lang": "ar",
@@ -390,7 +397,8 @@
         "loading": "جارٍ التحميل…",
         "loadError": "فشل التحميل",
         "diedTitle": "لقد مت",
-        "diedBody": "حاول مرة أخرى للتحقق."
+        "diedBody": "حاول مرة أخرى للتحقق.",
+        "diedVerifiedBody": "تحققتَ بالفعل، لكن الشياطين نالت منك هذه الجولة."
       },
       "Portuguese": {
         "_lang": "pt",
@@ -417,7 +425,8 @@
         "loading": "Carregando…",
         "loadError": "Falha ao carregar",
         "diedTitle": "Você morreu",
-        "diedBody": "Tente de novo para verificar."
+        "diedBody": "Tente de novo para verificar.",
+        "diedVerifiedBody": "Você já está verificado, mas os demônios te pegaram nesta rodada."
       },
       "French": {
         "_lang": "fr",
@@ -444,7 +453,8 @@
         "loading": "Chargement…",
         "loadError": "Échec du chargement",
         "diedTitle": "Vous êtes mort",
-        "diedBody": "Réessayez pour vérifier."
+        "diedBody": "Réessayez pour vérifier.",
+        "diedVerifiedBody": "Vous êtes déjà vérifié, mais les démons vous ont eu cette manche."
       },
       "German": {
         "_lang": "de",
@@ -471,7 +481,8 @@
         "loading": "Wird geladen…",
         "loadError": "Laden fehlgeschlagen",
         "diedTitle": "Du bist gestorben",
-        "diedBody": "Versuch es noch mal, um dich zu verifizieren."
+        "diedBody": "Versuch es noch mal, um dich zu verifizieren.",
+        "diedVerifiedBody": "Du bist schon verifiziert, aber diese Runde haben dich die Dämonen erwischt."
       },
       "Russian": {
         "_lang": "ru",
@@ -498,7 +509,8 @@
         "loading": "Загрузка…",
         "loadError": "Ошибка загрузки",
         "diedTitle": "Вы погибли",
-        "diedBody": "Попробуйте снова, чтобы пройти проверку."
+        "diedBody": "Попробуйте снова, чтобы пройти проверку.",
+        "diedVerifiedBody": "Проверку вы уже прошли, но в этом раунде демоны вас одолели."
       },
       "Japanese": {
         "_lang": "ja",
@@ -525,7 +537,8 @@
         "loading": "読み込み中…",
         "loadError": "読み込み失敗",
         "diedTitle": "やられた",
-        "diedBody": "もう一度挑戦して認証しよう。"
+        "diedBody": "もう一度挑戦して認証しよう。",
+        "diedVerifiedBody": "認証はもう済んでるけど、今回は悪魔にやられたね。"
       },
       "Korean": {
         "_lang": "ko",
@@ -552,7 +565,8 @@
         "loading": "불러오는 중…",
         "loadError": "불러오기 실패",
         "diedTitle": "사망했습니다",
-        "diedBody": "다시 도전해 인증하세요."
+        "diedBody": "다시 도전해 인증하세요.",
+        "diedVerifiedBody": "인증은 이미 통과했지만, 이번 판은 악마에게 당했네요."
       },
       "Indonesian": {
         "_lang": "id",
@@ -579,7 +593,8 @@
         "loading": "Memuat…",
         "loadError": "Gagal memuat",
         "diedTitle": "Kamu mati",
-        "diedBody": "Coba lagi untuk verifikasi."
+        "diedBody": "Coba lagi untuk verifikasi.",
+        "diedVerifiedBody": "Kamu sudah terverifikasi, tapi ronde ini iblis yang menang."
       }
     }
   }
