@@ -135,18 +135,19 @@ def _inner_box(ed, box, inner_sector, riser_tex):
         ed.linedefs.append(ld)
 
 
-def _arena_marker_things():
-    """Seeded-wave spawn markers (doomednum 4001) on the main arena floor, clear
-    of the central platform box and the player start. A 6x5 grid (30 cells) minus
-    the ~12 cells over the central feature leaves 18; the first 16 are used, so
-    the seeded pick has >= the max wave (16) distinct points on every arena (all
-    arenas share the PLAT footprint, so the same grid is valid on each)."""
-    PX0, PY0, PX1, PY1 = PLAT
+def _arena_marker_things(exclude_boxes):
+    """Seeded-wave spawn markers (doomednum 4001) on the MAIN arena floor, clear
+    of the player start and of every feature box (holes, raised steps, solid
+    pillars) so demons never spawn stuck below/above the player or inside solid
+    geometry -- they always land on traversable floor and can approach. A dense
+    7x6 grid (42 cells) leaves >= the max wave (16) distinct points even after the
+    feature exclusions; the first 16 are used."""
     pts = []
-    for x in range(380, 1157, 155):      # 6 columns across the spawn band
-        for y in range(360, 921, 140):   # 5 rows
-            if PX0 - 48 < x < PX1 + 48 and PY0 - 48 < y < PY1 + 48:
-                continue                 # inside the central feature box
+    for x in range(380, 1161, 130):      # 7 columns across the spawn band
+        for y in range(360, 941, 115):   # 6 rows
+            if any(bx0 - 48 < x < bx1 + 48 and by0 - 48 < y < by1 + 48
+                   for (bx0, by0, bx1, by1) in exclude_boxes):
+                continue                 # over a feature (hole / step / pillar)
             if abs(x - AW // 2) < 140 and abs(y - 200) < 140:
                 continue                 # too close to the player start
             pts.append((x, y))
@@ -166,31 +167,32 @@ def build_map(outer_pts, walls, feature):
     ed.sectors.append(Sector(0, 168, FLOOR, CEIL, 150, 0, 0))   # sector 0 = main floor
     _outer_walls(ed, outer_pts, walls)
     cx0, cy0, cx1, cy1 = PLAT
+    boxes = []                      # feature footprints, kept clear of spawn markers
 
     if feature == 'platform':       # raised step-up island, brighter
         ed.sectors.append(Sector(24, 168, 'FLOOR0_5', 'CEIL3_1', 210, 0, 0))
         _inner_box(ed, PLAT, len(ed.sectors) - 1, 'STEP3')
-    elif feature == 'pit':          # sunken nukage-floor pit, dimmer
+        boxes = [PLAT]
+    elif feature == 'pit':          # single sunken nukage-floor pit, dimmer
         ed.sectors.append(Sector(-24, 168, 'FLAT5_4', CEIL, 120, 0, 0))
         _inner_box(ed, PLAT, len(ed.sectors) - 1, 'STEP3')
+        boxes = [PLAT]
     elif feature == 'pillars':      # four solid floor-to-ceiling columns
         sz = 112
         for (px, py) in [(cx0, cy0), (cx1 - sz, cy0), (cx0, cy1 - sz), (cx1 - sz, cy1 - sz)]:
             ed.sectors.append(Sector(168, 168, FLOOR, CEIL, 150, 0, 0))  # floor==ceil = solid
             _inner_box(ed, (px, py, px + sz, py + sz), len(ed.sectors) - 1, 'SUPPORT3')
-    elif feature == 'terraces':     # broken terrain: several sunken holes + tall raised steps
-        PITS = [(320, 340, 540, 560), (996, 720, 1216, 940), (660, 884, 876, 1100)]
-        STEPS = [(996, 340, 1216, 560), (320, 720, 540, 940), (660, 470, 876, 686)]
-        for box in PITS:            # sunken nukage holes, dimmer
+            boxes.append((px, py, px + sz, py + sz))
+    elif feature == 'holes':        # simple arena, several sunken nukage holes in the corners
+        for box in [(300, 300, 520, 520), (1016, 300, 1236, 520),
+                    (300, 760, 520, 980), (1016, 760, 1236, 980)]:
             ed.sectors.append(Sector(-40, 168, 'FLAT5_4', CEIL, 110, 0, 0))
             _inner_box(ed, box, len(ed.sectors) - 1, 'STEP3')
-        for box in STEPS:           # tall raised steps, brighter top
-            ed.sectors.append(Sector(96, 168, 'FLOOR0_5', 'CEIL3_1', 200, 0, 0))
-            _inner_box(ed, box, len(ed.sectors) - 1, 'STEP3')
+            boxes.append(box)
 
     th = Thing(AW // 2, 200, 90, 1, 0)
     th.easy = th.medium = th.hard = True
-    ed.things = [th] + _arena_marker_things()
+    ed.things = [th] + _arena_marker_things(boxes)
     return ed
 
 
@@ -297,7 +299,7 @@ def build_maze(cols, rows, pitch, hw, wall_tex, seed):
 # is a thunk so arenas and mazes can share one assembly loop.
 CAMPAIGN = [
     lambda: build_map(octagon_pts(), ['METAL', 'BROWN1', 'STARGR1', 'COMPUTE1', 'METAL', 'BROWN1', 'STARGR1', 'SUPPORT3'], 'platform'),
-    lambda: build_map(rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'terraces'),
+    lambda: build_map(rect_pts(),    ['BROWN1', 'SUPPORT3', 'DOOR1', 'BROWN1'], 'holes'),
     lambda: build_map(octagon_pts(288), ['STARGR1', 'METAL', 'COMPUTE1', 'STARGR2', 'STARGR1', 'METAL', 'COMPUTE1', 'STARGR2'], 'pillars'),
     lambda: build_map(rect_pts(),    ['COMPUTE1', 'METAL', 'STARGR2', 'METAL'], 'platform'),
     lambda: build_maze(5, 4, 384, 96, 'BROWN1', 1337),

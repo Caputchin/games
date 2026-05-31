@@ -23,7 +23,10 @@ function trace(tics: number): Uint8Array {
 
 maybe('phobos run() replay', () => {
   let mod: WebAssembly.Module;
-  const seedA: Seed = [0xc0ffee01, 0xdeadbeef, 0x12345678, 0x9abcdef0];
+  // Re-picked whenever the WAD spawn layout changes (the seed must discriminate
+  // the config pairs below; see the F9-clobber test). Last re-picked for the
+  // marker-avoids-feature spawn grid.
+  const seedA: Seed = [0xc0ffff12, 0xdead9ce8, 0x123489a9, 0x9abc8ba5];
   const seedB: Seed = [1, 2, 3, 4];
 
   beforeAll(async () => {
