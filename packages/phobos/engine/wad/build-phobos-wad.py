@@ -8,9 +8,13 @@ keeping TEXTURE1/PNAMES intact is safe (R_PrecacheLevel only touches the
 textures our map uses). The arena ships monster-free; every demon is spawned
 procedurally from the server seed at level init (phobos.c).
 
-Sprites/sounds/graphics are kept whole for now (engine's sprnames[] table
-requires a lump for every sprite; trimming those needs an info.c edit - a later
-optimization). The dominant win is the 9.6MB patch group."""
+Sprites are trimmed to KEEP_SPRITES -- only the ones the game can actually spawn.
+R_InitSpriteDefs already tolerates a sprite name with no lumps (numframes=0, no
+error), and the stripped sprites are never spawned, so the live build renders
+fine and no info.c edit is needed. This is the dominant size lever: it lets ONE
+shared WAD fit the replay artifact's per-artifact size cap, so the live build and
+the headless replay embed the same WAD (no duplicate). Sounds/graphics are kept
+whole (the live build plays sounds; both builds boot the HUD/status graphics)."""
 import os
 import random
 import struct
@@ -33,6 +37,19 @@ FLATS_KEEP = {'FLOOR0_3', 'FLOOR0_5', 'CEIL5_1', 'FLAT1', 'FLAT5_4',
               'F_SKY1', 'FLOOR4_8', 'CEIL3_1'}  # static flats only (no anim starts)
 KEEP_MUSIC = {'D_E1M1', 'D_E1M2', 'D_E1M3', 'D_E1M4',
               'D_E1M5', 'D_E1M6'}  # one per campaign map (engine hard-looks-up D_<map>)
+
+# Sprites the game can actually spawn -- the ONLY ones the live build ever
+# renders, so every other DOOM sprite (other monsters, unowned weapons, pickups,
+# decorations) is dead weight and stripped. This is the dominant size lever and
+# lets ONE shared WAD fit the replay artifact's per-artifact cap (so live + the
+# headless replay embed the same WAD; no duplicate). R_InitSpriteDefs already
+# tolerates a name with no lumps (numframes=0, no error), and the stripped ones
+# are never spawned -> never rendered, so live is unaffected.
+#   PLAY=player+corpse  POSS/TROO/SARG=zombieman/imp/pinky  BAL1=imp fireball
+#   PUFF/BLUD=hit effects  CLIP=zombieman death drop  TFOG=nightmare respawn fog
+#   PUNG/PISG/PISF/SHTG/SHTF=fist/pistol/shotgun (the only owned weapons + flashes)
+KEEP_SPRITES = {'PLAY', 'POSS', 'TROO', 'SARG', 'BAL1', 'PUFF', 'BLUD', 'CLIP',
+                'TFOG', 'PUNG', 'PISG', 'PISF', 'SHTG', 'SHTF'}
 
 # Arena bounding box. The seeded monster spawn in phobos.c uses the same bounds
 # (keep them in sync). Player starts bottom-center; a raised platform sits in the
@@ -338,6 +355,9 @@ for name in list(w.flats):
 for name in list(w.music):
     if name.upper() not in KEEP_MUSIC:
         del w.music[name]
+for name in list(w.sprites):
+    if name[:4].upper() not in KEEP_SPRITES:
+        del w.sprites[name]
 for name in list(w.maps):
     del w.maps[name]
 for i, builder in enumerate(CAMPAIGN, 1):

@@ -8,7 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ENGINE=engine
-WAD=engine/wad/phobos.wad
+WAD=engine/wad/phobos.wad                    # one shared WAD: live + headless replay
 OUT=build
 mkdir -p "$OUT"
 
