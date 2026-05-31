@@ -36,6 +36,10 @@ interface Live {
 // through them; keep in sync with the CAMPAIGN list in engine/wad/build-phobos-wad.py.
 const NUM_MAPS = 4;
 
+// Speaker glyphs for the mute toggle (sound on / muted).
+const SPK_ON = '\u{1F50A}';   // 🔊
+const SPK_OFF = '\u{1F507}';  // 🔇
+
 function t(locale: Record<string, string> | null | undefined, key: string, fallback: string): string {
   return (locale && locale[key]) || fallback;
 }
@@ -59,10 +63,16 @@ export function runPhobos({ container, bridge, ctx }: {
       <span class="phobos-kills">0 / ${passKills}</span>
       <span class="phobos-badge" hidden>${t(locale, 'verifiedBadge', 'Verified')}</span>
     </div>
+    <button class="phobos-mute" type="button" aria-pressed="false"
+            aria-label="${t(locale, 'muteSound', 'Mute sound')}">${SPK_ON}</button>
+    <div class="phobos-loading" hidden aria-hidden="true">
+      <div class="phobos-spinner"></div>
+      <p>${t(locale, 'loading', 'Loading...')}</p>
+    </div>
     <div class="phobos-start">
       <h2>${t(locale, 'startTitle', 'Phobos')}</h2>
       <p>${t(locale, 'startBody', `Clear ${passKills} demons to prove you're human.`)}</p>
-      <button class="phobos-btn" type="button">${t(locale, 'startButton', 'Enter')}</button>
+      <button class="phobos-btn" type="button">${t(locale, 'startButton', 'Slay')}</button>
       <small>${t(locale, 'controlsHint', 'Arrows or WASD to move, Space or click to fire')}</small>
     </div>
     <div class="phobos-controls" aria-hidden="true">
@@ -95,12 +105,16 @@ export function runPhobos({ container, bridge, ctx }: {
   const clearedEl = root.querySelector('.phobos-cleared') as HTMLElement;
   const clearedTitle = root.querySelector('.phobos-cleared-title') as HTMLElement;
   const clearedBody = root.querySelector('.phobos-cleared-body') as HTMLElement;
+  const muteEl = root.querySelector('.phobos-mute') as HTMLButtonElement;
+  const loadingEl = root.querySelector('.phobos-loading') as HTMLElement;
 
   let live: Live | null = null;
   let raf = 0;
   let running = false;
   let passed = false;
   let disposed = false;
+  let muted = false;
+  let ended = false;   // guards a single end-overlay per round (clear-delay vs death race)
   let image: ImageData | null = null;
   let level = 1;
   let wave = waveCount;
@@ -109,7 +123,7 @@ export function runPhobos({ container, bridge, ctx }: {
   // The engine bundle is several MB and takes a moment to instantiate; gate the
   // Enter button behind a loading state so the round never starts before it is
   // ready (and the visitor sees progress instead of a frozen button).
-  const startLabel = startBtn.textContent || 'Enter';
+  const startLabel = startBtn.textContent || 'Slay';
   startBtn.disabled = true;
   startBtn.textContent = t(locale, 'loading', 'Loading...');
 
@@ -149,6 +163,8 @@ export function runPhobos({ container, bridge, ctx }: {
   // died. Either way the framing is a success if the captcha is already
   // verified; only an unverified death prompts a retry.
   function showEnd(cleared: boolean) {
+    if (ended) return;   // one overlay per round (clear-delay timer vs death path)
+    ended = true;
     running = false;
     cancelAnimationFrame(raf);
     const nextBtn = root.querySelector('.phobos-next') as HTMLButtonElement;
@@ -191,10 +207,13 @@ export function runPhobos({ container, bridge, ctx }: {
       badgeEl.hidden = false;
       liveEl.textContent = t(locale, 'announceVerified', 'Verified. You may keep playing.');
     }
-    // Level cleared: every demon in this wave is down.
+    // Level cleared: every demon in this wave is down. Hold the overlay ~1s so
+    // the last demon's death animation plays out (loop keeps rendering; there are
+    // no demons left to kill the player, and a verified round skips the tic cap).
     if (!levelCleared && kills >= wave) {
       levelCleared = true;
-      showEnd(true);
+      liveEl.textContent = t(locale, 'announceCleared', 'Arena clear.');
+      window.setTimeout(() => { if (!disposed) showEnd(true); }, 1000);
     }
   }
 
@@ -203,7 +222,7 @@ export function runPhobos({ container, bridge, ctx }: {
     live!.ccall('phobos_frame', null, [], []);
     blit();
     checkProgress();
-    if (!running) return; // a level-clear this frame stopped the loop
+    if (!running) return; // death or tic-cap this frame stopped the loop (clear defers via setTimeout)
     // Player death ends the round: success if already verified, else a retry.
     if (live!.ccall('phobos_player_dead', 'number', [], [])) {
       showEnd(false);
@@ -231,29 +250,44 @@ export function runPhobos({ container, bridge, ctx }: {
 
   function startLevel(lvl: number) {
     if (!live) return;
-    level = lvl;
-    wave = waveCount + (lvl - 1) * 2; // escalate the wave each level
-    levelCleared = false;
-    if (lvl === 1) { passed = false; badgeEl.hidden = true; }
-    // Level 1 runs the configured captcha map (server replays it); bonus levels
-    // cycle through the other arenas for variety. Level 1 honors the configured
-    // respawn (must match the replay); bonus levels keep respawn off so the wave
-    // stays finite and clearable.
-    const map = lvl === 1 ? startMap : ((startMap - 1 + (lvl - 1)) % NUM_MAPS) + 1;
-    const respawn = lvl === 1 ? (cfg.respawnMonsters ? 1 : 0) : 0;
-    const s = levelSeed(lvl);
-    live.ccall('phobos_start', null,
-      ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-      [s[0]! >>> 0, s[1]! >>> 0, s[2]! >>> 0, s[3]! >>> 0, map, wave,
-        cfg.skill, cfg.fastMonsters ? 1 : 0, respawn]);
+    // Show the loading state and let the browser paint it BEFORE the synchronous
+    // level setup runs. P_SetupLevel happens on the first engine tic and briefly
+    // blocks the main thread; without this the Play/Slay click looks frozen.
     startEl.hidden = true;
     clearedEl.hidden = true;
-    (root.querySelector('.phobos-controls') as HTMLElement).removeAttribute('aria-hidden');
-    killsEl.textContent = `0 / ${wave}`;
-    running = true;
-    liveEl.textContent = t(locale, 'announceStart', 'Go. Clear the demons.');
-    canvas.focus();
-    loop();
+    loadingEl.hidden = false;
+    liveEl.textContent = t(locale, 'loading', 'Loading...');
+    // Double rAF: guarantees a paint of the loader before we block on setup.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (disposed || !live) return;
+      level = lvl;
+      wave = waveCount + (lvl - 1) * 2; // escalate the wave each level
+      levelCleared = false;
+      ended = false;
+      if (lvl === 1) { passed = false; badgeEl.hidden = true; }
+      // Level 1 runs the configured captcha map (server replays it); bonus levels
+      // cycle through the other arenas for variety. Level 1 honors the configured
+      // respawn (must match the replay); bonus levels keep respawn off so the wave
+      // stays finite and clearable.
+      const map = lvl === 1 ? startMap : ((startMap - 1 + (lvl - 1)) % NUM_MAPS) + 1;
+      const respawn = lvl === 1 ? (cfg.respawnMonsters ? 1 : 0) : 0;
+      const s = levelSeed(lvl);
+      live.ccall('phobos_audio_resume', null, [], []);    // unlock audio on the click gesture
+      live.ccall('phobos_set_mute', null, ['number'], [muted ? 1 : 0]);
+      live.ccall('phobos_start', null,
+        ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+        [s[0]! >>> 0, s[1]! >>> 0, s[2]! >>> 0, s[3]! >>> 0, map, wave,
+          cfg.skill, cfg.fastMonsters ? 1 : 0, respawn]);
+      live.ccall('phobos_frame', null, [], []); // run the heavy setup tic under the loader
+      blit();                                   // paint the first real frame, then reveal it
+      loadingEl.hidden = true;
+      (root.querySelector('.phobos-controls') as HTMLElement).removeAttribute('aria-hidden');
+      killsEl.textContent = `0 / ${wave}`;
+      running = true;
+      liveEl.textContent = t(locale, 'announceStart', 'Go. Clear the demons.');
+      canvas.focus();
+      loop();
+    }));
   }
 
   // Touch controls -> held DOOM keys.
@@ -270,6 +304,16 @@ export function runPhobos({ container, bridge, ctx }: {
   canvas.tabIndex = 0;
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
+
+  // Mute toggle: flips the live SFX gain to zero and persists across levels.
+  muteEl.addEventListener('click', () => {
+    muted = !muted;
+    live?.ccall('phobos_set_mute', null, ['number'], [muted ? 1 : 0]);
+    muteEl.textContent = muted ? SPK_OFF : SPK_ON;
+    muteEl.setAttribute('aria-pressed', String(muted));
+    muteEl.setAttribute('aria-label',
+      t(locale, muted ? 'unmuteSound' : 'muteSound', muted ? 'Unmute sound' : 'Mute sound'));
+  });
 
   startBtn.addEventListener('click', () => startLevel(1));
   (root.querySelector('.phobos-next') as HTMLButtonElement)

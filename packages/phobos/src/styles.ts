@@ -58,6 +58,18 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string> | nu
 .phobos-controls[aria-hidden="true"] { display:none; }
 .phobos-controls button { width:44px; height:44px; border-radius:50%; border:1px solid ${v(skin, 'fg')}55;
   background:${v(skin, 'hud_bg')}; color:${v(skin, 'fg')}; font-size:16px; touch-action:none; }
+.phobos-mute { position:absolute; top:6px; right:6px; z-index:2; width:32px; height:32px; cursor:pointer;
+  border:none; border-radius:4px; background:${v(skin, 'hud_bg')}; color:${v(skin, 'fg')}; font-size:16px;
+  line-height:1; display:flex; align-items:center; justify-content:center; padding:0; }
+.phobos-mute:hover { background:${v(skin, 'button_hover')}; }
+.phobos-loading { position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; gap:12px;
+  align-items:center; justify-content:center; background:${v(skin, 'bg')}e6; }
+.phobos-loading[hidden] { display:none; }
+.phobos-loading p { margin:0; opacity:0.8; font-size:14px; }
+.phobos-spinner { width:34px; height:34px; border-radius:50%; border:3px solid ${v(skin, 'fg')}33;
+  border-top-color:${v(skin, 'button_bg')}; animation:phobos-spin 0.8s linear infinite; }
+@keyframes phobos-spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .phobos-spinner { animation-duration:2.4s; } }
 .phobos-live { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 @media (pointer:fine) { .phobos-controls { display:none; } }`;
   const style = document.createElement('style');

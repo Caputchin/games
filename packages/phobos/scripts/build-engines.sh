@@ -19,8 +19,11 @@ if [ ! -f "$WAD" ]; then
 fi
 
 # Shared DOOM fork + phobos.c. Each target adds exactly one platform entry.
+# Headless: silent stub sound (sim must not depend on audio), no _live.c files.
+# Live: real SFX backend (i_sound_phobos_live.c) REPLACES the stub -- drop the
+# stub here or the two definitions of the I_* sound symbols collide.
 HEADLESS_SRC=$(ls "$ENGINE"/*.c | grep -vE '_live\.c$')
-LIVE_SRC=$(ls "$ENGINE"/*.c | grep -vE 'phobos_headless\.c$')
+LIVE_SRC=$(ls "$ENGINE"/*.c | grep -vE 'phobos_headless\.c$|i_sound_stub\.c$')
 
 COMMON="-O3 -I $ENGINE --embed-file $WAD@/phobos.wad -sMODULARIZE=1 -sEXPORT_ES6=1 \
   -sEXIT_RUNTIME=0 -sALLOW_MEMORY_GROWTH=1 -sENVIRONMENT=web,worker"
@@ -36,8 +39,8 @@ echo "[headless] done -> $OUT/phobos-headless.wasm ($(du -h "$OUT/phobos-headles
 echo "[live] compiling $(echo "$LIVE_SRC" | wc -w) files..."
 emcc $COMMON $LIVE_SRC \
   -sEXPORT_NAME=PhobosLive \
-  -sEXPORTED_FUNCTIONS='["_main","_phobos_start","_phobos_frame","_phobos_key","_phobos_fb","_phobos_width","_phobos_height","_phobos_killcount","_phobos_tracelen","_phobos_traceptr","_phobos_leveltime","_phobos_player_dead","_malloc","_free"]' \
-  -sEXPORTED_RUNTIME_METHODS='["ccall","HEAPU8","HEAPU32"]' \
+  -sEXPORTED_FUNCTIONS='["_main","_phobos_start","_phobos_frame","_phobos_key","_phobos_fb","_phobos_width","_phobos_height","_phobos_killcount","_phobos_tracelen","_phobos_traceptr","_phobos_leveltime","_phobos_player_dead","_phobos_audio_pull","_phobos_audio_resume","_phobos_set_mute","_malloc","_free"]' \
+  -sEXPORTED_RUNTIME_METHODS='["ccall","HEAPU8","HEAPU32","HEAPF32"]' \
   -o "$OUT/phobos-live.js"
 # Codegen a clean base64 string of the live wasm (engine + WAD) so the live IIFE
 # inlines it as ONE tidy string. (emscripten SINGLE_FILE + esbuild minify mangles
