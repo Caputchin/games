@@ -30,3 +30,26 @@ export function applyStyles(container: HTMLElement, canvas: HTMLCanvasElement): 
   canvas.style.outline = 'none';
   canvas.style.touchAction = 'none';
 }
+
+// Pre-boot loading placeholder. Bevy can't render its own loader (it isn't running
+// yet, and the inlined wasm is a few MB to instantiate), so this small CSS overlay
+// covers the canvas until the game fires `wallsmash:ready` on its first frame. It is
+// the ONLY non-Bevy visual; every screen after boot is drawn by Bevy UI.
+export function createBootOverlay(doc: Document): HTMLElement {
+  if (doc.head && !doc.getElementById('ws-boot-style')) {
+    const style = doc.createElement('style');
+    style.id = 'ws-boot-style';
+    style.textContent =
+      '.ws-boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0d0d12;z-index:2}' +
+      '.ws-boot-spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#3ad6ff;animation:ws-spin .8s linear infinite}' +
+      '@keyframes ws-spin{to{transform:rotate(360deg)}}' +
+      '@media (prefers-reduced-motion:reduce){.ws-boot-spin{animation:none;border-top-color:rgba(255,255,255,.2)}}';
+    doc.head.appendChild(style);
+  }
+  const el = doc.createElement('div');
+  el.className = 'ws-boot';
+  const spinner = doc.createElement('div');
+  spinner.className = 'ws-boot-spin';
+  el.appendChild(spinner);
+  return el;
+}

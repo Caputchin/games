@@ -9,7 +9,8 @@ use bevy::asset::RenderAssetUsages;
 use bevy::camera::ScalingMode;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::image::{Image, ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
-use bevy::math::primitives::{Capsule3d, Circle, Cuboid, Cylinder, Sphere};
+use bevy::math::primitives::{Capsule3d, Circle, Cuboid, Cylinder, Rectangle, Sphere};
+use bevy::math::Affine2;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
@@ -18,8 +19,8 @@ use bevy::window::PrimaryWindow;
 use wasm_bindgen::prelude::*;
 
 use crate::sim::{
-    spawn_sim, tick_schedule, Ball, Brick, Cfg, Half, Level, Paddle, PendingInput, Phase, Pos,
-    SimConfig, Status, FP, TICK_HZ,
+    level_count, reset_sim, spawn_sim, tick_schedule, Ball, Brick, Cfg, Half, Level, Paddle,
+    PendingInput, Phase, Pos, SimConfig, Status, FP, TICK_HZ,
 };
 
 const SCALE: f32 = 2.0;
@@ -251,9 +252,9 @@ struct Particle {
 #[derive(Resource, Default)]
 struct LaunchLatch(bool);
 
-/// Flat 2D star backdrop (rendered by the order -1 camera in the 3D skin).
+/// The 3D-skin star quad (a billboard far behind the arena, faces the camera).
 #[derive(Component)]
-struct StarBg;
+struct StarBg3d;
 
 /// A single 3D smash-debris cube: flies outward, falls, shrinks, then despawns.
 /// 3D analog of the 2D `Particle`, spawned when a brick breaks.
@@ -359,7 +360,7 @@ fn resolve_palette(palette: &[u32]) -> Palette {
 }
 
 #[wasm_bindgen]
-pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>) {
+pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>, locale: Vec<String>) {
     let mut s = [0u32; 4];
     for (i, v) in seed.iter().take(4).enumerate() {
         s[i] = *v;
@@ -394,25 +395,49 @@ pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>) {
     app.insert_resource(Recorder::default());
     app.insert_resource(RenderRng(rng_seed));
     app.insert_resource(LaunchLatch::default());
+    app.insert_resource(ScreenUi::default());
+    app.insert_resource(RestartReq::default());
+    app.insert_resource(Locale(locale));
 
     if is3d {
-        app.add_systems(Startup, setup_3d);
+        app.add_systems(Startup, (setup_3d, setup_hud));
         app.add_systems(
             Update,
             (
+                button_system,
+                apply_restart,
                 skin_bricks_3d,
                 frame_camera_3d,
                 drive,
+                update_hud,
+                screens,
+                update_toast,
                 sync_3d,
                 sync_floor_shadows,
                 update_debris_3d,
-                fit_star_bg,
+                frame_star_3d,
+                signal_ready,
             )
                 .chain(),
         );
     } else {
-        app.add_systems(Startup, setup_scene);
-        app.add_systems(Update, (skin_bricks, drive, sync_positions, update_particles).chain());
+        app.add_systems(Startup, (setup_scene, setup_hud));
+        app.add_systems(
+            Update,
+            (
+                button_system,
+                apply_restart,
+                skin_bricks,
+                drive,
+                update_hud,
+                screens,
+                update_toast,
+                sync_positions,
+                update_particles,
+                signal_ready,
+            )
+                .chain(),
+        );
     }
     app.run();
 }
@@ -422,6 +447,418 @@ fn to_px(pos: &Pos, cfg: &SimConfig) -> Vec2 {
     let x = (pos.x as f32 / FP as f32 - cfg.arena_w as f32 / 2.0) * SCALE;
     let y = (cfg.arena_h as f32 / 2.0 - pos.y as f32 / FP as f32) * SCALE;
     Vec2::new(x, y)
+}
+
+// ---- HUD (Bevy UI) -----------------------------------------------------------
+//
+// The chrome is built with Bevy's own UI (bevy_ui + bevy_text), not a DOM overlay:
+// the point of this game is to show a real engine's UI running inside a captcha.
+// All HUD/screen systems are render-only (live build); the headless replay never
+// compiles bevy_ui, so it stays tiny + zero-import.
+
+const HUD_FG: Color = Color::srgb(0.92, 0.95, 1.0);
+const HUD_FONT: f32 = 18.0;
+
+/// Which sim value a HUD text node shows; `update_hud` fills it each frame.
+#[derive(Component, Clone, Copy)]
+enum HudField {
+    Score,
+    Time,
+    Level,
+}
+
+/// One life pip (`0` = leftmost); hidden once `index >= lives`.
+#[derive(Component)]
+struct LifePip(u32);
+
+fn hud_text(field: HudField) -> impl Bundle {
+    (
+        Text::new(""),
+        TextFont::from_font_size(HUD_FONT),
+        TextColor(HUD_FG),
+        field,
+    )
+}
+
+/// Top HUD bar: life pips (left), time remaining (center), level + score (right).
+fn setup_hud(mut commands: Commands, cfg: Res<Cfg>) {
+    let c = cfg.0;
+    let lives = commands
+        .spawn(Node {
+            flex_direction: FlexDirection::Row,
+            column_gap: Val::Px(5.0),
+            align_items: AlignItems::Center,
+            ..default()
+        })
+        .with_children(|p| {
+            for i in 0..c.lives {
+                p.spawn((
+                    Node { width: Val::Px(12.0), height: Val::Px(12.0), ..default() },
+                    BackgroundColor(Color::srgb(0.90, 0.16, 0.18)),
+                    LifePip(i),
+                ));
+            }
+        })
+        .id();
+    let time = commands.spawn(hud_text(HudField::Time)).id();
+    let right = commands
+        .spawn(Node {
+            flex_direction: FlexDirection::Row,
+            column_gap: Val::Px(14.0),
+            align_items: AlignItems::Center,
+            ..default()
+        })
+        .with_children(|p| {
+            p.spawn(hud_text(HudField::Level));
+            p.spawn(hud_text(HudField::Score));
+        })
+        .id();
+
+    commands
+        .spawn(Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(0.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
+            padding: UiRect::all(Val::Px(10.0)),
+            column_gap: Val::Px(12.0),
+            ..default()
+        })
+        .add_children(&[lives, time, right]);
+}
+
+/// Fill the HUD from the sim state each frame (render-only; reads, never writes sim).
+fn update_hud(
+    cfg: Res<Cfg>,
+    status: Res<Status>,
+    level: Res<Level>,
+    mut texts: Query<(&HudField, &mut Text)>,
+    mut pips: Query<(&LifePip, &mut Node)>,
+) {
+    let c = cfg.0;
+    let st = *status;
+    let levels = level_count(&c);
+    for (field, mut text) in &mut texts {
+        let s = match field {
+            HudField::Score => format!("{}", st.score),
+            HudField::Time => format!("{}s", c.timeout_ticks.saturating_sub(st.tick) / TICK_HZ),
+            HudField::Level => format!("{}/{}", (level.0 + 1).min(levels), levels),
+        };
+        if text.0 != s {
+            text.0 = s;
+        }
+    }
+    for (pip, mut node) in &mut pips {
+        node.display = if pip.0 < st.lives { Display::Flex } else { Display::None };
+    }
+}
+
+/// Fire `wallsmash:ready` once on the first rendered frame so the JS boot
+/// placeholder can be removed (Bevy can't paint its own pre-boot loader).
+fn signal_ready(mut sent: Local<bool>) {
+    if *sent {
+        return;
+    }
+    *sent = true;
+    if let Some(window) = web_sys::window() {
+        let init = web_sys::CustomEventInit::new();
+        init.set_bubbles(false);
+        if let Ok(ev) = web_sys::CustomEvent::new_with_event_init_dict("wallsmash:ready", &init) {
+            let _ = window.dispatch_event(&ev);
+        }
+    }
+}
+
+// ---- screens (Bevy UI overlays) ----------------------------------------------
+//
+// Start prompt / win-verified / round-over, drawn with Bevy UI (not DOM). The
+// `screens` system shows the right overlay from the sim phase; `button_system`
+// drives the Replay / Keep-playing buttons; `apply_restart` resets the round.
+// All localized text comes from the `Locale` resource (Phase 3); English here is
+// the placeholder + fallback.
+
+const OVERLAY_BG: Color = Color::srgba(0.03, 0.03, 0.06, 0.72);
+const PANEL_BG: Color = Color::srgb(0.08, 0.09, 0.14);
+const BTN_BG: Color = Color::srgb(0.16, 0.18, 0.26);
+const BTN_BG_HOVER: Color = Color::srgb(0.26, 0.30, 0.42);
+
+/// Localized UI strings, POSITIONAL: index = the `STRING_KEYS` order in src/strings.ts
+/// (game.ts marshals `localeVec(ctx.locale)` into `start()`). The Bevy screens index
+/// the few they need via `txt::*`; a missing/empty entry falls back to baked English
+/// so a locale gap never blanks the UI. Render-only; never touches the sim.
+#[derive(Resource)]
+struct Locale(Vec<String>);
+
+/// Indices into the locale Vec. MUST match `STRING_KEYS` order in src/strings.ts.
+mod txt {
+    pub const START_PROMPT: usize = 1;
+    pub const LEVEL_TOAST: usize = 2;
+    pub const WIN_TITLE: usize = 3;
+    pub const WIN_BODY: usize = 4;
+    pub const KEEP_PLAYING: usize = 5;
+    pub const LOSE_TITLE: usize = 6;
+    pub const LOSE_BODY: usize = 7;
+    pub const TRY_AGAIN: usize = 8;
+}
+
+/// English fallbacks (same order), used when ctx.locale is absent/short.
+const EN: [&str; 9] = [
+    "",
+    "Tap or press Space to launch",
+    "Level {level}",
+    "Verified",
+    "Wall cleared. You can keep playing.",
+    "Keep playing",
+    "Round over",
+    "Try again to verify.",
+    "Try again",
+];
+
+impl Locale {
+    fn get(&self, i: usize) -> String {
+        let s = self
+            .0
+            .get(i)
+            .map(|s| s.as_str())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| EN.get(i).copied().unwrap_or(""));
+        s.to_string()
+    }
+    fn level(&self, i: usize, n: u32) -> String {
+        self.get(i).replace("{level}", &n.to_string())
+    }
+}
+
+#[derive(PartialEq, Clone, Copy)]
+enum ScreenKind {
+    None,
+    Launch,
+    Win,
+    Lose,
+}
+
+#[derive(Resource)]
+struct ScreenUi {
+    kind: ScreenKind,
+    prev_level: u32,
+}
+impl Default for ScreenUi {
+    fn default() -> Self {
+        Self { kind: ScreenKind::None, prev_level: 0 }
+    }
+}
+
+#[derive(Component)]
+struct ScreenRoot;
+
+/// A transient "Level N" toast (seconds remaining); ticked + despawned by `update_toast`.
+#[derive(Component)]
+struct LevelToast(f32);
+
+#[derive(Component, Clone, Copy)]
+enum ScreenButton {
+    Retry,
+    Continue,
+}
+
+/// Set by a button press, consumed by `apply_restart`.
+#[derive(Resource, Default)]
+struct RestartReq(Option<ScreenButton>);
+
+fn screen_text(s: &str, size: f32) -> impl Bundle {
+    (Text::new(s), TextFont::from_font_size(size), TextColor(HUD_FG))
+}
+
+/// A pill (bg + padding + centered text) at the bottom, e.g. the launch prompt or a
+/// level toast. `tag` marks the root for despawn (ScreenRoot or LevelToast).
+fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str) {
+    commands
+        .spawn((
+            tag,
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(20.0),
+                left: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+        ))
+        .with_children(|p| {
+            p.spawn((
+                Node { padding: UiRect::axes(Val::Px(14.0), Val::Px(8.0)), ..default() },
+                BackgroundColor(OVERLAY_BG),
+            ))
+            .with_children(|q| {
+                q.spawn(screen_text(text, 16.0));
+            });
+        });
+}
+
+fn spawn_end(commands: &mut Commands, win: bool, title: &str, body: &str, btn: &str) {
+    let kind = if win { ScreenButton::Continue } else { ScreenButton::Retry };
+    commands
+        .spawn((
+            ScreenRoot,
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                left: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            BackgroundColor(OVERLAY_BG),
+        ))
+        .with_children(|p| {
+            p.spawn((
+                Node {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    row_gap: Val::Px(12.0),
+                    padding: UiRect::all(Val::Px(26.0)),
+                    ..default()
+                },
+                BackgroundColor(PANEL_BG),
+            ))
+            .with_children(|q| {
+                q.spawn(screen_text(title, 30.0));
+                q.spawn(screen_text(body, 16.0));
+                q.spawn((
+                    Button,
+                    kind,
+                    Node {
+                        padding: UiRect::axes(Val::Px(22.0), Val::Px(11.0)),
+                        margin: UiRect::top(Val::Px(6.0)),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    BackgroundColor(BTN_BG),
+                ))
+                .with_children(|b| {
+                    b.spawn(screen_text(btn, 18.0));
+                });
+            });
+        });
+}
+
+/// Pick the overlay from the sim phase; re-spawn only when it changes. Also fires a
+/// transient "Level N" toast when a new wall drops in.
+fn screens(
+    mut commands: Commands,
+    status: Res<Status>,
+    level: Res<Level>,
+    loc: Res<Locale>,
+    balls: Query<&Ball>,
+    roots: Query<Entity, With<ScreenRoot>>,
+    mut ui: ResMut<ScreenUi>,
+) {
+    // between-level toast (level is 0-indexed; show 1-based, only past the first)
+    if level.0 != ui.prev_level {
+        if level.0 > ui.prev_level && level.0 > 0 {
+            spawn_pill(
+                &mut commands,
+                (LevelToast(1.6),),
+                &loc.level(txt::LEVEL_TOAST, level.0 + 1),
+            );
+        }
+        ui.prev_level = level.0;
+    }
+
+    let stuck = balls.iter().next().map(|b| b.stuck).unwrap_or(true);
+    let want = match status.phase {
+        Phase::Won => ScreenKind::Win,
+        Phase::Lost => ScreenKind::Lose,
+        Phase::Playing if stuck => ScreenKind::Launch,
+        Phase::Playing => ScreenKind::None,
+    };
+    if want == ui.kind {
+        return;
+    }
+    ui.kind = want;
+    for e in &roots {
+        commands.entity(e).despawn();
+    }
+    match want {
+        ScreenKind::None => {}
+        ScreenKind::Launch => {
+            spawn_pill(&mut commands, (ScreenRoot,), &loc.get(txt::START_PROMPT));
+        }
+        ScreenKind::Win => spawn_end(
+            &mut commands,
+            true,
+            &loc.get(txt::WIN_TITLE),
+            &loc.get(txt::WIN_BODY),
+            &loc.get(txt::KEEP_PLAYING),
+        ),
+        ScreenKind::Lose => spawn_end(
+            &mut commands,
+            false,
+            &loc.get(txt::LOSE_TITLE),
+            &loc.get(txt::LOSE_BODY),
+            &loc.get(txt::TRY_AGAIN),
+        ),
+    }
+}
+
+/// Tick + despawn the transient level toast.
+fn update_toast(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut toasts: Query<(Entity, &mut LevelToast)>,
+) {
+    let dt = time.delta_secs();
+    for (e, mut t) in &mut toasts {
+        t.0 -= dt;
+        if t.0 <= 0.0 {
+            commands.entity(e).despawn();
+        }
+    }
+}
+
+/// Button hover/press feedback + record a restart request on press.
+fn button_system(
+    mut buttons: Query<
+        (&Interaction, &ScreenButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut restart: ResMut<RestartReq>,
+) {
+    for (interaction, kind, mut bg) in &mut buttons {
+        match interaction {
+            Interaction::Pressed => {
+                *bg = BackgroundColor(BTN_BG);
+                restart.0 = Some(*kind);
+            }
+            Interaction::Hovered => *bg = BackgroundColor(BTN_BG_HOVER),
+            Interaction::None => *bg = BackgroundColor(BTN_BG),
+        }
+    }
+}
+
+/// Consume a restart request: reset the round in place + clear live-only state.
+fn apply_restart(world: &mut World) {
+    let req = world.resource_mut::<RestartReq>().0.take();
+    if req.is_none() {
+        return;
+    }
+    reset_sim(world);
+    *world.resource_mut::<Recorder>() = Recorder::default();
+    *world.resource_mut::<Accum>() = Accum::default();
+    *world.resource_mut::<LaunchLatch>() = LaunchLatch::default();
+    let fx: Vec<Entity> = world
+        .query_filtered::<Entity, Or<(With<Particle>, With<Debris>)>>()
+        .iter(world)
+        .collect();
+    for e in fx {
+        world.entity_mut(e).despawn();
+    }
 }
 
 /// Retro skin: a completely FLAT, top-down read of the same arena the 3D skin
@@ -444,6 +881,7 @@ fn setup_scene(
     // any aspect, so the retro skin is responsive like the 3D one.
     commands.spawn((
         Camera2d,
+        IsDefaultUiCamera, // HUD + screens render over this camera
         Msaa::Off,
         Projection::Orthographic(OrthographicProjection {
             scaling_mode: ScalingMode::AutoMin { min_width: aw + 36.0, min_height: ah + 36.0 },
@@ -598,6 +1036,7 @@ fn setup_3d(
     // so it stays framed + responsive as the iframe resizes.
     commands.spawn((
         Camera3d::default(),
+        IsDefaultUiCamera, // HUD + screens render over this camera (order 0, above the backdrop)
         // Draw on top of the order -1 star camera without erasing it.
         Camera { order: 0, clear_color: ClearColorConfig::None, ..default() },
         Hdr,
@@ -605,7 +1044,8 @@ fn setup_3d(
         Bloom::NATURAL,
         Msaa::Off,
         AmbientLight { brightness: 75.0, ..default() },
-        Projection::Perspective(PerspectiveProjection { fov: CAM_FOV, ..default() }),
+        // far plane pushed out so the distant star backdrop quad isn't clipped.
+        Projection::Perspective(PerspectiveProjection { fov: CAM_FOV, far: 20000.0, ..default() }),
         Transform::from_translation(cam_target(ah) + cam_dir() * ah * 3.0).looking_at(cam_target(ah), Vec3::Y),
     ));
     // Angled key light for face shading. Real-time shadows OFF: the star dome would
@@ -645,11 +1085,24 @@ fn setup_3d(
         }),
     });
 
-    commands.spawn((Camera2d, Camera { order: -1, ..default() }));
+    // Starfield: a large unlit quad placed FAR behind the arena inside the 3D scene,
+    // billboarded to face the camera (frame_star_3d). Rendering it in the Camera3d's
+    // own scene (instead of a separate order -1 2D camera) keeps it behind the arena
+    // AND survives the bevy_ui render pass, which broke the prior 2-camera composite.
+    let stars = images.add(make_stars(0x51A4));
+    let star_pos = cam_target(ah) - cam_dir() * 3000.0;
     commands.spawn((
-        star_sprite(images.add(make_stars(0x51A4)), 2048.0),
-        Transform::from_xyz(0.0, 0.0, -10.0),
-        StarBg, // fit_star_bg resizes this to the viewport (this camera is pixel-space)
+        Mesh3d(meshes.add(Rectangle::new(8000.0, 8000.0))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::WHITE,
+            base_color_texture: Some(stars),
+            unlit: true,
+            cull_mode: None,
+            uv_transform: Affine2::from_scale(Vec2::splat(5.0)),
+            ..default()
+        })),
+        Transform::from_translation(star_pos).looking_to(-cam_dir(), Vec3::Y),
+        StarBg3d,
     ));
 
     // Fake floor shadows (reliable on any GPU, unlike the real-time shadow pass):
@@ -762,7 +1215,7 @@ fn spawn_floor_shadow(commands: &mut Commands, art: &ShadowArt, which: FloorShad
 }
 
 /// Keep the ball/paddle floor shadows under their objects (they don't move with the
-/// objects automatically since they aren't children — the paddle is rotated).
+/// objects automatically since they aren't children (the paddle is rotated).
 fn sync_floor_shadows(
     cfg: Res<Cfg>,
     balls: Query<&Pos, With<Ball>>,
@@ -1004,6 +1457,7 @@ fn drive(world: &mut World) {
     if st.phase != Phase::Playing && !world.resource::<Recorder>().finished {
         world.resource_mut::<Recorder>().finished = true;
         emit_sfx(if st.phase == Phase::Won { "win" } else { "lose" });
+        dispatch_announce(if st.phase == Phase::Won { "verified" } else { "roundOver" }, 0);
         let bytes = world.resource::<Recorder>().bytes.clone();
         dispatch_finish(st.phase == Phase::Won, &bytes);
     }
@@ -1012,6 +1466,7 @@ fn drive(world: &mut World) {
 fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
     if !a.stuck && b.stuck {
         emit_sfx("launch");
+        dispatch_announce("launch", 0);
     }
     if a.bricks < b.bricks {
         emit_sfx("break");
@@ -1024,9 +1479,11 @@ fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
     }
     if a.level > b.level {
         emit_sfx("level");
+        dispatch_announce("level", a.level + 1);
     }
     if a.lives < b.lives {
         emit_sfx("lose");
+        dispatch_announce("lifeLost", a.lives);
     }
     if !a.stuck && b.vy > 0 && a.vy < 0 {
         emit_sfx("bounce");
@@ -1095,14 +1552,15 @@ fn update_debris_3d(
     }
 }
 
-/// Keep the flat 2D star backdrop covering the viewport as the iframe resizes.
-fn fit_star_bg(
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut q: Query<&mut Sprite, With<StarBg>>,
-) {
-    let Ok(win) = windows.single() else { return };
-    for mut sp in &mut q {
-        sp.custom_size = Some(Vec2::new(win.width(), win.height()));
+/// Keep the 3D star quad far behind the arena, billboarded to face the camera so it
+/// reads as a flat starfield no matter the camera distance / aspect.
+fn frame_star_3d(cfg: Res<Cfg>, mut q: Query<&mut Transform, With<StarBg3d>>) {
+    let c = cfg.0;
+    let ah = c.arena_h as f32 * SCALE;
+    let dir = cam_dir();
+    let pos = cam_target(ah) - dir * 3000.0;
+    for mut t in &mut q {
+        *t = Transform::from_translation(pos).looking_to(-dir, Vec3::Y);
     }
 }
 
@@ -1114,6 +1572,22 @@ fn emit_sfx(name: &str) {
     init.set_detail(&detail);
     init.set_bubbles(false);
     if let Ok(ev) = web_sys::CustomEvent::new_with_event_init_dict("wallsmash:sfx", &init) {
+        let _ = window.dispatch_event(&ev);
+    }
+}
+
+/// Screen-reader bridge: tell game.ts a semantic transition happened (`kind`) with
+/// an optional number (`n` = level or lives). game.ts localizes it + speaks it via
+/// the hidden aria-live region. The Bevy canvas itself is opaque to screen readers.
+fn dispatch_announce(kind: &str, n: u32) {
+    let Some(window) = web_sys::window() else { return };
+    let detail = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("kind"), &JsValue::from_str(kind));
+    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("n"), &JsValue::from_f64(n as f64));
+    let init = web_sys::CustomEventInit::new();
+    init.set_detail(&detail);
+    init.set_bubbles(false);
+    if let Ok(ev) = web_sys::CustomEvent::new_with_event_init_dict("wallsmash:announce", &init) {
         let _ = window.dispatch_event(&ev);
     }
 }

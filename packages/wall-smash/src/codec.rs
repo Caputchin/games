@@ -1,7 +1,7 @@
 //! Trace wire format, shared by the live recorder (`live.rs`) and the headless
 //! replay (`headless.rs`). Both ends call THESE functions, so the encoder and
-//! decoder cannot drift apart — there is no second hand-rolled copy of the layout
-//! to fall out of sync. The TS test fixture (`trace.ts`) mirrors this format and is
+//! decoder cannot drift apart (there is no second hand-rolled copy of the layout
+//! to fall out of sync). The TS test fixture (`trace.ts`) mirrors this format and is
 //! pinned to it by the vitest replay test (it feeds TS-encoded bytes to this very
 //! decoder); the round-trip + byte-layout tests below pin the format itself.
 //!

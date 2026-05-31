@@ -23,6 +23,10 @@ bevy = { version = "0.18.1", default-features = false, optional = true, features
     "bevy_pbr",           # 3D skin: PBR materials + shadows (real GPU only)
     "bevy_light",         # 3D skin: directional / point lights
     "bevy_post_process",  # 3D skin: bloom
+    "bevy_ui",            # in-engine HUD + screens (Node/Button layout)
+    "bevy_ui_render",     # render the UI over the gameplay camera
+    "bevy_text",          # Text/TextFont/TextColor for HUD + screens
+    "default_font",       # embedded FiraMono so text renders before the subset font lands
     "bevy_window",
     "webgl2",
 ] }

@@ -20,5 +20,11 @@ declare module '../build/bindgen/wall_smash.js' {
   export default function init(opts?: {
     module_or_path: BufferSource | WebAssembly.Module;
   }): Promise<unknown>;
-  export function start(seed: number[], cfg: number[], style: number, palette: number[]): void;
+  export function start(
+    seed: number[],
+    cfg: number[],
+    style: number,
+    palette: number[],
+    locale: string[],
+  ): void;
 }

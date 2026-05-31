@@ -1,5 +1,6 @@
 {
   "schema": {
+    "style": { "type": "list", "values": ["2d", "3d"], "name": "Look", "description": "2d = flat top-down retro board; 3d = lit modern arena (needs a GPU; falls back to 2d on software-only WebGL)." },
     "background": { "type": "color", "name": "Background", "description": "Arena backdrop tint (behind the starfield)." },
     "brick": { "type": "color", "name": "Brick", "description": "Recolor the whole wall to one hue (shaded per row). Omit to keep the default multi-color arcade wall." },
     "ball": { "type": "color", "name": "Ball", "description": "Ball color." },
@@ -10,6 +11,7 @@
     "retro": {
       "_theme": "any",
       "_default": true,
+      "style": "2d",
       "background": "#0b0b12",
       "ball": "#e6f2ff",
       "paddle": "#e6292e",
@@ -17,6 +19,7 @@
     },
     "modern": {
       "_theme": "any",
+      "style": "3d",
       "background": "#06000f",
       "ball": "#ffffff",
       "paddle": "#e6292e",

@@ -62,7 +62,7 @@ pub struct SimConfig {
     pub paddle_speed: i32, // subunits / tick
     pub ball_r: i32,
     pub ball_speed: i32, // subunits / tick (vector magnitude)
-    pub num_levels: u32, // walls to clear (in order) to win; capped to LEVELS.len()
+    pub num_levels: u32, // walls to clear (in order) to win; capped to LEVEL_ROWS.len()
     pub brick_gap: i32, // units between bricks
     pub top_margin: i32,
     pub lives: u32,
@@ -193,15 +193,11 @@ enum Pattern {
     Diamond,
 }
 
-/// Level table: (cols, rows, pattern). Ordered easy -> hard; `num_levels` plays
-/// the first N. Deterministic (no RNG), so live + replay build identical walls.
-const LEVELS: [(i32, i32, Pattern); 5] = [
-    (4, 2, Pattern::Full),     // 8 big bricks - very quick
-    (5, 2, Pattern::Checker),  // ~5
-    (5, 3, Pattern::Pyramid),  // ~
-    (6, 3, Pattern::Diamond),  // ~
-    (6, 4, Pattern::Checker),  // ~
-];
+/// Rows per level: `num_levels` plays the first N, and the row count paces difficulty
+/// (early levels stay short for a fast captcha). The column count + pattern are SEEDED
+/// per session in `level_brick_layout` so the wall varies between seeds while staying
+/// deterministic given the seed (live + replay build the identical wall).
+const LEVEL_ROWS: [i32; 5] = [2, 2, 3, 3, 4];
 
 fn brick_present(pat: Pattern, col: i32, row: i32, cols: i32, rows: i32) -> bool {
     match pat {
@@ -214,9 +210,47 @@ fn brick_present(pat: Pattern, col: i32, row: i32, cols: i32, rows: i32) -> bool
     }
 }
 
-/// The brick (center, half-extent) list for a given level. Pure + deterministic.
-fn level_brick_layout(cfg: &SimConfig, level: u32) -> Vec<(Pos, Half)> {
-    let (cols, rows, pat) = LEVELS[(level as usize).min(LEVELS.len() - 1)];
+const PATTERNS: [Pattern; 4] =
+    [Pattern::Full, Pattern::Checker, Pattern::Pyramid, Pattern::Diamond];
+
+/// Layout PRNG seed, derived from the server seed but kept SEPARATE from the launch
+/// PRNG stream. Seeding the wall means every session's starting board differs, so an
+/// attacker can't pre-plan against a fixed layout (defense in depth on top of the
+/// seed-bound launch). Live + replay derive it from the same seed, so they still
+/// build the identical wall.
+pub fn layout_seed_of(seed: [u32; 4]) -> u32 {
+    let s = seed[0].rotate_left(5) ^ seed[1].rotate_left(17) ^ seed[2] ^ seed[3].rotate_left(27);
+    if s == 0 {
+        0x85eb_ca6b
+    } else {
+        s
+    }
+}
+
+fn brick_count(pat: Pattern, cols: i32, rows: i32) -> usize {
+    (0..rows)
+        .flat_map(|row| (0..cols).map(move |col| (col, row)))
+        .filter(|&(col, row)| brick_present(pat, col, row, cols, rows))
+        .count()
+}
+
+/// The brick (center, half-extent) list for a level. SEEDED per session: `lseed`
+/// picks the column count (4..=6) + the pattern, so the wall differs between seeds;
+/// the row count stays paced by LEVEL_ROWS so early levels stay short (a fast
+/// captcha). Pure + deterministic given (cfg, level, lseed) -> live + replay agree.
+fn level_brick_layout(cfg: &SimConfig, level: u32, lseed: u32) -> Vec<(Pos, Half)> {
+    let rows = LEVEL_ROWS[(level as usize).min(LEVEL_ROWS.len() - 1)];
+    // Per-level seeded value (decorrelated across levels so each wall varies).
+    let r = (lseed ^ level.wrapping_mul(0x9e37_79b9))
+        .wrapping_mul(2654_435761)
+        .rotate_left(level % 29 + 1);
+    let cols = 4 + (r % 3) as i32; // 4..=6
+    let mut pat = PATTERNS[((r >> 7) % 4) as usize];
+    // Never a near-empty wall: a too-sparse seeded pattern falls back to a Full wall,
+    // so the round is always solvable regardless of seed.
+    if brick_count(pat, cols, rows) < 3 {
+        pat = Pattern::Full;
+    }
     let usable_w = cfg.arena_w - (cols + 1) * cfg.brick_gap;
     let bw = usable_w / cols;
     let bh = 8;
@@ -236,7 +270,7 @@ fn level_brick_layout(cfg: &SimConfig, level: u32) -> Vec<(Pos, Half)> {
 
 /// Effective number of levels (config request clamped to the table).
 pub fn level_count(cfg: &SimConfig) -> u32 {
-    cfg.num_levels.clamp(1, LEVELS.len() as u32)
+    cfg.num_levels.clamp(1, LEVEL_ROWS.len() as u32)
 }
 
 /// Build a fresh sim `World` with all entities + resources. Pure; no clock/IO.
@@ -246,13 +280,29 @@ pub fn build_world(cfg: SimConfig, seed: [u32; 4]) -> World {
     world
 }
 
+/// The original server seed, kept so the live build can restart a round under the
+/// SAME seed (a retry replays identically). Headless never restarts.
+#[derive(Resource, Clone, Copy)]
+pub struct SimSeed(pub [u32; 4]);
+
+/// Mix the 4-word seed into the PRNG seed. Both spawn + restart use this so a retry
+/// re-runs the identical seeded launch stream.
+fn mix_seed(seed: [u32; 4]) -> u32 {
+    let s = seed[0] ^ seed[1].rotate_left(11) ^ seed[2].rotate_left(19) ^ seed[3];
+    if s == 0 {
+        0x9e3779b9
+    } else {
+        s
+    }
+}
+
 /// Spawn the sim entities + resources into an existing `World`. The live build
 /// calls this on the Bevy `App`'s world so render entities live alongside the
 /// sim; the headless build calls it on a fresh world. Same entities both ends.
 pub fn spawn_sim(world: &mut World, cfg: SimConfig, seed: [u32; 4]) {
-    let seed0 = seed[0] ^ seed[1].rotate_left(11) ^ seed[2].rotate_left(19) ^ seed[3];
-    let seed0 = if seed0 == 0 { 0x9e3779b9 } else { seed0 };
+    let seed0 = mix_seed(seed);
     world.insert_resource(Cfg(cfg));
+    world.insert_resource(SimSeed(seed));
     world.insert_resource(Rng(seed0));
 
     // paddle
@@ -268,12 +318,64 @@ pub fn spawn_sim(world: &mut World, cfg: SimConfig, seed: [u32; 4]) {
         Pos { x: px, y: paddle_y(&cfg) - (cfg.paddle_h * FP / 2) - cfg.ball_r * FP },
         Half { hx: cfg.ball_r * FP, hy: cfg.ball_r * FP },
     ));
-    // level 0 brick wall
-    let layout = level_brick_layout(&cfg, 0);
+    // level 0 brick wall (seeded layout)
+    let layout = level_brick_layout(&cfg, 0, layout_seed_of(seed));
     let bricks_left = layout.len() as u32;
     for (pos, half) in layout {
         world.spawn((Brick, pos, half));
     }
+    world.insert_resource(Level(0));
+    world.insert_resource(Status {
+        phase: Phase::Playing,
+        score: 0,
+        tick: 0,
+        lives: cfg.lives,
+        bricks_left,
+    });
+    world.insert_resource(PendingInput::default());
+}
+
+/// Restart the round IN PLACE (live-only; the headless replay never calls this).
+/// Keeps the paddle + ball entities (so their render visuals persist) and resets
+/// their state; despawns + re-spawns the level-0 bricks (the brick-skinning system
+/// re-skins fresh bricks); re-seeds the PRNG to the ORIGINAL seed so a retry plays
+/// under the same seeded launch. Resets the sim resources.
+pub fn reset_sim(world: &mut World) {
+    let cfg = world.resource::<Cfg>().0;
+    let seed = world.resource::<SimSeed>().0;
+    let seed0 = mix_seed(seed);
+    let px = cfg.arena_w * FP / 2;
+
+    let bricks: Vec<Entity> = world
+        .query_filtered::<Entity, With<Brick>>()
+        .iter(world)
+        .collect();
+    for e in bricks {
+        world.entity_mut(e).despawn();
+    }
+    {
+        let mut q = world.query_filtered::<&mut Pos, With<Paddle>>();
+        for mut p in q.iter_mut(world) {
+            p.x = px;
+            p.y = paddle_y(&cfg);
+        }
+    }
+    {
+        let mut q = world.query::<(&mut Ball, &mut Pos)>();
+        for (mut ball, mut pos) in q.iter_mut(world) {
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.stuck = true;
+            pos.x = px;
+            pos.y = paddle_y(&cfg) - (cfg.paddle_h * FP / 2) - cfg.ball_r * FP;
+        }
+    }
+    let layout = level_brick_layout(&cfg, 0, layout_seed_of(seed));
+    let bricks_left = layout.len() as u32;
+    for (pos, half) in layout {
+        world.spawn((Brick, pos, half));
+    }
+    world.insert_resource(Rng(seed0));
     world.insert_resource(Level(0));
     world.insert_resource(Status {
         phase: Phase::Playing,
@@ -428,6 +530,7 @@ fn sys_bricks(
 fn sys_advance_level(
     mut commands: Commands,
     cfg: Res<Cfg>,
+    seed: Res<SimSeed>,
     mut level: ResMut<Level>,
     mut status: ResMut<Status>,
     mut balls: Query<(&mut Ball, &mut Pos)>,
@@ -440,7 +543,7 @@ fn sys_advance_level(
         return; // last level cleared -> sys_state marks Won
     }
     level.0 += 1;
-    let layout = level_brick_layout(&c, level.0);
+    let layout = level_brick_layout(&c, level.0, layout_seed_of(seed.0));
     status.bricks_left = layout.len() as u32;
     for (pos, half) in layout {
         commands.spawn((Brick, pos, half));
@@ -580,5 +683,64 @@ mod tests {
             s.score,
             s.phase
         );
+    }
+
+    #[test]
+    fn seed_varies_the_starting_wall() {
+        // The starting wall MUST vary by seed (no fixed board to pre-plan against)
+        // AND be deterministic for a given seed (live + replay build the same wall).
+        let wall = |seed: [u32; 4]| {
+            let mut sim = Sim::new(SimConfig::default(), seed);
+            let mut q = sim.world.query_filtered::<&Pos, With<Brick>>();
+            let mut v: Vec<(i32, i32)> = q.iter(&sim.world).map(|p| (p.x, p.y)).collect();
+            v.sort();
+            v
+        };
+        // determinism: same seed -> identical wall (replay safety)
+        assert_eq!(wall([5, 6, 7, 8]), wall([5, 6, 7, 8]));
+        // variety + always-solvable across many seeds
+        let mut distinct = std::collections::HashSet::new();
+        for s in 0..24u32 {
+            let w = wall([s.wrapping_mul(2654435761), s + 1, s + 9, s + 17]);
+            assert!(w.len() >= 3, "seed {} gave a near-empty wall ({})", s, w.len());
+            distinct.insert(w);
+        }
+        assert!(distinct.len() > 4, "expected varied starting walls, got {}", distinct.len());
+    }
+
+    #[test]
+    fn reset_restores_a_fresh_round() {
+        let cfg = SimConfig::default();
+        let mut sim = Sim::new(cfg, [9, 9, 9, 9]);
+        // play a while so score/tick/level/bricks all diverge from a fresh round
+        for _ in 0..400 {
+            let (bx, stuck, px) = read(&mut sim);
+            sim.tick((bx - px).signum(), stuck);
+            if sim.status().phase != Phase::Playing {
+                break;
+            }
+        }
+        assert!(sim.status().tick > 0);
+
+        reset_sim(&mut sim.world);
+        let st = sim.status();
+        assert_eq!(st.tick, 0, "tick reset");
+        assert_eq!(st.score, 0, "score reset");
+        assert_eq!(st.lives, cfg.lives, "lives restored");
+        assert_eq!(st.phase, Phase::Playing, "playing again");
+        assert!(st.bricks_left > 0, "level-0 wall respawned");
+        assert_eq!(sim.world.resource::<Level>().0, 0, "back to level 0");
+
+        // a reset round replays identically to a fresh game under the same seed
+        let fresh = drive([9, 9, 9, 9], 400);
+        for _ in 0..400 {
+            let (bx, stuck, px) = read(&mut sim);
+            sim.tick((bx - px).signum(), stuck);
+            if sim.status().phase != Phase::Playing {
+                break;
+            }
+        }
+        assert_eq!(sim.status().score, fresh.score, "reset == fresh under same seed");
+        assert_eq!(sim.status().tick, fresh.tick);
     }
 }
