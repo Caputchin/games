@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-phobos",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Clear the demons to prove you're human. A real DOOM-engine captcha. A Caputchin first-party game.",
   "keywords": [
     "caputchin",

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.0](https://github.com/Caputchin/games/compare/dino-runner-v0.3.0...dino-runner-v0.4.0) (2026-06-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **games:** migrate register() calls to the manifest-less signature
+
+### Features
+
+* **dino-runner:** server-validated replay re-author (headless run + live driver) ([6cf6358](https://github.com/Caputchin/games/commit/6cf635844a48c0b973adfaa728918790431862d8))
+* **games:** set preferred.layout inline for leaf-memory and dino-runner ([48d7370](https://github.com/Caputchin/games/commit/48d73707c5e2365adeb9a17b2dc5a67e40c22def))
+
+
+### Bug Fixes
+
+* **games:** read split .caputchin presets directly in config + tests for 5 games ([fb375bf](https://github.com/Caputchin/games/commit/fb375bf11e2dcd919ee16d959ac16edbe6b95afd))
+* **games:** self-contained replay engines; live honors dashboard config ([8c2176b](https://github.com/Caputchin/games/commit/8c2176b5e37545aace861bad6eae5f158b90a721))
+* **games:** widen skin helper param types for ResolvedSkin scalar values ([b847870](https://github.com/Caputchin/games/commit/b8478700e027a534163e2d6ce27c497455e507b9))
+
+
+### Code Refactoring
+
+* **games:** migrate register() calls to the manifest-less signature ([a527b11](https://github.com/Caputchin/games/commit/a527b11930315d8de9b958a559e7d3a12a112310))
+
 ## [0.3.0](https://github.com/Caputchin/games/compare/dino-runner-v0.2.0...dino-runner-v0.3.0) (2026-05-25)
 
 
