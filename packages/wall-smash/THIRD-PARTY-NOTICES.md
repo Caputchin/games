@@ -11,6 +11,10 @@ dependency tree, and the **wasm-bindgen** / **web-sys** / **js-sys** glue. These
 are dual-licensed **MIT OR Apache-2.0**. The headless replay build uses
 **bevy_ecs** under the same terms.
 
+The live bundle also embeds **fflate** (https://github.com/101arrowz/fflate),
+licensed **MIT**, used only as a fallback to gunzip the inlined wasm on browsers
+without the native `DecompressionStream` API.
+
 ## On-screen UI font (Noto Sans)
 
 `assets/ui-font.subset.ttf` is a subset, merged from the Noto Sans family, carrying

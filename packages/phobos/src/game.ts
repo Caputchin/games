@@ -9,13 +9,7 @@ import liveWasmB64 from './generated/phobos-live-wasm.js';
 import { STAGE_WIDTH, STAGE_HEIGHT, mountStyles } from './styles.js';
 import { DOOM_KEYS, mapKey } from './input.js';
 import { resolvePhobosConfig, effectiveMaxTics } from './config.js';
-
-function b64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
-  return out;
-}
+import { inflateWasm } from './wasm-inline.js';
 
 interface Bridge {
   pass(result: { trace: string }): void;
@@ -380,7 +374,18 @@ export function runPhobos({ container, bridge, ctx }: {
   (root.querySelector('.phobos-replay') as HTMLButtonElement)
     .addEventListener('click', () => startLevel(level));
 
-  const wasmBytes = b64ToBytes(liveWasmB64);
+  // Surface a load failure identically whether it comes from inflate/instantiate
+  // (inside the instantiateWasm hook) or from the engine Module promise. The hook
+  // returns {} synchronously, so a rejected inflate/instantiate would leave
+  // `success` uncalled -> the Module promise never resolves -> the outer .catch
+  // never runs -> silent hang (start button stuck disabled). The inner chain MUST
+  // carry its own .catch; both paths share this recovery.
+  const failLoad = (e: unknown) => {
+    if (disposed) return;
+    startBtn.textContent = t(locale, 'loadError', 'Failed to load');
+    bridge.error({ code: 'engine-load', message: e instanceof Error ? e.message : 'failed to load' });
+  };
+
   createPhobosLive({
     // Silence the DOOM engine's printf startup banner (Z_Init / W_Init / ...);
     // it would otherwise flood the host page's console.
@@ -390,11 +395,16 @@ export function runPhobos({ container, bridge, ctx }: {
       imports: WebAssembly.Imports,
       success: (inst: WebAssembly.Instance, mod: WebAssembly.Module) => void,
     ) {
-      // Runtime instantiation from bytes is allowed in the live iframe.
-      WebAssembly.instantiate(wasmBytes, imports).then((r) => {
-        const src = r as unknown as WebAssembly.WebAssemblyInstantiatedSource;
-        success(src.instance, src.module);
-      });
+      // Runtime instantiation from bytes is allowed in the live iframe. gunzip
+      // the inlined wasm first (async), then instantiate; emscripten's hook
+      // accepts a deferred success callback, so returning {} here is correct.
+      inflateWasm(liveWasmB64)
+        .then((wasmBytes) => WebAssembly.instantiate(wasmBytes, imports))
+        .then((r) => {
+          const src = r as unknown as WebAssembly.WebAssemblyInstantiatedSource;
+          success(src.instance, src.module);
+        })
+        .catch(failLoad);
       return {};
     },
   }).then((M: Live) => {
@@ -403,10 +413,7 @@ export function runPhobos({ container, bridge, ctx }: {
     blit(); // show the booted arena behind the start overlay
     startBtn.disabled = false; // engine ready: enable the round
     startBtn.textContent = startLabel;
-  }).catch((e: unknown) => {
-    startBtn.textContent = t(locale, 'loadError', 'Failed to load');
-    bridge.error({ code: 'engine-load', message: e instanceof Error ? e.message : 'failed to load' });
-  });
+  }).catch(failLoad);
 
   return () => {
     disposed = true; running = false;

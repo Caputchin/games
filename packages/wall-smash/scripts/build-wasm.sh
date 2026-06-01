@@ -53,7 +53,10 @@ if [ "${WS_HEADLESS_ONLY:-0}" != "1" ]; then
   cargo build --profile "$PROFILE" --target "$T" --features render
   wasm-bindgen --target web --no-typescript --out-dir build/bindgen "target/$T/$PROFILE_DIR/wall_smash.wasm"
   opt_or_copy build/bindgen/wall_smash_bg.wasm build/bindgen/wall_smash_opt.wasm
-  # Inline the live wasm as one base64 string the IIFE decodes + instantiates.
-  printf 'export default "%s";\n' "$(base64 -w0 build/bindgen/wall_smash_opt.wasm)" > src/generated/live-wasm.ts
-  echo "[wall-smash] live $(du -h build/bindgen/wall_smash_opt.wasm | cut -f1) (+b64)"
+  # Inline the live wasm as one gzip+base64 string the IIFE gunzips + instantiates.
+  # gzip (-n: no name/mtime, deterministic) roughly halves the inlined size so the
+  # live entry stays under the marketplace bundle gate; game.ts gunzips at runtime
+  # (DecompressionStream, fflate fallback) before wasm-bindgen `init`.
+  printf 'export default "%s";\n' "$(gzip -9 -n -c build/bindgen/wall_smash_opt.wasm | base64 -w0)" > src/generated/live-wasm.ts
+  echo "[wall-smash] live $(du -h build/bindgen/wall_smash_opt.wasm | cut -f1) (+gz+b64)"
 fi

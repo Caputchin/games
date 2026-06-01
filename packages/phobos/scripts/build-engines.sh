@@ -51,12 +51,14 @@ if [ "${PH_HEADLESS_ONLY:-0}" != "1" ]; then
     -sEXPORTED_FUNCTIONS='["_main","_phobos_start","_phobos_frame","_phobos_key","_phobos_fb","_phobos_width","_phobos_height","_phobos_killcount","_phobos_tracelen","_phobos_traceptr","_phobos_leveltime","_phobos_player_dead","_phobos_audio_pull","_phobos_audio_resume","_phobos_set_mute","_malloc","_free"]' \
     -sEXPORTED_RUNTIME_METHODS='["ccall","HEAPU8","HEAPU32","HEAPF32"]' \
     -o "$OUT/phobos-live.js"
-  # Codegen a clean base64 string of the live wasm (engine + WAD) so the live IIFE
+  # Codegen a gzip+base64 string of the live wasm (engine + WAD) so the live IIFE
   # inlines it as ONE tidy string. (emscripten SINGLE_FILE + esbuild minify mangles
-  # the binary into ~717k \xNN escapes, ~1.6x bloat.) game.ts decodes + instantiates;
-  # runtime WebAssembly.instantiate(bytes) is allowed in the live iframe (only the
-  # replay isolate forbids it).
+  # the binary into ~717k \xNN escapes, ~1.6x bloat.) gzip (-n: no name/mtime, so
+  # the output is deterministic) roughly halves the inlined size, keeping the live
+  # entry under the marketplace bundle gate; game.ts gunzips at runtime
+  # (DecompressionStream, fflate fallback) before WebAssembly.instantiate, which is
+  # allowed in the live iframe (only the replay isolate forbids it).
   mkdir -p src/generated
-  printf 'export default "%s";\n' "$(base64 -w0 "$OUT/phobos-live.wasm")" > src/generated/phobos-live-wasm.ts
-  echo "[live] done -> $OUT/phobos-live.wasm ($(du -h "$OUT/phobos-live.wasm" | cut -f1)) + b64"
+  printf 'export default "%s";\n' "$(gzip -9 -n -c "$OUT/phobos-live.wasm" | base64 -w0)" > src/generated/phobos-live-wasm.ts
+  echo "[live] done -> $OUT/phobos-live.wasm ($(du -h "$OUT/phobos-live.wasm" | cut -f1)) + gz+b64"
 fi

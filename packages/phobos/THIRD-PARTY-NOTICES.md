@@ -26,6 +26,13 @@ under the same GPL-2.0 terms.
 A copy of the GNU General Public License version 2 is available at
 <https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt>.
 
+## JavaScript libraries
+
+The live bundle embeds **fflate** (https://github.com/101arrowz/fflate),
+licensed **MIT**, used only as a fallback to gunzip the inlined engine wasm on
+browsers without the native `DecompressionStream` API. MIT is compatible with
+the package's GPL-2.0-only terms.
+
 ## Game data (Freedoom), BSD-3-Clause
 
 The bundled `phobos.wad` is assembled from assets of the
