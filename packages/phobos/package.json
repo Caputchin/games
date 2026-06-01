@@ -31,13 +31,16 @@
   ],
   "scripts": {
     "build:engines": "bash scripts/build-engines.sh",
-    "prebuild": "[ -f src/generated/phobos-live-wasm.ts ] || pnpm build:engines",
-    "build": "tsup",
-    "predev": "[ -f src/generated/phobos-live-wasm.ts ] || pnpm build:engines",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "build:engines:headless": "PH_HEADLESS_ONLY=1 bash scripts/build-engines.sh",
+    "build:engines:live": "PH_LIVE_ONLY=1 bash scripts/build-engines.sh",
+    "pretest": "[ -f build/phobos-headless.wasm ] || pnpm build:engines:headless",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prebuild": "{ [ -f build/phobos-headless.wasm ] || pnpm build:engines:headless; } && { [ -f src/generated/phobos-live-wasm.ts ] || pnpm build:engines:live; }",
+    "build": "tsup",
+    "predev": "{ [ -f build/phobos-headless.wasm ] || pnpm build:engines:headless; } && { [ -f src/generated/phobos-live-wasm.ts ] || pnpm build:engines:live; }",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@caputchin/game-sdk": "^2.1.0",

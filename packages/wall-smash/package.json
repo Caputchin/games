@@ -32,13 +32,16 @@
   ],
   "scripts": {
     "build:wasm": "bash scripts/build-wasm.sh",
-    "prebuild": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "build:wasm:headless": "WS_HEADLESS_ONLY=1 bash scripts/build-wasm.sh",
+    "build:wasm:live": "WS_LIVE_ONLY=1 bash scripts/build-wasm.sh",
+    "pretest": "[ -f build/wall-smash-headless.wasm ] || pnpm build:wasm:headless",
+    "test": "cargo test && vitest run",
+    "test:watch": "vitest",
+    "prebuild": "{ [ -f build/wall-smash-headless.wasm ] || pnpm build:wasm:headless; } && { [ -f src/generated/live-wasm.ts ] || pnpm build:wasm:live; }",
     "build": "tsup",
-    "predev": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "predev": "{ [ -f build/wall-smash-headless.wasm ] || pnpm build:wasm:headless; } && { [ -f src/generated/live-wasm.ts ] || pnpm build:wasm:live; }",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@caputchin/game-sdk": "^2.1.0",

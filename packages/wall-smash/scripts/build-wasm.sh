@@ -10,9 +10,12 @@
 # binary with WASM_OPT=/path/to/wasm-opt.
 #
 # Iteration knobs (local only; CI always does a full release build):
-#   WS_FAST=1       use the `fastdev` cargo profile + skip wasm-opt (much faster
-#                   link + no size pass; bundle is bigger but fine for testing).
-#   WS_LIVE_ONLY=1  skip the headless build (use when only live.rs changed).
+#   WS_FAST=1          use the `fastdev` cargo profile + skip wasm-opt (much faster
+#                      link + no size pass; bundle is bigger but fine for testing).
+#   WS_LIVE_ONLY=1     skip the headless build (use when only live.rs changed).
+#   WS_HEADLESS_ONLY=1 skip the live render build. The headless replay artifact
+#                      (build/wall-smash-headless.wasm) is all the tests need, so
+#                      `pretest` uses this to avoid the expensive Bevy compile.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck disable=SC1090
@@ -45,11 +48,12 @@ if [ "${WS_LIVE_ONLY:-0}" != "1" ]; then
   opt_or_copy "target/$T/$PROFILE_DIR/wall_smash.wasm" build/wall-smash-headless.wasm
 fi
 
-echo "[wall-smash] live render build..."
-cargo build --profile "$PROFILE" --target "$T" --features render
-wasm-bindgen --target web --no-typescript --out-dir build/bindgen "target/$T/$PROFILE_DIR/wall_smash.wasm"
-opt_or_copy build/bindgen/wall_smash_bg.wasm build/bindgen/wall_smash_opt.wasm
-# Inline the live wasm as one base64 string the IIFE decodes + instantiates.
-printf 'export default "%s";\n' "$(base64 -w0 build/bindgen/wall_smash_opt.wasm)" > src/generated/live-wasm.ts
-
-echo "[wall-smash] live $(du -h build/bindgen/wall_smash_opt.wasm | cut -f1) (+b64)"
+if [ "${WS_HEADLESS_ONLY:-0}" != "1" ]; then
+  echo "[wall-smash] live render build..."
+  cargo build --profile "$PROFILE" --target "$T" --features render
+  wasm-bindgen --target web --no-typescript --out-dir build/bindgen "target/$T/$PROFILE_DIR/wall_smash.wasm"
+  opt_or_copy build/bindgen/wall_smash_bg.wasm build/bindgen/wall_smash_opt.wasm
+  # Inline the live wasm as one base64 string the IIFE decodes + instantiates.
+  printf 'export default "%s";\n' "$(base64 -w0 build/bindgen/wall_smash_opt.wasm)" > src/generated/live-wasm.ts
+  echo "[wall-smash] live $(du -h build/bindgen/wall_smash_opt.wasm | cut -f1) (+b64)"
+fi
