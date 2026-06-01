@@ -36,6 +36,8 @@ const FALLBACK = {
   announceVerified: 'Verified. Wall cleared. You can keep playing.',
   /** Announce: round over without verifying. */
   announceLose: 'Round over. Try again to verify.',
+  /** Short unit suffix on the HUD countdown number (rendered "30s"). */
+  secondsShort: 's',
 } as const;
 
 export type StringKey = keyof typeof FALLBACK;

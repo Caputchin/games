@@ -585,9 +585,16 @@ fn setup_hud(
 ) {
     let c = cfg.0;
     let f = || font.0.clone();
+    // Both flanks grow equally from a zero basis, so the left (lives) and right
+    // (level/score/sound) boxes are ALWAYS the same width regardless of their content
+    // - that keeps the center timer pinned dead-center even as the score/lives change
+    // width (a plain space-between row drifts the center with the side widths).
     let lives = commands
         .spawn(Node {
             flex_direction: FlexDirection::Row,
+            flex_grow: 1.0,
+            flex_basis: Val::Px(0.0),
+            justify_content: JustifyContent::FlexStart,
             column_gap: Val::Px(5.0),
             align_items: AlignItems::Center,
             ..default()
@@ -607,6 +614,9 @@ fn setup_hud(
     let right = commands
         .spawn(Node {
             flex_direction: FlexDirection::Row,
+            flex_grow: 1.0,
+            flex_basis: Val::Px(0.0),
+            justify_content: JustifyContent::FlexEnd,
             column_gap: Val::Px(14.0),
             align_items: AlignItems::Center,
             ..default()
@@ -624,6 +634,8 @@ fn setup_hud(
         })
         .id();
 
+    // Row = [equal-grow lives flank | timer | equal-grow right flank]. The two flanks
+    // being equal width keeps the timer centered; a small gap stops them touching it.
     commands
         .spawn(Node {
             position_type: PositionType::Absolute,
@@ -631,10 +643,9 @@ fn setup_hud(
             left: Val::Px(0.0),
             width: Val::Percent(100.0),
             flex_direction: FlexDirection::Row,
-            justify_content: JustifyContent::SpaceBetween,
             align_items: AlignItems::Center,
             padding: UiRect::all(Val::Px(10.0)),
-            column_gap: Val::Px(12.0),
+            column_gap: Val::Px(8.0),
             ..default()
         })
         .add_children(&[lives, time, right]);
@@ -646,12 +657,15 @@ fn update_hud(
     status: Res<Status>,
     level: Res<Level>,
     bonus: Res<BonusMode>,
+    loc: Res<Locale>,
     mut texts: Query<(&HudField, &mut Text)>,
     mut pips: Query<(&LifePip, &mut Node)>,
 ) {
     let c = cfg.0;
     let st = *status;
     let levels = level_count(&c);
+    // Localized seconds-unit suffix (e.g. "s", Arabic "ث"), appended to the count.
+    let secs_unit = loc.get(txt::SECONDS_SHORT);
     for (field, mut text) in &mut texts {
         let s = match field {
             HudField::Score => format!("{}", st.score),
@@ -659,13 +673,14 @@ fn update_hud(
             // starts when the player starts playing), then counts down. Bonus play is
             // endless, so it shows elapsed time counting up instead.
             HudField::Time => {
-                if bonus.0 {
-                    format!("{}s", st.play_ticks / TICK_HZ)
+                let secs = if bonus.0 {
+                    st.play_ticks / TICK_HZ
                 } else if !st.started {
-                    format!("{}s", c.timeout_ticks / TICK_HZ)
+                    c.timeout_ticks / TICK_HZ
                 } else {
-                    format!("{}s", c.timeout_ticks.saturating_sub(st.play_ticks) / TICK_HZ)
-                }
+                    c.timeout_ticks.saturating_sub(st.play_ticks) / TICK_HZ
+                };
+                format!("{}{}", secs, secs_unit)
             }
             HudField::Level => {
                 if bonus.0 {
@@ -735,10 +750,15 @@ mod txt {
     pub const LOSE_TITLE: usize = 6;
     pub const LOSE_BODY: usize = 7;
     pub const TRY_AGAIN: usize = 8;
+    // 9 = loading, 10..=14 = the announce* strings: all spoken via the DOM live
+    // region, not rendered by Bevy. 15 is the HUD seconds-unit suffix.
+    pub const SECONDS_SHORT: usize = 15;
 }
 
-/// English fallbacks (same order), used when ctx.locale is absent/short.
-const EN: [&str; 9] = [
+/// English fallbacks (same order), used when ctx.locale is absent/short. Only the
+/// Bevy-rendered slots need a real value: 1..=8 (screens) and 15 (seconds suffix).
+/// 0 (aria label), 9 (loading) and 10..=14 (announce*) are DOM-only, never rendered here.
+const EN: [&str; 16] = [
     "",
     "Tap or press Space to launch",
     "Level {level}",
@@ -748,6 +768,8 @@ const EN: [&str; 9] = [
     "Round over",
     "Try again to verify.",
     "Try again",
+    "", "", "", "", "", "",
+    "s",
 ];
 
 impl Locale {

@@ -64,6 +64,7 @@ describe('Bevy positional contract (STRING_KEYS <-> live.rs txt::*)', () => {
     expect(STRING_KEYS[6]).toBe('loseTitle'); // txt::LOSE_TITLE
     expect(STRING_KEYS[7]).toBe('loseBody'); // txt::LOSE_BODY
     expect(STRING_KEYS[8]).toBe('tryAgain'); // txt::TRY_AGAIN
+    expect(STRING_KEYS[15]).toBe('secondsShort'); // txt::SECONDS_SHORT (HUD timer unit)
   });
 });
 

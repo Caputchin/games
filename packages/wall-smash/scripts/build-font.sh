@@ -32,7 +32,10 @@ mkdir -p assets
 # the score / time / level readouts, punctuation, the {level} number).
 python3 - "$WORK/glyphs.txt" <<'PY'
 import json, sys
-SCREEN_KEYS = ["startPrompt","levelToast","winTitle","winBody","keepPlaying","loseTitle","loseBody","tryAgain"]
+# Every locale key the Bevy build RENDERS: the 8 full-screen strings + the HUD
+# seconds-unit suffix (secondsShort adds non-ASCII glyphs like ث / 秒 / 초 / с).
+# The HUD numbers / "/" are covered by the ASCII range added below.
+SCREEN_KEYS = ["startPrompt","levelToast","winTitle","winBody","keepPlaying","loseTitle","loseBody","tryAgain","secondsShort"]
 chars = set(chr(c) for c in range(0x20, 0x7f))  # ASCII printable (digits/punct/Latin)
 data = json.load(open(".caputchin/locales.json", encoding="utf-8"))
 for preset in data["presets"].values():

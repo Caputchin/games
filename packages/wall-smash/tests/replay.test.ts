@@ -11,7 +11,7 @@ import { runWithModule } from '../src/run-core.js';
 import { encodeTrace } from '../src/trace.js';
 
 // The HEADLESS replay wasm only. Prefer the shipped artifact, then the build/
-// output. Never the cargo `target/` wasm — after a full build that file is the
+// output. Never the cargo `target/` wasm: after a full build that file is the
 // LIVE (wasm-bindgen) build, which is not the C-ABI headless module under test.
 const candidates = ['../dist/wall-smash.wasm', '../build/wall-smash-headless.wasm'];
 const wasmPath = candidates

@@ -68,6 +68,10 @@
     "announceLose": {
       "name": "Announcer: round over",
       "description": "Live-region message when the round ends without verifying."
+    },
+    "secondsShort": {
+      "name": "Seconds unit",
+      "description": "Short unit suffix appended to the HUD countdown number, e.g. 30s."
     }
   },
   "presets": {
@@ -88,7 +92,8 @@
       "announceLevel": "Level {level}.",
       "announceLifeLost": "Lost a life. {lives} remaining.",
       "announceVerified": "Verified. Wall cleared. You can keep playing.",
-      "announceLose": "Round over. Try again to verify."
+      "announceLose": "Round over. Try again to verify.",
+      "secondsShort": "s"
     },
     "Chinese (Simplified)": {
       "_lang": "zh-Hans",
@@ -107,7 +112,8 @@
       "announceLevel": "第 {level} 关。",
       "announceLifeLost": "失去一条命，还剩 {lives} 条。",
       "announceVerified": "已通过。砖墙已清空，你可以继续玩。",
-      "announceLose": "本回合结束。再试一次以完成验证。"
+      "announceLose": "本回合结束。再试一次以完成验证。",
+      "secondsShort": "秒"
     },
     "Spanish": {
       "_lang": "es",
@@ -126,7 +132,8 @@
       "announceLevel": "Nivel {level}.",
       "announceLifeLost": "Perdiste una vida. Quedan {lives}.",
       "announceVerified": "Verificado. Muro despejado. Puedes seguir jugando.",
-      "announceLose": "Ronda terminada. Inténtalo de nuevo para verificar."
+      "announceLose": "Ronda terminada. Inténtalo de nuevo para verificar.",
+      "secondsShort": "s"
     },
     "Arabic": {
       "_lang": "ar",
@@ -146,7 +153,8 @@
       "announceLevel": "المستوى {level}.",
       "announceLifeLost": "فقدت محاولة. تبقى {lives}.",
       "announceVerified": "تم التحقق. تم تحطيم الجدار. يمكنك مواصلة اللعب.",
-      "announceLose": "انتهت الجولة. أعد المحاولة لإتمام التحقق."
+      "announceLose": "انتهت الجولة. أعد المحاولة لإتمام التحقق.",
+      "secondsShort": "ث"
     },
     "Portuguese": {
       "_lang": "pt",
@@ -165,7 +173,8 @@
       "announceLevel": "Nível {level}.",
       "announceLifeLost": "Você perdeu uma vida. Restam {lives}.",
       "announceVerified": "Verificado. Muro destruído. Você pode continuar jogando.",
-      "announceLose": "Rodada encerrada. Tente de novo para verificar."
+      "announceLose": "Rodada encerrada. Tente de novo para verificar.",
+      "secondsShort": "s"
     },
     "French": {
       "_lang": "fr",
@@ -184,7 +193,8 @@
       "announceLevel": "Niveau {level}.",
       "announceLifeLost": "Vie perdue. Il en reste {lives}.",
       "announceVerified": "Vérifié. Mur détruit. Vous pouvez continuer à jouer.",
-      "announceLose": "Manche terminée. Réessayez pour vous vérifier."
+      "announceLose": "Manche terminée. Réessayez pour vous vérifier.",
+      "secondsShort": "s"
     },
     "German": {
       "_lang": "de",
@@ -203,7 +213,8 @@
       "announceLevel": "Level {level}.",
       "announceLifeLost": "Ein Leben verloren. Noch {lives} übrig.",
       "announceVerified": "Bestätigt. Mauer geräumt. Du kannst weiterspielen.",
-      "announceLose": "Runde vorbei. Versuch es noch mal zum Bestätigen."
+      "announceLose": "Runde vorbei. Versuch es noch mal zum Bestätigen.",
+      "secondsShort": "s"
     },
     "Russian": {
       "_lang": "ru",
@@ -222,7 +233,8 @@
       "announceLevel": "Уровень {level}.",
       "announceLifeLost": "Потеряна жизнь. Осталось {lives}.",
       "announceVerified": "Пройдено. Стена разбита. Можно играть дальше.",
-      "announceLose": "Раунд окончен. Попробуйте снова для проверки."
+      "announceLose": "Раунд окончен. Попробуйте снова для проверки.",
+      "secondsShort": "с"
     },
     "Japanese": {
       "_lang": "ja",
@@ -241,7 +253,8 @@
       "announceLevel": "レベル {level}。",
       "announceLifeLost": "ミスしました。残り {lives}。",
       "announceVerified": "認証済み。壁をすべて壊しました。このまま続けて遊べます。",
-      "announceLose": "ラウンド終了。もう一度挑戦して認証しましょう。"
+      "announceLose": "ラウンド終了。もう一度挑戦して認証しましょう。",
+      "secondsShort": "秒"
     },
     "Korean": {
       "_lang": "ko",
@@ -260,7 +273,8 @@
       "announceLevel": "레벨 {level}.",
       "announceLifeLost": "목숨을 잃었어요. {lives}개 남았어요.",
       "announceVerified": "인증됨. 벽을 모두 부쉈어요. 계속 플레이할 수 있어요.",
-      "announceLose": "라운드 종료. 다시 시도해서 인증하세요."
+      "announceLose": "라운드 종료. 다시 시도해서 인증하세요.",
+      "secondsShort": "초"
     },
     "Indonesian": {
       "_lang": "id",
@@ -279,7 +293,8 @@
       "announceLevel": "Level {level}.",
       "announceLifeLost": "Kehilangan satu nyawa. Sisa {lives}.",
       "announceVerified": "Terverifikasi. Dinding hancur. Kamu bisa terus bermain.",
-      "announceLose": "Ronde selesai. Coba lagi untuk verifikasi."
+      "announceLose": "Ronde selesai. Coba lagi untuk verifikasi.",
+      "secondsShort": "s"
     }
   }
 }
