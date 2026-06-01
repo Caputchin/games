@@ -29,6 +29,17 @@ export function applyStyles(container: HTMLElement, canvas: HTMLCanvasElement): 
   canvas.style.height = '100%';
   canvas.style.outline = 'none';
   canvas.style.touchAction = 'none';
+
+  // Drag-to-play affordance: an open hand on hover, a closed hand while the pointer
+  // is held (launch / drag the paddle). `:active` (not inline) so the held state can
+  // override the resting one; keyed to a class so it doesn't depend on the canvas id.
+  canvas.classList.add('ws-canvas');
+  if (doc?.head && !doc.getElementById('ws-cursor-style')) {
+    const style = doc.createElement('style');
+    style.id = 'ws-cursor-style';
+    style.textContent = '.ws-canvas{cursor:grab}.ws-canvas:active{cursor:grabbing}';
+    doc.head.appendChild(style);
+  }
 }
 
 // Pre-boot loading placeholder. Bevy can't render its own loader (it isn't running
