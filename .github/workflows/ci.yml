@@ -6,9 +6,41 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel superseded PR runs; never cancel a run on main.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  verify:
+  # Which games changed? Emits a per-game matrix (or empty on a docs-only change).
+  # A shared change (lockfile / root config / workflow) fans out to all games.
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+      has_games: ${{ steps.compute.outputs.has_games }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need history for the merge-base / diff
+      - id: compute
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: bash .github/scripts/detect-games.sh
+
+  # One reusable definition; the matrix runs it once per changed game. The stack
+  # (from detect) selects which toolchain is set up, so a new Rust/C game needs
+  # no new leg. typecheck uses the committed src/generated/*.d.ts stub (no heavy
+  # build); test builds only the cheap headless artifact (+ cargo test for rust);
+  # build does the heavy live compile + tsup.
+  game:
+    needs: detect
+    if: ${{ needs.detect.outputs.has_games == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # one game's failure must not cancel its siblings
+      matrix: ${{ fromJSON(needs.detect.outputs.matrix) }}
+    name: "${{ matrix.game }} (${{ matrix.stack }})"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -16,9 +48,54 @@ jobs:
           version: 10.33.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
+
+      # Rust stack (wall-smash). rust-cache makes Bevy's dep compile a once-per-
+      # lockfile cost (still compiles fresh -> no stale-artifact risk). Toolchain
+      # pins match release.yml so CI verifies on the same toolchain it publishes.
+      - if: ${{ matrix.stack == 'rust' }}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - if: ${{ matrix.stack == 'rust' }}
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/${{ matrix.game }}
+      - if: ${{ matrix.stack == 'rust' }}
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@0.2.122,wasm-opt
+
+      # Emscripten stack (phobos). The committed engine/wad/phobos.wad keeps the
+      # WAD toolchain (zdbsp/python) out -- only emcc is needed.
+      - if: ${{ matrix.stack == 'emscripten' }}
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          actions-cache-folder: emsdk-cache
+
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r typecheck
-      - run: pnpm -r --if-present test
-      - run: pnpm -r build
+
+      - run: pnpm --filter ${{ matrix.pkg }} typecheck
+      - run: pnpm --filter ${{ matrix.pkg }} test
+      - run: pnpm --filter ${{ matrix.pkg }} build
+
+  # Single STABLE required status check. Branch protection must require THIS job
+  # (the matrix legs have dynamic names and can't be required individually).
+  # Passes when every leg succeeded OR the matrix was legitimately empty
+  # (docs-only change -> game skipped); fails on any leg failure/cancel.
+  ci-gate:
+    needs: [detect, game]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate result
+        run: |
+          echo "detect=${{ needs.detect.result }} game=${{ needs.game.result }}"
+          if [ "${{ needs.detect.result }}" != "success" ]; then
+            echo "ci-gate: fail (detect=${{ needs.detect.result }})"; exit 1
+          fi
+          case "${{ needs.game.result }}" in
+            success|skipped) echo "ci-gate: pass (game=${{ needs.game.result }})"; exit 0 ;;
+            *) echo "ci-gate: fail (game=${{ needs.game.result }})"; exit 1 ;;
+          esac
