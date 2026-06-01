@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Caputchin/games/compare/phobos-v0.2.0...phobos-v0.2.1) (2026-06-01)
+
+
+### Bug Fixes
+
+* gzip-compress the inlined live wasm in phobos and wall-smash to shrink the bundle entry ([6fd372d](https://github.com/Caputchin/games/commit/6fd372d2d5d3b61208031b46c974ac082b23714b))
+
 ## [0.2.0](https://github.com/Caputchin/games/compare/phobos-v0.1.0...phobos-v0.2.0) (2026-06-01)
 
 

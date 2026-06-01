@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-wall-smash",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Smash the wall of bricks with the ball to prove you're human. A Bevy-engine captcha. A Caputchin first-party game.",
   "keywords": [
     "caputchin",
