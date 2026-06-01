@@ -26,5 +26,6 @@ declare module '../build/bindgen/wall_smash.js' {
     style: number,
     palette: number[],
     locale: string[],
+    muted: boolean,
   ): void;
 }

@@ -6,7 +6,7 @@
 //! zero-import wasm the replay isolate loads precompiled.
 
 use crate::codec;
-use crate::sim::{Phase, Sim, SimConfig, TICK_HZ};
+use crate::sim::{replay_tick_cap, Phase, Sim, SimConfig, TICK_HZ};
 use core::slice;
 
 /// Allocate `len` bytes in wasm linear memory and hand the pointer to JS, which
@@ -57,7 +57,7 @@ pub extern "C" fn ws_run(
     let mut idx = 0usize;
     let rec = trace.len() / codec::REC;
 
-    for tick in 0..cfg.timeout_ticks {
+    for tick in 0..replay_tick_cap(&cfg) {
         let mut launch = false;
         // Apply every input record stamped for this tick (shared codec: the live
         // recorder writes with the same module, so encode + decode cannot diverge).

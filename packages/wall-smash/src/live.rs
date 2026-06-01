@@ -19,8 +19,8 @@ use bevy::window::PrimaryWindow;
 use wasm_bindgen::prelude::*;
 
 use crate::sim::{
-    level_count, reset_sim, spawn_sim, tick_schedule, Ball, Brick, Cfg, Half, Level, Paddle,
-    PendingInput, Phase, Pos, SimConfig, Status, FP, TICK_HZ,
+    enter_bonus, level_count, reset_sim, spawn_sim, tick_schedule, Ball, BonusMode, Brick, Cfg,
+    Half, Level, Paddle, PendingInput, Phase, Pos, SimConfig, Status, FP, TICK_HZ,
 };
 
 const SCALE: f32 = 2.0;
@@ -360,7 +360,14 @@ fn resolve_palette(palette: &[u32]) -> Palette {
 }
 
 #[wasm_bindgen]
-pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>, locale: Vec<String>) {
+pub fn start(
+    seed: Vec<u32>,
+    cfg: Vec<i32>,
+    mode: u32,
+    palette: Vec<u32>,
+    locale: Vec<String>,
+    muted: bool,
+) {
     let mut s = [0u32; 4];
     for (i, v) in seed.iter().take(4).enumerate() {
         s[i] = *v;
@@ -398,6 +405,18 @@ pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>, locale
     app.insert_resource(ScreenUi::default());
     app.insert_resource(RestartReq::default());
     app.insert_resource(Locale(locale));
+    app.insert_resource(BonusMode::default()); // off until the win screen's Keep-playing
+    // Initial sound state comes from the host (game.ts derives it from config.sound), so
+    // the speaker icon matches the actual audio from the first frame: a `sound:false`
+    // site paints the muted icon, not a lie that needs two taps to correct.
+    app.insert_resource(SoundOn(!muted));
+    // Bake the multi-script UI font into the shared font assets, so HUD + screen text
+    // renders every locale (default_font is Latin-only). Failure can't happen at run
+    // time (the bytes are compiled in + validated by the build), so a bad asset is a
+    // build break, not a player-facing one.
+    let font = Font::try_from_bytes(UI_FONT_BYTES.to_vec()).expect("baked UI font is valid");
+    let ui_font = app.world_mut().resource_mut::<Assets<Font>>().add(font);
+    app.insert_resource(UiFont(ui_font));
 
     if is3d {
         app.add_systems(Startup, (setup_3d, setup_hud));
@@ -405,6 +424,7 @@ pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>, locale
             Update,
             (
                 button_system,
+                sound_button_system,
                 apply_restart,
                 skin_bricks_3d,
                 frame_camera_3d,
@@ -426,6 +446,7 @@ pub fn start(seed: Vec<u32>, cfg: Vec<i32>, mode: u32, palette: Vec<u32>, locale
             Update,
             (
                 button_system,
+                sound_button_system,
                 apply_restart,
                 skin_bricks,
                 drive,
@@ -459,6 +480,16 @@ fn to_px(pos: &Pos, cfg: &SimConfig) -> Vec2 {
 const HUD_FG: Color = Color::srgb(0.92, 0.95, 1.0);
 const HUD_FONT: f32 = 18.0;
 
+/// The in-game UI font: Noto Sans subset to exactly the glyphs the screens render
+/// across all 11 locales (Latin, Cyrillic, Arabic, CJK), merged into one small static
+/// TTF by `scripts/build-font.sh`. Baked in so the HUD + screens render every language
+/// (Bevy's default font is Latin-only). Regenerate the asset when screen strings change.
+const UI_FONT_BYTES: &[u8] = include_bytes!("../assets/ui-font.subset.ttf");
+
+/// Handle to the baked UI font, shared by every HUD + screen `Text` node.
+#[derive(Resource)]
+struct UiFont(Handle<Font>);
+
 /// Which sim value a HUD text node shows; `update_hud` fills it each frame.
 #[derive(Component, Clone, Copy)]
 enum HudField {
@@ -471,18 +502,89 @@ enum HudField {
 #[derive(Component)]
 struct LifePip(u32);
 
-fn hud_text(field: HudField) -> impl Bundle {
+/// Whether SFX are on. Mirrors game.ts (default on); the HUD speaker button flips it
+/// and `dispatch_sound` tells game.ts to (un)mute the actual audio. Render-only.
+#[derive(Resource, Clone, Copy)]
+struct SoundOn(bool);
+
+/// Marks the HUD speaker (mute) button so its icon system is separate from the
+/// screen Retry/Continue buttons.
+#[derive(Component)]
+struct SoundButton;
+
+/// Procedural speaker icon (no bundled image, no font glyph): a flat top-down speaker
+/// drawn pixel-by-pixel, with sound waves when on or a red mute slash when off. Built
+/// in-engine, on brand for "Bevy can render its own UI". 48x48 RGBA.
+fn make_speaker_icon(on: bool) -> Image {
+    let n = 48i32;
+    let mut data = vec![0u8; (n * n * 4) as usize];
+    let fg = [230u8, 240, 255, 255];
+    let red = [240u8, 86, 86, 255];
+    let set = |data: &mut Vec<u8>, x: i32, y: i32, c: [u8; 4]| {
+        if x < 0 || y < 0 || x >= n || y >= n {
+            return;
+        }
+        let i = ((y * n + x) * 4) as usize;
+        data[i] = c[0];
+        data[i + 1] = c[1];
+        data[i + 2] = c[2];
+        data[i + 3] = c[3];
+    };
+    for y in 0..n {
+        for x in 0..n {
+            let (fx, fy) = (x as f32, y as f32);
+            // speaker body: a square magnet block + a cone that widens to the right.
+            let magnet = (10..=17).contains(&x) && (19..=29).contains(&y);
+            let cone = fx >= 17.0 && fx <= 28.0 && (fy - 24.0).abs() <= 4.0 + (fx - 17.0) * 0.85;
+            if magnet || cone {
+                set(&mut data, x, y, fg);
+            }
+            if on {
+                // two arcs to the right of the cone (only the right-facing 45deg slice).
+                let d = ((fx - 27.0).powi(2) + (fy - 24.0).powi(2)).sqrt();
+                let wave = fx > 30.0
+                    && ((d - 9.0).abs() < 1.3 || (d - 14.0).abs() < 1.3)
+                    && (fy - 24.0).abs() < (fx - 27.0);
+                if wave {
+                    set(&mut data, x, y, fg);
+                }
+            }
+        }
+    }
+    if !on {
+        // red mute slash across the speaker, drawn last so it reads on top.
+        for t in 0..=220 {
+            let f = t as f32 / 220.0;
+            let x = (9.0 + f * 30.0) as i32;
+            let y = (12.0 + f * 26.0) as i32;
+            for (dx, dy) in [(0, 0), (1, 0), (0, 1)] {
+                set(&mut data, x + dx, y + dy, red);
+            }
+        }
+    }
+    rgba_image(n as u32, n as u32, data)
+}
+
+fn hud_text(field: HudField, font: Handle<Font>) -> impl Bundle {
     (
         Text::new(""),
-        TextFont::from_font_size(HUD_FONT),
+        TextFont { font, font_size: HUD_FONT, ..default() },
         TextColor(HUD_FG),
         field,
     )
 }
 
-/// Top HUD bar: life pips (left), time remaining (center), level + score (right).
-fn setup_hud(mut commands: Commands, cfg: Res<Cfg>) {
+/// Top HUD bar: life pips (left), time remaining (center), level + score + the sound
+/// (mute) toggle (right).
+fn setup_hud(
+    mut commands: Commands,
+    cfg: Res<Cfg>,
+    sound: Res<SoundOn>,
+    font: Res<UiFont>,
+    mut images: ResMut<Assets<Image>>,
+) {
     let c = cfg.0;
+    let f = || font.0.clone();
     let lives = commands
         .spawn(Node {
             flex_direction: FlexDirection::Row,
@@ -500,7 +602,8 @@ fn setup_hud(mut commands: Commands, cfg: Res<Cfg>) {
             }
         })
         .id();
-    let time = commands.spawn(hud_text(HudField::Time)).id();
+    let time = commands.spawn(hud_text(HudField::Time, f())).id();
+    let sound_icon = images.add(make_speaker_icon(sound.0));
     let right = commands
         .spawn(Node {
             flex_direction: FlexDirection::Row,
@@ -509,8 +612,15 @@ fn setup_hud(mut commands: Commands, cfg: Res<Cfg>) {
             ..default()
         })
         .with_children(|p| {
-            p.spawn(hud_text(HudField::Level));
-            p.spawn(hud_text(HudField::Score));
+            p.spawn(hud_text(HudField::Level, f()));
+            p.spawn(hud_text(HudField::Score, f()));
+            // sound (mute) toggle: a tappable speaker icon, click/touch flips it.
+            p.spawn((
+                Button,
+                SoundButton,
+                Node { width: Val::Px(26.0), height: Val::Px(26.0), ..default() },
+                ImageNode::new(sound_icon),
+            ));
         })
         .id();
 
@@ -535,6 +645,7 @@ fn update_hud(
     cfg: Res<Cfg>,
     status: Res<Status>,
     level: Res<Level>,
+    bonus: Res<BonusMode>,
     mut texts: Query<(&HudField, &mut Text)>,
     mut pips: Query<(&LifePip, &mut Node)>,
 ) {
@@ -544,8 +655,26 @@ fn update_hud(
     for (field, mut text) in &mut texts {
         let s = match field {
             HudField::Score => format!("{}", st.score),
-            HudField::Time => format!("{}s", c.timeout_ticks.saturating_sub(st.tick) / TICK_HZ),
-            HudField::Level => format!("{}/{}", (level.0 + 1).min(levels), levels),
+            // Timer: frozen at the full budget until the first launch (the clock
+            // starts when the player starts playing), then counts down. Bonus play is
+            // endless, so it shows elapsed time counting up instead.
+            HudField::Time => {
+                if bonus.0 {
+                    format!("{}s", st.play_ticks / TICK_HZ)
+                } else if !st.started {
+                    format!("{}s", c.timeout_ticks / TICK_HZ)
+                } else {
+                    format!("{}s", c.timeout_ticks.saturating_sub(st.play_ticks) / TICK_HZ)
+                }
+            }
+            HudField::Level => {
+                if bonus.0 {
+                    // past the captcha table: show an absolute bonus level number
+                    format!("{}", level.0 + 1)
+                } else {
+                    format!("{}/{}", (level.0 + 1).min(levels), levels)
+                }
+            }
         };
         if text.0 != s {
             text.0 = s;
@@ -582,6 +711,10 @@ fn signal_ready(mut sent: Local<bool>) {
 
 const OVERLAY_BG: Color = Color::srgba(0.03, 0.03, 0.06, 0.72);
 const PANEL_BG: Color = Color::srgb(0.08, 0.09, 0.14);
+// The launch / toast pill sits over the starfield, so it needs an OPAQUE fill: Bevy
+// composites UI in linear space, so even a 0.94 alpha lets the bright backdrop stars
+// bleed through the text as little squares. Fully opaque kills it.
+const PILL_BG: Color = Color::srgb(0.06, 0.07, 0.12);
 const BTN_BG: Color = Color::srgb(0.16, 0.18, 0.26);
 const BTN_BG_HOVER: Color = Color::srgb(0.26, 0.30, 0.42);
 
@@ -668,13 +801,13 @@ enum ScreenButton {
 #[derive(Resource, Default)]
 struct RestartReq(Option<ScreenButton>);
 
-fn screen_text(s: &str, size: f32) -> impl Bundle {
-    (Text::new(s), TextFont::from_font_size(size), TextColor(HUD_FG))
+fn screen_text(s: &str, size: f32, font: Handle<Font>) -> impl Bundle {
+    (Text::new(s), TextFont { font, font_size: size, ..default() }, TextColor(HUD_FG))
 }
 
 /// A pill (bg + padding + centered text) at the bottom, e.g. the launch prompt or a
 /// level toast. `tag` marks the root for despawn (ScreenRoot or LevelToast).
-fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str) {
+fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str, font: &Handle<Font>) {
     commands
         .spawn((
             tag,
@@ -690,15 +823,22 @@ fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str) {
         .with_children(|p| {
             p.spawn((
                 Node { padding: UiRect::axes(Val::Px(14.0), Val::Px(8.0)), ..default() },
-                BackgroundColor(OVERLAY_BG),
+                BackgroundColor(PILL_BG),
             ))
             .with_children(|q| {
-                q.spawn(screen_text(text, 16.0));
+                q.spawn(screen_text(text, 16.0, font.clone()));
             });
         });
 }
 
-fn spawn_end(commands: &mut Commands, win: bool, title: &str, body: &str, btn: &str) {
+fn spawn_end(
+    commands: &mut Commands,
+    win: bool,
+    title: &str,
+    body: &str,
+    btn: &str,
+    font: &Handle<Font>,
+) {
     let kind = if win { ScreenButton::Continue } else { ScreenButton::Retry };
     commands
         .spawn((
@@ -727,8 +867,8 @@ fn spawn_end(commands: &mut Commands, win: bool, title: &str, body: &str, btn: &
                 BackgroundColor(PANEL_BG),
             ))
             .with_children(|q| {
-                q.spawn(screen_text(title, 30.0));
-                q.spawn(screen_text(body, 16.0));
+                q.spawn(screen_text(title, 30.0, font.clone()));
+                q.spawn(screen_text(body, 16.0, font.clone()));
                 q.spawn((
                     Button,
                     kind,
@@ -742,7 +882,7 @@ fn spawn_end(commands: &mut Commands, win: bool, title: &str, body: &str, btn: &
                     BackgroundColor(BTN_BG),
                 ))
                 .with_children(|b| {
-                    b.spawn(screen_text(btn, 18.0));
+                    b.spawn(screen_text(btn, 18.0, font.clone()));
                 });
             });
         });
@@ -755,10 +895,12 @@ fn screens(
     status: Res<Status>,
     level: Res<Level>,
     loc: Res<Locale>,
+    font: Res<UiFont>,
     balls: Query<&Ball>,
     roots: Query<Entity, With<ScreenRoot>>,
     mut ui: ResMut<ScreenUi>,
 ) {
+    let f = &font.0;
     // between-level toast (level is 0-indexed; show 1-based, only past the first)
     if level.0 != ui.prev_level {
         if level.0 > ui.prev_level && level.0 > 0 {
@@ -766,6 +908,7 @@ fn screens(
                 &mut commands,
                 (LevelToast(1.6),),
                 &loc.level(txt::LEVEL_TOAST, level.0 + 1),
+                f,
             );
         }
         ui.prev_level = level.0;
@@ -788,7 +931,7 @@ fn screens(
     match want {
         ScreenKind::None => {}
         ScreenKind::Launch => {
-            spawn_pill(&mut commands, (ScreenRoot,), &loc.get(txt::START_PROMPT));
+            spawn_pill(&mut commands, (ScreenRoot,), &loc.get(txt::START_PROMPT), f);
         }
         ScreenKind::Win => spawn_end(
             &mut commands,
@@ -796,6 +939,7 @@ fn screens(
             &loc.get(txt::WIN_TITLE),
             &loc.get(txt::WIN_BODY),
             &loc.get(txt::KEEP_PLAYING),
+            f,
         ),
         ScreenKind::Lose => spawn_end(
             &mut commands,
@@ -803,6 +947,7 @@ fn screens(
             &loc.get(txt::LOSE_TITLE),
             &loc.get(txt::LOSE_BODY),
             &loc.get(txt::TRY_AGAIN),
+            f,
         ),
     }
 }
@@ -842,16 +987,32 @@ fn button_system(
     }
 }
 
-/// Consume a restart request: reset the round in place + clear live-only state.
+/// Consume a button request: Retry replays a fresh captcha round (re-records,
+/// re-verifies); Continue (only offered after a pass) drops into endless bonus play.
 fn apply_restart(world: &mut World) {
-    let req = world.resource_mut::<RestartReq>().0.take();
-    if req.is_none() {
+    let Some(kind) = world.resource_mut::<RestartReq>().0.take() else {
         return;
+    };
+    match kind {
+        ScreenButton::Retry => {
+            reset_sim(world);
+            *world.resource_mut::<Recorder>() = Recorder::default();
+            world.resource_mut::<BonusMode>().0 = false;
+        }
+        ScreenButton::Continue => {
+            // sim side: bonus on, harder wall, score kept, ball re-stuck. The trace is
+            // already submitted; bonus is never recorded, so the Recorder stays as-is
+            // (finished) and `drive` resumes via its bonus guard.
+            enter_bonus(world);
+        }
     }
-    reset_sim(world);
-    *world.resource_mut::<Recorder>() = Recorder::default();
     *world.resource_mut::<Accum>() = Accum::default();
     *world.resource_mut::<LaunchLatch>() = LaunchLatch::default();
+    despawn_fx(world);
+}
+
+/// Despawn all transient break-effect entities (2D particles + 3D debris).
+fn despawn_fx(world: &mut World) {
     let fx: Vec<Entity> = world
         .query_filtered::<Entity, Or<(With<Particle>, With<Debris>)>>()
         .iter(world)
@@ -859,6 +1020,26 @@ fn apply_restart(world: &mut World) {
     for e in fx {
         world.entity_mut(e).despawn();
     }
+}
+
+/// Speaker (mute) button: a press toggles SFX, redraws the icon, and tells game.ts to
+/// (un)mute the audio. Separate from the screen Retry/Continue buttons.
+fn sound_button_system(
+    mut buttons: Query<&Interaction, (Changed<Interaction>, With<SoundButton>)>,
+    mut icons: Query<&mut ImageNode, With<SoundButton>>,
+    mut sound: ResMut<SoundOn>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    let pressed = buttons.iter_mut().any(|i| *i == Interaction::Pressed);
+    if !pressed {
+        return;
+    }
+    sound.0 = !sound.0;
+    let icon = images.add(make_speaker_icon(sound.0));
+    for mut node in &mut icons {
+        node.image = icon.clone();
+    }
+    dispatch_sound(sound.0);
 }
 
 /// Retro skin: a completely FLAT, top-down read of the same arena the 3D skin
@@ -1352,15 +1533,28 @@ fn read_input(world: &mut World) -> (i32, bool) {
         let touches = world.resource::<Touches>();
         (touches.any_just_pressed(), touches.iter().next().map(|t| t.position().x))
     };
-    if touch_just {
+    let (mouse_just, mouse_held) = {
+        let m = world.resource::<ButtonInput<MouseButton>>();
+        (m.just_pressed(MouseButton::Left), m.pressed(MouseButton::Left))
+    };
+    if touch_just || mouse_just {
         launch = true;
     }
-    // Touch steering = drag-to-position: the paddle chases the finger's horizontal
-    // position (put your finger where you want the paddle and slide). Keyboard wins
-    // if a key is held. This stays in the {-1,0,1} dir model, so the recorded trace
-    // and headless replay are unchanged; only the live steering feel improves.
+    // Pointer steering = drag-to-position, identical feel for touch and mouse: the
+    // paddle chases the pointer's horizontal position (point/hold where you want the
+    // paddle and slide). Touch wins if both are active; a held mouse button is the
+    // mouse equivalent of a finger down. Keyboard still wins if a key is held. This
+    // stays in the {-1,0,1} dir model, so the recorded trace + headless replay are
+    // unchanged; only the live steering feel improves.
+    let cursor_x = if mouse_held && touch_x.is_none() {
+        let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
+        wq.single(&*world).ok().and_then(|w| w.cursor_position()).map(|p| p.x)
+    } else {
+        None
+    };
+    let pointer_x = touch_x.or(cursor_x);
     if dir == 0 {
-        if let Some(tx) = touch_x {
+        if let Some(tx) = pointer_x {
             let c = world.resource::<Cfg>().0;
             let win_w = {
                 let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
@@ -1417,7 +1611,10 @@ fn snapshot(world: &mut World) -> Snap {
 }
 
 fn drive(world: &mut World) {
-    if world.resource::<Recorder>().finished {
+    let bonus = world.resource::<BonusMode>().0;
+    // After the captcha is decided the recorder is `finished` and the sim stops -
+    // UNLESS bonus play is on, where it keeps ticking (untimed, unrecorded) for fun.
+    if world.resource::<Recorder>().finished && !bonus {
         return;
     }
     let dt = world.resource::<Time>().delta_secs().min(0.1);
@@ -1442,7 +1639,10 @@ fn drive(world: &mut World) {
             pi.dir = dir;
             pi.launch = launch;
         }
-        record(world, dir, launch);
+        // bonus play is never recorded (the verified trace is already submitted)
+        if !bonus {
+            record(world, dir, launch);
+        }
         world.resource_scope::<TickSched, _>(|w, mut sched| sched.0.run(w));
         world.resource_mut::<Accum>().0 -= STEP;
         steps += 1;
@@ -1454,7 +1654,7 @@ fn drive(world: &mut World) {
     emit_feedback(world, &before, &after);
 
     let st = *world.resource::<Status>();
-    if st.phase != Phase::Playing && !world.resource::<Recorder>().finished {
+    if !bonus && st.phase != Phase::Playing && !world.resource::<Recorder>().finished {
         world.resource_mut::<Recorder>().finished = true;
         emit_sfx(if st.phase == Phase::Won { "win" } else { "lose" });
         dispatch_announce(if st.phase == Phase::Won { "verified" } else { "roundOver" }, 0);
@@ -1588,6 +1788,20 @@ fn dispatch_announce(kind: &str, n: u32) {
     init.set_detail(&detail);
     init.set_bubbles(false);
     if let Ok(ev) = web_sys::CustomEvent::new_with_event_init_dict("wallsmash:announce", &init) {
+        let _ = window.dispatch_event(&ev);
+    }
+}
+
+/// Tell game.ts the player toggled sound from the in-canvas mute button, so it can
+/// (un)mute the WebAudio SFX (the audio lives JS-side; Bevy only renders the toggle).
+fn dispatch_sound(on: bool) {
+    let Some(window) = web_sys::window() else { return };
+    let detail = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("on"), &JsValue::from_bool(on));
+    let init = web_sys::CustomEventInit::new();
+    init.set_detail(&detail);
+    init.set_bubbles(false);
+    if let Ok(ev) = web_sys::CustomEvent::new_with_event_init_dict("wallsmash:sound", &init) {
         let _ = window.dispatch_event(&ev);
     }
 }

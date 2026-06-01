@@ -178,7 +178,7 @@ export function runWallSmash(opts: GameOptions): () => void {
   const palette = paletteFromSkin(ctx?.skin ?? null);
 
   const soundOn = ctx?.config?.['sound'] !== false; // default on; customer can disable
-  const sfx = createSfx(soundOn);
+  const sfx = createSfx(!soundOn); // the in-canvas speaker button toggles it at runtime
 
   let submitted = false;
   const onFinish = (e: Event) => {
@@ -195,10 +195,16 @@ export function runWallSmash(opts: GameOptions): () => void {
     const name = (e as CustomEvent<{ name: string }>).detail?.name;
     if (name) sfx.play(name);
   };
+  // The in-canvas Bevy speaker button toggles sound; (un)mute the WebAudio sfx.
+  const onSound = (e: Event) => {
+    const on = (e as CustomEvent<{ on: boolean }>).detail?.on;
+    if (typeof on === 'boolean') sfx.setMuted(!on);
+  };
   // Audio needs a user gesture; the player's first interaction unlocks it.
   const onGesture = () => sfx.resume();
   window.addEventListener('wallsmash:finish', onFinish);
   window.addEventListener('wallsmash:sfx', onSfx);
+  window.addEventListener('wallsmash:sound', onSound);
   container.addEventListener('pointerdown', onGesture);
   window.addEventListener('keydown', onGesture);
 
@@ -209,7 +215,16 @@ export function runWallSmash(opts: GameOptions): () => void {
   init({ module_or_path: decodeBase64(liveWasmB64) })
     .then(() => {
       if (cancelled) return;
-      start([seed[0], seed[1], seed[2], seed[3]], cfgInts, mode, palette, localeVec(ctx?.locale ?? null));
+      // Pass the initial muted state so the Bevy speaker icon matches the audio from
+      // the first frame (the in-canvas button toggles both thereafter).
+      start(
+        [seed[0], seed[1], seed[2], seed[3]],
+        cfgInts,
+        mode,
+        palette,
+        localeVec(ctx?.locale ?? null),
+        !soundOn,
+      );
     })
     .catch((err: unknown) => {
       bridge.error({ code: 'engine-init-failed', message: String(err) });
@@ -219,6 +234,7 @@ export function runWallSmash(opts: GameOptions): () => void {
     cancelled = true;
     window.removeEventListener('wallsmash:finish', onFinish);
     window.removeEventListener('wallsmash:sfx', onSfx);
+    window.removeEventListener('wallsmash:sound', onSound);
     window.removeEventListener('wallsmash:ready', onReady);
     window.removeEventListener('wallsmash:announce', onAnnounce);
     container.removeEventListener('pointerdown', onGesture);

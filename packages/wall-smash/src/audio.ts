@@ -9,13 +9,16 @@ type SfxName = 'launch' | 'bounce' | 'break' | 'level' | 'win' | 'lose';
 export interface Sfx {
   play(name: string): void;
   resume(): void;
+  setMuted(muted: boolean): void;
   dispose(): void;
 }
 
-const SILENT: Sfx = { play() {}, resume() {}, dispose() {} };
+const SILENT: Sfx = { play() {}, resume() {}, setMuted() {}, dispose() {} };
 
-export function createSfx(enabled: boolean): Sfx {
-  if (!enabled) return SILENT;
+// `muted` is the live state (the in-canvas speaker button flips it via setMuted); it
+// starts from the customer config. The audio context is only created on the first
+// unmuted play, so a muted session never opens one.
+export function createSfx(muted: boolean): Sfx {
   const Ctor: typeof AudioContext | undefined =
     typeof window !== 'undefined'
       ? window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -48,6 +51,7 @@ export function createSfx(enabled: boolean): Sfx {
   }
 
   const play = (name: string): void => {
+    if (muted) return;
     switch (name as SfxName) {
       case 'launch':
         tone(440, 0.1, 'square', 0.14);
@@ -75,8 +79,12 @@ export function createSfx(enabled: boolean): Sfx {
   return {
     play,
     resume() {
+      if (muted) return; // don't open a context for a muted session
       const ac = ensure();
       if (ac.state === 'suspended') void ac.resume();
+    },
+    setMuted(m: boolean) {
+      muted = m;
     },
     dispose() {
       if (ctx) void ctx.close();

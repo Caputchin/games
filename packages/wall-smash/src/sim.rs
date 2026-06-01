@@ -134,6 +134,26 @@ pub struct Status {
     pub tick: u32,
     pub lives: u32,
     pub bricks_left: u32,
+    /// Latches true the first tick the ball is launched (leaves the paddle). The
+    /// countdown timer is FROZEN until this flips, so the clock starts when the
+    /// player starts playing, not on mount. Pure sim state -> live + replay agree.
+    pub started: bool,
+    /// Ticks elapsed SINCE the first launch (0 while `!started`). The timeout is
+    /// checked against this, so idling on the launch prompt never burns the budget.
+    pub play_ticks: u32,
+}
+
+/// Live-only "play for fun" mode, switched on by the win screen's Keep-playing
+/// button AFTER the captcha is already passed + submitted. While active the round
+/// never wins (keeps spawning ever-harder walls), never times out, and never loses
+/// a life (endless bonus play). The headless replay NEVER inserts this resource, so
+/// every shared system reads it as `Option<Res<BonusMode>>` = None and the verified
+/// captcha round is byte-identical to a fresh replay. Bonus play is never recorded.
+#[derive(Resource, Default, Clone, Copy)]
+pub struct BonusMode(pub bool);
+
+fn bonus_on(b: &Option<Res<BonusMode>>) -> bool {
+    b.as_ref().map(|r| r.0).unwrap_or(false)
 }
 
 /// The input applied for the current tick, set by the host before each `tick`.
@@ -199,6 +219,11 @@ enum Pattern {
 /// deterministic given the seed (live + replay build the identical wall).
 const LEVEL_ROWS: [i32; 5] = [2, 2, 3, 3, 4];
 
+/// Row ceiling for bonus (live-only) levels: rows keep growing past the table but
+/// stop here so the wall still clears the paddle with room for the ball to play.
+/// (arena_h 150, ~10 units/row from top_margin 14 -> 8 rows ends well above paddle.)
+const MAX_BONUS_ROWS: i32 = 8;
+
 fn brick_present(pat: Pattern, col: i32, row: i32, cols: i32, rows: i32) -> bool {
     match pat {
         Pattern::Full => true,
@@ -239,13 +264,30 @@ fn brick_count(pat: Pattern, cols: i32, rows: i32) -> usize {
 /// the row count stays paced by LEVEL_ROWS so early levels stay short (a fast
 /// captcha). Pure + deterministic given (cfg, level, lseed) -> live + replay agree.
 fn level_brick_layout(cfg: &SimConfig, level: u32, lseed: u32) -> Vec<(Pos, Half)> {
-    let rows = LEVEL_ROWS[(level as usize).min(LEVEL_ROWS.len() - 1)];
+    let lvl = level as usize;
     // Per-level seeded value (decorrelated across levels so each wall varies).
     let r = (lseed ^ level.wrapping_mul(0x9e37_79b9))
         .wrapping_mul(2654_435761)
         .rotate_left(level % 29 + 1);
-    let cols = 4 + (r % 3) as i32; // 4..=6
-    let mut pat = PATTERNS[((r >> 7) % 4) as usize];
+    // Captcha levels follow the LEVEL_ROWS table (paced for a fast verify). Bonus
+    // levels (live-only; level past the table, unreachable in headless because
+    // `num_levels <= LEVEL_ROWS.len()`) keep escalating: one more row each level up
+    // to a cap that still clears the paddle, and always-dense walls so they get
+    // genuinely harder rather than repeating.
+    let bonus = lvl >= LEVEL_ROWS.len();
+    let rows = if bonus {
+        // grow past the table's last row, capped at MAX_BONUS_ROWS (fits above paddle)
+        (LEVEL_ROWS[LEVEL_ROWS.len() - 1] + (lvl - LEVEL_ROWS.len() + 1) as i32).min(MAX_BONUS_ROWS)
+    } else {
+        LEVEL_ROWS[lvl]
+    };
+    let cols = if bonus { 5 + (r % 2) as i32 } else { 4 + (r % 3) as i32 }; // bonus 5..=6, else 4..=6
+    let mut pat = if bonus {
+        // dense walls for bonus (Full / Checker only), so difficulty rises with rows
+        if r & 1 == 0 { Pattern::Full } else { Pattern::Checker }
+    } else {
+        PATTERNS[((r >> 7) % 4) as usize]
+    };
     // Never a near-empty wall: a too-sparse seeded pattern falls back to a Full wall,
     // so the round is always solvable regardless of seed.
     if brick_count(pat, cols, rows) < 3 {
@@ -271,6 +313,14 @@ fn level_brick_layout(cfg: &SimConfig, level: u32, lseed: u32) -> Vec<(Pos, Half
 /// Effective number of levels (config request clamped to the table).
 pub fn level_count(cfg: &SimConfig) -> u32 {
     cfg.num_levels.clamp(1, LEVEL_ROWS.len() as u32)
+}
+
+/// Hard tick ceiling for a headless replay loop. The timeout is launch-relative now
+/// (a pre-launch grace = the budget, then the play clock = the budget), so a replay
+/// can run at most ~2x the budget before `sys_state` forces an outcome. Bound the
+/// loop a hair above that so it always reaches the sim's own terminal state first.
+pub fn replay_tick_cap(cfg: &SimConfig) -> u32 {
+    cfg.timeout_ticks.saturating_mul(2).saturating_add(8)
 }
 
 /// Build a fresh sim `World` with all entities + resources. Pure; no clock/IO.
@@ -331,6 +381,8 @@ pub fn spawn_sim(world: &mut World, cfg: SimConfig, seed: [u32; 4]) {
         tick: 0,
         lives: cfg.lives,
         bricks_left,
+        started: false,
+        play_ticks: 0,
     });
     world.insert_resource(PendingInput::default());
 }
@@ -383,8 +435,51 @@ pub fn reset_sim(world: &mut World) {
         tick: 0,
         lives: cfg.lives,
         bricks_left,
+        started: false,
+        play_ticks: 0,
     });
     world.insert_resource(PendingInput::default());
+}
+
+/// Switch an already-passed round into endless bonus play (live-only; the headless
+/// replay never calls this). Turns on `BonusMode`, drops the cleared wall, spawns the
+/// next (harder) bonus wall, restores full lives, KEEPS the score, resets the play
+/// clock, and re-sticks the ball. The captcha trace is already submitted; bonus play
+/// is never recorded, so this can't touch the verified result.
+pub fn enter_bonus(world: &mut World) {
+    world.insert_resource(BonusMode(true));
+    let cfg = world.resource::<Cfg>().0;
+    let seed = world.resource::<SimSeed>().0;
+    let next = world.resource::<Level>().0 + 1;
+
+    let bricks: Vec<Entity> = world.query_filtered::<Entity, With<Brick>>().iter(world).collect();
+    for e in bricks {
+        world.entity_mut(e).despawn();
+    }
+    let layout = level_brick_layout(&cfg, next, layout_seed_of(seed));
+    let n = layout.len() as u32;
+    for (pos, half) in layout {
+        world.spawn((Brick, pos, half));
+    }
+    world.insert_resource(Level(next));
+    {
+        let mut st = world.resource_mut::<Status>();
+        st.phase = Phase::Playing;
+        st.lives = cfg.lives;
+        st.bricks_left = n;
+        st.started = false;
+        st.play_ticks = 0;
+        // score carries over into bonus (it is the running fun score now)
+    }
+    let px = cfg.arena_w * FP / 2;
+    let mut q = world.query::<(&mut Ball, &mut Pos)>();
+    for (mut ball, mut pos) in q.iter_mut(world) {
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.stuck = true;
+        pos.x = px;
+        pos.y = paddle_y(&cfg) - (cfg.paddle_h * FP / 2) - cfg.ball_r * FP;
+    }
 }
 
 // --- Systems (the ordered per-tick pipeline) ---------------------------------
@@ -435,10 +530,12 @@ fn sys_ball_move(mut q: Query<(&mut Pos, &Ball)>) {
 
 fn sys_walls(
     cfg: Res<Cfg>,
+    bonus: Option<Res<BonusMode>>,
     mut status: ResMut<Status>,
     mut q: Query<(&mut Pos, &mut Ball, &Half)>,
 ) {
     let c = cfg.0;
+    let bonus = bonus_on(&bonus);
     let aw = c.arena_w * FP;
     let ah = c.arena_h * FP;
     for (mut pos, mut ball, half) in &mut q {
@@ -457,8 +554,9 @@ fn sys_walls(
             ball.vy = ball.vy.abs();
         }
         if pos.y - half.hy > ah {
-            // fell past the bottom -> lose a life, re-stick
-            if status.lives > 0 {
+            // fell past the bottom -> lose a life, re-stick. Bonus play is endless,
+            // so it never costs a life (live-only; headless never sets bonus).
+            if !bonus && status.lives > 0 {
                 status.lives -= 1;
             }
             ball.stuck = true;
@@ -531,6 +629,7 @@ fn sys_advance_level(
     mut commands: Commands,
     cfg: Res<Cfg>,
     seed: Res<SimSeed>,
+    bonus: Option<Res<BonusMode>>,
     mut level: ResMut<Level>,
     mut status: ResMut<Status>,
     mut balls: Query<(&mut Ball, &mut Pos)>,
@@ -539,7 +638,10 @@ fn sys_advance_level(
     if status.bricks_left != 0 || status.phase != Phase::Playing {
         return;
     }
-    if level.0 + 1 >= level_count(&c) {
+    // In bonus mode the round never wins: clearing the final captcha wall instead
+    // advances into an ever-harder bonus wall, so play continues forever. Off bonus,
+    // the last cleared level falls through to `sys_state` -> Won (the captcha pass).
+    if !bonus_on(&bonus) && level.0 + 1 >= level_count(&c) {
         return; // last level cleared -> sys_state marks Won
     }
     level.0 += 1;
@@ -558,13 +660,40 @@ fn sys_advance_level(
     }
 }
 
-fn sys_state(cfg: Res<Cfg>, mut status: ResMut<Status>) {
+fn sys_state(
+    cfg: Res<Cfg>,
+    bonus: Option<Res<BonusMode>>,
+    balls: Query<&Ball>,
+    mut status: ResMut<Status>,
+) {
     let c = cfg.0;
+    let bonus = bonus_on(&bonus);
     status.tick += 1;
+    // Latch `started` the first tick a ball is in flight, then count the play clock.
+    // The countdown is frozen until launch (the timer starts when the player starts
+    // playing) and stays continuous across levels thereafter.
+    if !status.started && balls.iter().any(|b| !b.stuck) {
+        status.started = true;
+    }
+    if status.started {
+        status.play_ticks = status.play_ticks.saturating_add(1);
+    }
     if status.bricks_left == 0 {
         status.phase = Phase::Won;
-    } else if status.lives == 0 || status.tick >= c.timeout_ticks {
+    } else if status.lives == 0 {
         status.phase = Phase::Lost;
+    } else if !bonus {
+        // Two timeout fences, both = the configured budget: a pre-launch grace
+        // (idling on the prompt still bounds the replay) and the play clock once
+        // launched. Bonus play is endless, so neither fence applies there.
+        let timed_out = if status.started {
+            status.play_ticks >= c.timeout_ticks
+        } else {
+            status.tick >= c.timeout_ticks
+        };
+        if timed_out {
+            status.phase = Phase::Lost;
+        }
     }
 }
 
@@ -742,5 +871,82 @@ mod tests {
         }
         assert_eq!(sim.status().score, fresh.score, "reset == fresh under same seed");
         assert_eq!(sim.status().tick, fresh.tick);
+    }
+
+    #[test]
+    fn timer_frozen_until_launch() {
+        // The play clock must not move while the ball is stuck on the paddle: the
+        // timer starts when the player launches, not on mount. Idle (no launch) for
+        // a stretch shorter than the budget -> still Playing, clock at zero.
+        let mut sim = Sim::new(SimConfig::default(), [3, 1, 4, 1]);
+        for _ in 0..300 {
+            sim.tick(0, false); // move nowhere, never launch
+        }
+        let st = sim.status();
+        assert!(!st.started, "must not be 'started' before any launch");
+        assert_eq!(st.play_ticks, 0, "play clock frozen pre-launch");
+        assert_eq!(st.phase, Phase::Playing, "idle pre-launch is not a loss yet");
+        assert_eq!(st.score, 0);
+        // launch -> the clock starts ticking from this point.
+        sim.tick(0, true);
+        for _ in 0..30 {
+            sim.tick(0, false);
+        }
+        let st = sim.status();
+        assert!(st.started, "launching starts the clock");
+        assert!(st.play_ticks > 0 && st.play_ticks <= 31, "play clock counts post-launch");
+    }
+
+    #[test]
+    fn idle_on_prompt_loses_at_the_budget() {
+        // Never launching still terminates the round at the budget (the pre-launch
+        // grace bounds the replay), and the loop cap is comfortably above that.
+        let mut cfg = SimConfig::default();
+        cfg.timeout_ticks = 120; // 2s budget for a fast test
+        let mut sim = Sim::new(cfg, [9, 8, 7, 6]);
+        let mut ticks = 0u32;
+        for _ in 0..replay_tick_cap(&cfg) {
+            sim.tick(0, false); // never launch
+            ticks += 1;
+            if sim.status().phase != Phase::Playing {
+                break;
+            }
+        }
+        let st = sim.status();
+        assert_eq!(st.phase, Phase::Lost, "idling past the budget loses");
+        assert_eq!(st.play_ticks, 0, "clock never started (never launched)");
+        assert!(ticks <= cfg.timeout_ticks + 1, "lost at ~budget, got {} vs {}", ticks, cfg.timeout_ticks);
+    }
+
+    #[test]
+    fn bonus_mode_never_wins_and_escalates() {
+        // With BonusMode on (live-only; the headless replay never inserts it), a
+        // competent player who would normally WIN the captcha instead keeps getting
+        // ever-harder walls: the round never reaches Won and the level climbs past
+        // the captcha table. Lives never drain in bonus either.
+        let seed = [42u32, 1, 2, 3];
+        // baseline: the same seed/player WINS the captcha without bonus.
+        let plain = drive(seed, 6000);
+        assert_eq!(plain.phase, Phase::Won, "baseline captcha is winnable");
+
+        let mut sim = Sim::new(SimConfig::default(), seed);
+        sim.world.insert_resource(BonusMode(true));
+        let start_lives = sim.status().lives;
+        for _ in 0..6000 {
+            let mut bq = sim.world.query::<(&Pos, &Ball)>();
+            let (bx, stuck) = bq.iter(&sim.world).next().map(|(p, b)| (p.x, b.stuck)).unwrap();
+            let mut pq = sim.world.query_filtered::<&Pos, With<Paddle>>();
+            let px = pq.iter(&sim.world).next().map(|p| p.x).unwrap();
+            sim.tick((bx - px).signum(), stuck);
+            assert_ne!(sim.status().phase, Phase::Won, "bonus never wins");
+        }
+        let st = sim.status();
+        assert_eq!(st.phase, Phase::Playing, "bonus keeps playing");
+        assert_eq!(st.lives, start_lives, "bonus never costs a life");
+        assert!(
+            sim.world.resource::<Level>().0 + 1 > level_count(&SimConfig::default()),
+            "bonus escalated past the captcha levels (level {})",
+            sim.world.resource::<Level>().0
+        );
     }
 }
