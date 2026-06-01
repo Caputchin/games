@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { resolvePhobosConfig } from '../src/config.js';
-import manifest from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 
 // The default preset is found by its `_default` flag, not its name.
-const presets = manifest.configurations.presets as unknown as Record<string, Record<string, number | boolean>>;
+const presets = configurationsJson.presets as unknown as Record<string, Record<string, number | boolean>>;
 const def = Object.values(presets).find((p) => p._default === true)!;
 
 // Guards the config wiring: the server sends the manifest's SNAKE_CASE keys, and

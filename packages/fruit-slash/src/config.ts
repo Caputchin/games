@@ -9,7 +9,7 @@
 // caputchin.json `default` preset, so the two sources can't drift and the game
 // still plays sensibly with `config === null`. Same pattern as dino-runner.
 
-import manifestJson from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 import { GRAVITY } from './sim/constants.js';
 
 export interface FruitSlashConfig {
@@ -26,7 +26,7 @@ export interface FruitSlashConfig {
   showLives: boolean;
 }
 
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
+const DEFAULT_PRESET = (configurationsJson.presets?.default ?? {}) as Record<string, unknown>;
 
 function jsonNumber(key: string, hardcoded: number): number {
   const v = DEFAULT_PRESET[key];

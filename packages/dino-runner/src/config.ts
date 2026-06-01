@@ -11,7 +11,7 @@
 // so the game still plays sensibly with `config === null` (e.g. a manifest
 // shipped without a configurations block).
 
-import manifestJson from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 import { SPEED, JUMP, GAP_COEFFICIENT } from './constants.js';
 import type { SimConfig } from './sim/types.js';
 
@@ -36,7 +36,7 @@ export interface DinoConfig {
 // sources can't drift: editing caputchin.json automatically refreshes these.
 // The hardcoded literals only kick in if the JSON itself omits a field. Same
 // pattern as leaf-memory's config shell.
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
+const DEFAULT_PRESET = (configurationsJson.presets?.default ?? {}) as Record<string, unknown>;
 function jsonNumber(key: string, hardcoded: number): number {
   const v = DEFAULT_PRESET[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : hardcoded;

@@ -13,7 +13,7 @@
 // Per-level fields are flat (e.g. `memorize_seconds_level_3`) rather than
 // nested because the schema DSL doesn't support nested objects.
 
-import manifestJson from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 import { DIFFICULTY_LADDER, MAX_LEVEL, type DifficultyLevel } from './difficulty.js';
 
 export interface LeafMemoryConfig {
@@ -32,7 +32,7 @@ export interface LeafMemoryConfig {
  *  drift: editing caputchin.json automatically refreshes these. Hardcoded
  *  literals only kick in if the JSON itself is missing the field. Same
  *  pattern as widget skin / widget-config shells. */
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
+const DEFAULT_PRESET = (configurationsJson.presets?.default ?? {}) as Record<string, unknown>;
 function jsonNumber(key: string, hardcoded: number): number {
   const v = DEFAULT_PRESET[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : hardcoded;

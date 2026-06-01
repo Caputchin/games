@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { buildStrings, FALLBACK_STRINGS } from '../src/strings.js';
 import type { ResolvedLocale } from '@caputchin/game-sdk';
-import manifest from '../caputchin.json';
+import localesJson from '../.caputchin/locales.json';
 
 const METADATA = new Set(['_lang', '_direction', '_default', '_extends']);
-const english = manifest.locales.presets.English as unknown as Record<string, string>;
+const english = localesJson.presets.English as unknown as Record<string, string>;
 const englishKeys = Object.keys(english).filter((k) => !METADATA.has(k));
 
 describe('strings FALLBACK ↔ manifest English parity', () => {

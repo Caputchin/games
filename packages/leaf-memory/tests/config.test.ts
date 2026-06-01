@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Bridge, ConfigPreset, ConfigSchemaEntry } from '@caputchin/game-sdk';
-import manifest from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 import { resolveLeafMemoryConfig } from '../src/config.js';
 import { DIFFICULTY_LADDER, MAX_LEVEL } from '../src/difficulty.js';
 import { runLeafMemory } from '../src/game.js';
@@ -18,7 +18,7 @@ beforeEach(() => {
   document.body.innerHTML = '';
 });
 
-const configurations = manifest.configurations;
+const configurations = configurationsJson;
 const presets = (configurations?.presets ?? {}) as Record<string, ConfigPreset>;
 const schema = (configurations?.schema ?? {}) as Record<string, ConfigSchemaEntry>;
 

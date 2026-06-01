@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import manifest from '../caputchin.json';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const m = manifest as any;
+import localesJson from '../.caputchin/locales.json';
+import skinsJson from '../.caputchin/skins.json';
+import configurationsJson from '../.caputchin/configurations.json';
 
 const EXPECTED_LANGS = ['en', 'zh-Hans', 'es', 'ar', 'pt', 'fr', 'de', 'ru', 'ja', 'ko', 'id'];
 
@@ -11,8 +10,8 @@ function tokensIn(value: string): string[] {
 }
 
 describe('locales schema + preset integrity', () => {
-  const presets = m.locales.presets as Record<string, Record<string, unknown>>;
-  const schema = m.locales.schema as Record<string, { name: string; description: string; tokens?: string[] }>;
+  const presets = localesJson.presets as Record<string, Record<string, unknown>>;
+  const schema = localesJson.schema as Record<string, { name: string; description: string; tokens?: string[] }>;
   const en = presets.English as Record<string, string>;
   const textKeys = Object.keys(en).filter((k) => !k.startsWith('_'));
 
@@ -62,8 +61,8 @@ describe('locales schema + preset integrity', () => {
 
 describe('skin + configuration preset keys are all declared in their schema', () => {
   it('skins', () => {
-    const schema = m.skins.schema as Record<string, unknown>;
-    for (const [name, p] of Object.entries(m.skins.presets as Record<string, Record<string, unknown>>)) {
+    const schema = skinsJson.schema as Record<string, unknown>;
+    for (const [name, p] of Object.entries(skinsJson.presets as Record<string, Record<string, unknown>>)) {
       for (const k of Object.keys(p).filter((key) => !key.startsWith('_'))) {
         expect(schema[k], `skin ${name}.${k}`).toBeDefined();
       }
@@ -71,8 +70,8 @@ describe('skin + configuration preset keys are all declared in their schema', ()
   });
 
   it('configurations', () => {
-    const schema = m.configurations.schema as Record<string, unknown>;
-    for (const [name, p] of Object.entries(m.configurations.presets as Record<string, Record<string, unknown>>)) {
+    const schema = configurationsJson.schema as Record<string, unknown>;
+    for (const [name, p] of Object.entries(configurationsJson.presets as Record<string, Record<string, unknown>>)) {
       for (const k of Object.keys(p).filter((key) => !key.startsWith('_'))) {
         expect(schema[k], `config ${name}.${k}`).toBeDefined();
       }

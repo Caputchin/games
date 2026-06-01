@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildStrings, FALLBACK_STRINGS, type StringKey } from '../src/strings.js';
-import manifest from '../caputchin.json';
+import localesJson from '../.caputchin/locales.json';
 
 describe('buildStrings', () => {
   it('falls back to English when no locale resolves', () => {
@@ -25,8 +25,7 @@ describe('buildStrings', () => {
 });
 
 describe('FALLBACK stays in lockstep with the manifest English preset', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const en = (manifest as any).locales.presets.English as Record<string, string>;
+  const en = localesJson.presets.English as unknown as Record<string, string>;
   const textKeys = Object.keys(en).filter((k) => !k.startsWith('_'));
 
   it('has the same key set', () => {

@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { SkinPreset, SkinSchemaEntry } from '@caputchin/game-sdk';
-import manifest from '../caputchin.json';
+import skinsJson from '../.caputchin/skins.json';
 import { DEFAULT_LEAF_URIS, decodeSvgDataUri, LEAF_IDS, resolveLeafSvgs, sanitizeSvgMarkup } from '../src/leaves.js';
 
-const skinPresets = manifest.skins?.presets as Record<string, SkinPreset>;
-const skinSchema = (manifest.skins?.schema ?? {}) as Record<string, SkinSchemaEntry>;
+const skinPresets = skinsJson.presets as Record<string, SkinPreset>;
+const skinSchema = (skinsJson.schema ?? {}) as Record<string, SkinSchemaEntry>;
 const METADATA_KEYS = new Set(['_theme', '_default', '_extends']);
 
 describe('leaf-memory caputchin.json - skin schema / preset parity', () => {

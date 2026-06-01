@@ -10,7 +10,7 @@
 // `config === null`. Every knob is clamped to a humane range: a captcha that
 // locks out humans is worse than a lenient one. Same pattern as fruit-slash.
 
-import manifestJson from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 
 export interface WhackConfig {
   /** Monkeys to whack to pass (spread across the levels). */
@@ -25,7 +25,7 @@ export interface WhackConfig {
   showScore: boolean;
 }
 
-const DEFAULT_PRESET = (manifestJson.configurations?.presets?.default ?? {}) as Record<string, unknown>;
+const DEFAULT_PRESET = (configurationsJson.presets?.default ?? {}) as Record<string, unknown>;
 
 function jsonNumber(key: string, hardcoded: number): number {
   const v = DEFAULT_PRESET[key];

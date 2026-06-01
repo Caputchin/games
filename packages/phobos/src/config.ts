@@ -10,7 +10,7 @@
 // Both the live driver (game.ts) and the headless replay (run-core.ts) resolve
 // through here, so live play and server replay execute under identical
 // gameplay params -> identical verdict.
-import manifestJson from '../caputchin.json';
+import configurationsJson from '../.caputchin/configurations.json';
 
 /** Hard ceiling on a round's tics when no time_limit is set. Bounds replay cost
  *  and the live round; both sides use it so live play and replay agree. ~200s,
@@ -40,7 +40,7 @@ export interface RoundConfig {
 
 // The default preset is identified by its `_default` flag, not a fixed name, so
 // the preset can be renamed (e.g. "standard") without breaking the fallbacks.
-const PRESETS = (manifestJson.configurations?.presets ?? {}) as Record<string, Record<string, unknown>>;
+const PRESETS = (configurationsJson.presets ?? {}) as Record<string, Record<string, unknown>>;
 const DEFAULT_PRESET = (Object.values(PRESETS).find((p) => p && p['_default'] === true)
   ?? {}) as Record<string, unknown>;
 
@@ -48,7 +48,7 @@ const DEFAULT_PRESET = (Object.values(PRESETS).find((p) => p && p['_default'] ==
 // inside the schema-declared range (1..4 = the open arenas). A server-stored
 // config beyond it would make a bonus map (a maze) the captcha -> heavier replay
 // cpuMs. Enforce the schema bound here, the one point live + headless inherit.
-const START_SCHEMA = (manifestJson.configurations?.schema as Record<string, { min?: number; max?: number }>
+const START_SCHEMA = (configurationsJson.schema as Record<string, { min?: number; max?: number }>
   | undefined)?.['start_level'];
 const START_MIN = typeof START_SCHEMA?.min === 'number' ? START_SCHEMA.min : 1;
 const START_MAX = typeof START_SCHEMA?.max === 'number' ? START_SCHEMA.max : 4;
