@@ -1743,9 +1743,6 @@ fn drive(world: &mut World) {
 }
 
 fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
-    // Bonus play is endless and costs no life, so it must give NO failure feedback when
-    // the ball drops out of bounds (no lose sound, no "life lost" announce). Lives
-    // already never decrease in bonus, but guard the cue explicitly so intent is clear.
     let bonus = world.resource::<BonusMode>().0;
     if !a.stuck && b.stuck {
         emit_sfx("launch");
@@ -1764,9 +1761,16 @@ fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
         emit_sfx("level");
         dispatch_announce("level", a.level + 1);
     }
-    if !bonus && a.lives < b.lives {
+    if a.lives < b.lives {
         emit_sfx("lose");
         dispatch_announce("lifeLost", a.lives);
+    }
+    // Bonus costs no life, so the life-lost path above never fires there - but a dropped
+    // ball should still get the "missed" fail sound. A ball that re-sticks without a
+    // level change (and is not the launch case handled above) is a drop. No announce:
+    // lives are infinite in bonus, so "lost a life" would be wrong.
+    if bonus && a.stuck && !b.stuck && a.level == b.level {
+        emit_sfx("lose");
     }
     if !a.stuck && b.vy > 0 && a.vy < 0 {
         emit_sfx("bounce");
