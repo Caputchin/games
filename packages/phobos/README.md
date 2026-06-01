@@ -4,6 +4,10 @@ Clear the demons to prove you're human. A Caputchin first-party game that drops
 the visitor into a real, first-person **DOOM** arena: true 3D, the iconic
 shotgun, and demons closing in.
 
+> **License:** Phobos is **GPL-2.0-only** (it links the open-source DOOM
+> engine). Embedding it through the standard check does not place your own site
+> under the GPL. See [Licensing](#licensing).
+
 ## How it plays
 
 You spawn in the middle of a demon-infested arena, shotgun in hand. Move, turn,
@@ -64,6 +68,26 @@ widget per site:
 Phobos runs as a sandboxed widget behind a Caputchin verification check. Preview
 it live and copy the embed snippet, with your locale, skin, and difficulty
 presets, from its [marketplace listing](https://caputchin.com/marketplace).
+
+## Licensing
+
+Phobos links the open-source **DOOM engine**, which is GPL-licensed, so the game
+is **GPL-2.0-only**.
+
+What this means if you embed Phobos:
+
+- **Your site is unaffected.** Phobos runs in Caputchin's sandboxed iframe, so
+  the standard check does not place your site under the GPL.
+- **Caputchin carries the obligation.** As the distributor, Caputchin publishes
+  the complete corresponding source (the engine included) in this package's
+  `engine/` directory.
+- **Re-hosting is the exception.** If you download and serve the Phobos bundle
+  yourself, you become the distributor and take on the GPL-2.0 obligations
+  directly.
+
+The game ships with no warranty, as stated in the GPL. The full license text is
+in [`LICENSE`](LICENSE), with engine and game-data attribution in
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
 ---
 
