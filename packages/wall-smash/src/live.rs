@@ -502,6 +502,11 @@ enum HudField {
 #[derive(Component)]
 struct LifePip(u32);
 
+/// The infinite-lives glyph shown in bonus play, where lives never run out: it
+/// replaces the pips (which are hidden) so the HUD reads "endless", not a fixed count.
+#[derive(Component)]
+struct LivesInfinity;
+
 /// Whether SFX are on. Mirrors game.ts (default on); the HUD speaker button flips it
 /// and `dispatch_sound` tells game.ts to (un)mute the actual audio. Render-only.
 #[derive(Resource, Clone, Copy)]
@@ -565,6 +570,40 @@ fn make_speaker_icon(on: bool) -> Image {
     rgba_image(n as u32, n as u32, data)
 }
 
+/// Procedural BOLD infinity glyph (the bonus-play lives indicator): two thick,
+/// overlapping rings = a horizontal figure-eight. Drawn in-engine (no font weight to
+/// lean on, and the subset font ships a single Regular weight), so the stroke can be
+/// as heavy as we like. Antialiased; `color` is the pip tint.
+fn make_infinity_icon(color: Color) -> Image {
+    let w = 44i32;
+    let h = 24i32;
+    let s = color.to_srgba();
+    let rgb = [(s.red * 255.0) as u8, (s.green * 255.0) as u8, (s.blue * 255.0) as u8];
+    let mut data = vec![0u8; (w * h * 4) as usize];
+    let cy = (h as f32 - 1.0) / 2.0;
+    let r = 8.0; // loop radius
+    let t = 3.0; // half stroke thickness (bold)
+    let (cxl, cxr) = (13.0, w as f32 - 1.0 - 13.0); // overlapping loop centers
+    for y in 0..h {
+        for x in 0..w {
+            let (fx, fy) = (x as f32, y as f32);
+            let dl = ((fx - cxl).powi(2) + (fy - cy).powi(2)).sqrt();
+            let dr = ((fx - cxr).powi(2) + (fy - cy).powi(2)).sqrt();
+            // distance to the nearer ring centerline; fill within the stroke band.
+            let d = (dl - r).abs().min((dr - r).abs());
+            let a = (t - d).clamp(0.0, 1.0); // ~1px antialiased edge
+            if a > 0.0 {
+                let i = ((y * w + x) * 4) as usize;
+                data[i] = rgb[0];
+                data[i + 1] = rgb[1];
+                data[i + 2] = rgb[2];
+                data[i + 3] = (a * 255.0) as u8;
+            }
+        }
+    }
+    rgba_image(w as u32, h as u32, data)
+}
+
 fn hud_text(field: HudField, font: Handle<Font>) -> impl Bundle {
     (
         Text::new(""),
@@ -607,6 +646,14 @@ fn setup_hud(
                     LifePip(i),
                 ));
             }
+            // Infinite-lives glyph for bonus play; hidden until bonus (update_hud swaps
+            // it in and hides the pips). Bold procedural ∞, tinted like the pips.
+            let inf = images.add(make_infinity_icon(Color::srgb(0.95, 0.32, 0.34)));
+            p.spawn((
+                Node { width: Val::Px(26.0), height: Val::Px(14.0), display: Display::None, ..default() },
+                ImageNode::new(inf),
+                LivesInfinity,
+            ));
         })
         .id();
     let time = commands.spawn(hud_text(HudField::Time, f())).id();
@@ -659,7 +706,8 @@ fn update_hud(
     bonus: Res<BonusMode>,
     loc: Res<Locale>,
     mut texts: Query<(&HudField, &mut Text)>,
-    mut pips: Query<(&LifePip, &mut Node)>,
+    mut pips: Query<(&LifePip, &mut Node), Without<LivesInfinity>>,
+    mut infinity: Query<&mut Node, (With<LivesInfinity>, Without<LifePip>)>,
 ) {
     let c = cfg.0;
     let st = *status;
@@ -695,8 +743,12 @@ fn update_hud(
             text.0 = s;
         }
     }
+    // Bonus play: hide the pips, show the infinity glyph (lives never run out).
     for (pip, mut node) in &mut pips {
-        node.display = if pip.0 < st.lives { Display::Flex } else { Display::None };
+        node.display = if !bonus.0 && pip.0 < st.lives { Display::Flex } else { Display::None };
+    }
+    for mut node in &mut infinity {
+        node.display = if bonus.0 { Display::Flex } else { Display::None };
     }
 }
 
@@ -827,15 +879,17 @@ fn screen_text(s: &str, size: f32, font: Handle<Font>) -> impl Bundle {
     (Text::new(s), TextFont { font, font_size: size, ..default() }, TextColor(HUD_FG))
 }
 
-/// A pill (bg + padding + centered text) at the bottom, e.g. the launch prompt or a
-/// level toast. `tag` marks the root for despawn (ScreenRoot or LevelToast).
-fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str, font: &Handle<Font>) {
+/// A pill (bg + padding + centered text) anchored `bottom` from the floor, e.g. the
+/// launch prompt (low) or a level toast (mid-screen, so the two never overlap when a
+/// new wall drops and the launch prompt is also showing). `tag` marks the root for
+/// despawn (ScreenRoot or LevelToast).
+fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str, font: &Handle<Font>, bottom: Val) {
     commands
         .spawn((
             tag,
             Node {
                 position_type: PositionType::Absolute,
-                bottom: Val::Px(20.0),
+                bottom,
                 left: Val::Px(0.0),
                 width: Val::Percent(100.0),
                 justify_content: JustifyContent::Center,
@@ -926,11 +980,14 @@ fn screens(
     // between-level toast (level is 0-indexed; show 1-based, only past the first)
     if level.0 != ui.prev_level {
         if level.0 > ui.prev_level && level.0 > 0 {
+            // mid-screen, clear of the bottom launch prompt that also shows when the
+            // fresh wall re-sticks the ball.
             spawn_pill(
                 &mut commands,
                 (LevelToast(1.6),),
                 &loc.level(txt::LEVEL_TOAST, level.0 + 1),
                 f,
+                Val::Percent(46.0),
             );
         }
         ui.prev_level = level.0;
@@ -953,7 +1010,7 @@ fn screens(
     match want {
         ScreenKind::None => {}
         ScreenKind::Launch => {
-            spawn_pill(&mut commands, (ScreenRoot,), &loc.get(txt::START_PROMPT), f);
+            spawn_pill(&mut commands, (ScreenRoot,), &loc.get(txt::START_PROMPT), f, Val::Px(20.0));
         }
         ScreenKind::Win => spawn_end(
             &mut commands,
@@ -1686,6 +1743,10 @@ fn drive(world: &mut World) {
 }
 
 fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
+    // Bonus play is endless and costs no life, so it must give NO failure feedback when
+    // the ball drops out of bounds (no lose sound, no "life lost" announce). Lives
+    // already never decrease in bonus, but guard the cue explicitly so intent is clear.
+    let bonus = world.resource::<BonusMode>().0;
     if !a.stuck && b.stuck {
         emit_sfx("launch");
         dispatch_announce("launch", 0);
@@ -1703,7 +1764,7 @@ fn emit_feedback(world: &mut World, b: &Snap, a: &Snap) {
         emit_sfx("level");
         dispatch_announce("level", a.level + 1);
     }
-    if a.lives < b.lives {
+    if !bonus && a.lives < b.lives {
         emit_sfx("lose");
         dispatch_announce("lifeLost", a.lives);
     }
