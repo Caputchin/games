@@ -9,8 +9,8 @@ use bevy::asset::RenderAssetUsages;
 use bevy::camera::ScalingMode;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::image::{Image, ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
-use bevy::math::primitives::{Capsule3d, Circle, Cuboid, Cylinder, Rectangle, Sphere};
 use bevy::math::Affine2;
+use bevy::math::primitives::{Capsule3d, Circle, Cuboid, Cylinder, Rectangle, Sphere};
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
@@ -19,8 +19,8 @@ use bevy::window::PrimaryWindow;
 use wasm_bindgen::prelude::*;
 
 use crate::sim::{
-    enter_bonus, level_count, reset_sim, spawn_sim, tick_schedule, Ball, BonusMode, Brick, Cfg,
-    Half, Level, Paddle, PendingInput, Phase, Pos, SimConfig, Status, FP, TICK_HZ,
+    Ball, BonusMode, Brick, Cfg, FP, Half, Level, Paddle, PendingInput, Phase, Pos, SimConfig,
+    Status, TICK_HZ, enter_bonus, level_count, reset_sim, spawn_sim, tick_schedule,
 };
 
 const SCALE: f32 = 2.0;
@@ -57,7 +57,6 @@ impl RenderRng {
         a + (self.next() as f32 / u32::MAX as f32) * (b - a)
     }
 }
-
 
 /// True when rendering the real 3D arena (3D skin on a hardware GPU).
 #[derive(Resource, Clone, Copy)]
@@ -133,7 +132,11 @@ fn make_disc(color: Color) -> Image {
 
 fn rgba_image(w: u32, h: u32, data: Vec<u8>) -> Image {
     Image::new(
-        Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+        Extent3d {
+            width: w,
+            height: h,
+            depth_or_array_layers: 1,
+        },
         TextureDimension::D2,
         data,
         TextureFormat::Rgba8UnormSrgb,
@@ -285,13 +288,21 @@ struct Snap {
 }
 
 fn color_u32(c: u32) -> Color {
-    Color::srgb_u8(((c >> 16) & 0xff) as u8, ((c >> 8) & 0xff) as u8, (c & 0xff) as u8)
+    Color::srgb_u8(
+        ((c >> 16) & 0xff) as u8,
+        ((c >> 8) & 0xff) as u8,
+        (c & 0xff) as u8,
+    )
 }
 
 /// Multiply an sRGB color's channels by `f` (per-row brick shading on a single tint).
 fn scale_color(c: Color, f: f32) -> Color {
     let s = c.to_srgba();
-    Color::srgb((s.red * f).min(1.0), (s.green * f).min(1.0), (s.blue * f).min(1.0))
+    Color::srgb(
+        (s.red * f).min(1.0),
+        (s.green * f).min(1.0),
+        (s.blue * f).min(1.0),
+    )
 }
 
 /// Color for a brick row, shared by both skins: the default multi-color ARCADE wall,
@@ -311,7 +322,11 @@ fn brick_color(tint: Option<Color>, row: usize, level: usize) -> Color {
 fn star_sprite(stars: Handle<Image>, size: f32) -> Sprite {
     Sprite {
         image: stars,
-        image_mode: SpriteImageMode::Tiled { tile_x: true, tile_y: true, stretch_value: 1.0 },
+        image_mode: SpriteImageMode::Tiled {
+            tile_x: true,
+            tile_y: true,
+            stretch_value: 1.0,
+        },
         custom_size: Some(Vec2::splat(size)),
         ..default()
     }
@@ -578,7 +593,11 @@ fn make_infinity_icon(color: Color) -> Image {
     let w = 44i32;
     let h = 24i32;
     let s = color.to_srgba();
-    let rgb = [(s.red * 255.0) as u8, (s.green * 255.0) as u8, (s.blue * 255.0) as u8];
+    let rgb = [
+        (s.red * 255.0) as u8,
+        (s.green * 255.0) as u8,
+        (s.blue * 255.0) as u8,
+    ];
     let mut data = vec![0u8; (w * h * 4) as usize];
     let cy = (h as f32 - 1.0) / 2.0;
     let r = 8.0; // loop radius
@@ -607,7 +626,11 @@ fn make_infinity_icon(color: Color) -> Image {
 fn hud_text(field: HudField, font: Handle<Font>) -> impl Bundle {
     (
         Text::new(""),
-        TextFont { font, font_size: HUD_FONT, ..default() },
+        TextFont {
+            font,
+            font_size: HUD_FONT,
+            ..default()
+        },
         TextColor(HUD_FG),
         field,
     )
@@ -641,7 +664,11 @@ fn setup_hud(
         .with_children(|p| {
             for i in 0..c.lives {
                 p.spawn((
-                    Node { width: Val::Px(12.0), height: Val::Px(12.0), ..default() },
+                    Node {
+                        width: Val::Px(12.0),
+                        height: Val::Px(12.0),
+                        ..default()
+                    },
                     BackgroundColor(Color::srgb(0.90, 0.16, 0.18)),
                     LifePip(i),
                 ));
@@ -650,7 +677,12 @@ fn setup_hud(
             // it in and hides the pips). Bold procedural ∞, tinted like the pips.
             let inf = images.add(make_infinity_icon(Color::srgb(0.95, 0.32, 0.34)));
             p.spawn((
-                Node { width: Val::Px(26.0), height: Val::Px(14.0), display: Display::None, ..default() },
+                Node {
+                    width: Val::Px(26.0),
+                    height: Val::Px(14.0),
+                    display: Display::None,
+                    ..default()
+                },
                 ImageNode::new(inf),
                 LivesInfinity,
             ));
@@ -675,7 +707,11 @@ fn setup_hud(
             p.spawn((
                 Button,
                 SoundButton,
-                Node { width: Val::Px(26.0), height: Val::Px(26.0), ..default() },
+                Node {
+                    width: Val::Px(26.0),
+                    height: Val::Px(26.0),
+                    ..default()
+                },
                 ImageNode::new(sound_icon),
             ));
         })
@@ -745,10 +781,18 @@ fn update_hud(
     }
     // Bonus play: hide the pips, show the infinity glyph (lives never run out).
     for (pip, mut node) in &mut pips {
-        node.display = if !bonus.0 && pip.0 < st.lives { Display::Flex } else { Display::None };
+        node.display = if !bonus.0 && pip.0 < st.lives {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
     for mut node in &mut infinity {
-        node.display = if bonus.0 { Display::Flex } else { Display::None };
+        node.display = if bonus.0 {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
 }
 
@@ -820,7 +864,12 @@ const EN: [&str; 16] = [
     "Round over",
     "Try again to verify.",
     "Try again",
-    "", "", "", "", "", "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
     "s",
 ];
 
@@ -854,7 +903,10 @@ struct ScreenUi {
 }
 impl Default for ScreenUi {
     fn default() -> Self {
-        Self { kind: ScreenKind::None, prev_level: 0 }
+        Self {
+            kind: ScreenKind::None,
+            prev_level: 0,
+        }
     }
 }
 
@@ -876,14 +928,28 @@ enum ScreenButton {
 struct RestartReq(Option<ScreenButton>);
 
 fn screen_text(s: &str, size: f32, font: Handle<Font>) -> impl Bundle {
-    (Text::new(s), TextFont { font, font_size: size, ..default() }, TextColor(HUD_FG))
+    (
+        Text::new(s),
+        TextFont {
+            font,
+            font_size: size,
+            ..default()
+        },
+        TextColor(HUD_FG),
+    )
 }
 
 /// A pill (bg + padding + centered text) anchored `bottom` from the floor, e.g. the
 /// launch prompt (low) or a level toast (mid-screen, so the two never overlap when a
 /// new wall drops and the launch prompt is also showing). `tag` marks the root for
 /// despawn (ScreenRoot or LevelToast).
-fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str, font: &Handle<Font>, bottom: Val) {
+fn spawn_pill(
+    commands: &mut Commands,
+    tag: impl Bundle,
+    text: &str,
+    font: &Handle<Font>,
+    bottom: Val,
+) {
     commands
         .spawn((
             tag,
@@ -898,7 +964,10 @@ fn spawn_pill(commands: &mut Commands, tag: impl Bundle, text: &str, font: &Hand
         ))
         .with_children(|p| {
             p.spawn((
-                Node { padding: UiRect::axes(Val::Px(14.0), Val::Px(8.0)), ..default() },
+                Node {
+                    padding: UiRect::axes(Val::Px(14.0), Val::Px(8.0)),
+                    ..default()
+                },
                 BackgroundColor(PILL_BG),
             ))
             .with_children(|q| {
@@ -915,7 +984,11 @@ fn spawn_end(
     btn: &str,
     font: &Handle<Font>,
 ) {
-    let kind = if win { ScreenButton::Continue } else { ScreenButton::Retry };
+    let kind = if win {
+        ScreenButton::Continue
+    } else {
+        ScreenButton::Retry
+    };
     commands
         .spawn((
             ScreenRoot,
@@ -1010,7 +1083,13 @@ fn screens(
     match want {
         ScreenKind::None => {}
         ScreenKind::Launch => {
-            spawn_pill(&mut commands, (ScreenRoot,), &loc.get(txt::START_PROMPT), f, Val::Px(20.0));
+            spawn_pill(
+                &mut commands,
+                (ScreenRoot,),
+                &loc.get(txt::START_PROMPT),
+                f,
+                Val::Px(20.0),
+            );
         }
         ScreenKind::Win => spawn_end(
             &mut commands,
@@ -1144,7 +1223,10 @@ fn setup_scene(
         IsDefaultUiCamera, // HUD + screens render over this camera
         Msaa::Off,
         Projection::Orthographic(OrthographicProjection {
-            scaling_mode: ScalingMode::AutoMin { min_width: aw + 36.0, min_height: ah + 36.0 },
+            scaling_mode: ScalingMode::AutoMin {
+                min_width: aw + 36.0,
+                min_height: ah + 36.0,
+            },
             ..OrthographicProjection::default_2d()
         }),
     ));
@@ -1158,9 +1240,17 @@ fn setup_scene(
     ));
 
     // Blue grid play-field (same texture the 3D floor uses) = the flat arena.
-    let grid = images.add(make_grid(Color::srgb(0.07, 0.18, 0.40), Color::srgb(0.20, 0.46, 0.80), 16));
+    let grid = images.add(make_grid(
+        Color::srgb(0.07, 0.18, 0.40),
+        Color::srgb(0.20, 0.46, 0.80),
+        16,
+    ));
     commands.spawn((
-        Sprite { image: grid, custom_size: Some(Vec2::new(aw, ah)), ..default() },
+        Sprite {
+            image: grid,
+            custom_size: Some(Vec2::new(aw, ah)),
+            ..default()
+        },
         Transform::from_xyz(0.0, 0.0, -10.0),
     ));
 
@@ -1169,7 +1259,11 @@ fn setup_scene(
     let t = 8.0;
     let bar = |w: f32, h: f32, x: f32, y: f32| {
         (
-            Sprite { color: rail, custom_size: Some(Vec2::new(w, h)), ..default() },
+            Sprite {
+                color: rail,
+                custom_size: Some(Vec2::new(w, h)),
+                ..default()
+            },
             Transform::from_xyz(x, y, -5.0),
         )
     };
@@ -1186,7 +1280,11 @@ fn setup_scene(
         let tw = (th as f32 * (pw / ph)).round().max(th as f32) as u32;
         let bar = images.add(make_cyl_bar(tw, th, pal.paddle));
         commands.entity(e).insert((
-            Sprite { image: bar, custom_size: Some(Vec2::new(pw, ph)), ..default() },
+            Sprite {
+                image: bar,
+                custom_size: Some(Vec2::new(pw, ph)),
+                ..default()
+            },
             Transform::from_xyz(0.0, 0.0, 3.0),
         ));
     }
@@ -1195,7 +1293,11 @@ fn setup_scene(
         let d = (half.hx * 2) as f32 / FP as f32 * SCALE * 2.0;
         let disc = images.add(make_disc(pal.ball));
         commands.entity(e).insert((
-            Sprite { image: disc, custom_size: Some(Vec2::splat(d)), ..default() },
+            Sprite {
+                image: disc,
+                custom_size: Some(Vec2::splat(d)),
+                ..default()
+            },
             Transform::from_xyz(0.0, 0.0, 4.0),
         ));
     }
@@ -1217,7 +1319,11 @@ fn skin_bricks(
         let (w, h) = brick_footprint(half);
         let p = to_px(pos, &c);
         commands.entity(e).insert((
-            Sprite { color: col, custom_size: Some(Vec2::new(w, h)), ..default() },
+            Sprite {
+                color: col,
+                custom_size: Some(Vec2::new(w, h)),
+                ..default()
+            },
             Transform::from_xyz(p.x, p.y, 1.0),
         ));
     }
@@ -1261,7 +1367,12 @@ fn to_floor(pos: &Pos, cfg: &SimConfig) -> (f32, f32) {
 }
 
 fn lit(base: Color, metallic: f32, rough: f32) -> StandardMaterial {
-    StandardMaterial { base_color: base, metallic, perceptual_roughness: rough, ..default() }
+    StandardMaterial {
+        base_color: base,
+        metallic,
+        perceptual_roughness: rough,
+        ..default()
+    }
 }
 
 /// Vertical FOV of the 3D arena camera (radians). Wider = stronger perspective
@@ -1298,26 +1409,46 @@ fn setup_3d(
         Camera3d::default(),
         IsDefaultUiCamera, // HUD + screens render over this camera (order 0, above the backdrop)
         // Draw on top of the order -1 star camera without erasing it.
-        Camera { order: 0, clear_color: ClearColorConfig::None, ..default() },
+        Camera {
+            order: 0,
+            clear_color: ClearColorConfig::None,
+            ..default()
+        },
         Hdr,
         Tonemapping::AcesFitted,
         Bloom::NATURAL,
         Msaa::Off,
-        AmbientLight { brightness: 75.0, ..default() },
+        AmbientLight {
+            brightness: 75.0,
+            ..default()
+        },
         // far plane pushed out so the distant star backdrop quad isn't clipped.
-        Projection::Perspective(PerspectiveProjection { fov: CAM_FOV, far: 20000.0, ..default() }),
-        Transform::from_translation(cam_target(ah) + cam_dir() * ah * 3.0).looking_at(cam_target(ah), Vec3::Y),
+        Projection::Perspective(PerspectiveProjection {
+            fov: CAM_FOV,
+            far: 20000.0,
+            ..default()
+        }),
+        Transform::from_translation(cam_target(ah) + cam_dir() * ah * 3.0)
+            .looking_at(cam_target(ah), Vec3::Y),
     ));
     // Angled key light for face shading. Real-time shadows OFF: the star dome would
     // cast a huge band across the floor, and we use fake blob shadows on the ground.
     commands.spawn((
-        DirectionalLight { illuminance: 9500.0, shadows_enabled: false, ..default() },
+        DirectionalLight {
+            illuminance: 9500.0,
+            shadows_enabled: false,
+            ..default()
+        },
         Transform::from_xyz(-aw * 0.55, ah * 0.8, ah * 0.45).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     // Contained play-field floor (arena-sized + a small lip, NOT the whole screen),
     // receives shadows. The space around it is the starfield.
-    let grid = images.add(make_grid(Color::srgb(0.07, 0.18, 0.40), Color::srgb(0.20, 0.46, 0.80), 16));
+    let grid = images.add(make_grid(
+        Color::srgb(0.07, 0.18, 0.40),
+        Color::srgb(0.20, 0.46, 0.80),
+        16,
+    ));
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(aw + 28.0, 9.0, ah + 28.0))),
         MeshMaterial3d(materials.add(StandardMaterial {
@@ -1385,7 +1516,10 @@ fn setup_3d(
     let zlen = ah + rr * 2.0;
     for sx in [-1.0_f32, 1.0] {
         commands.spawn((
-            Mesh3d(meshes.add(Cylinder { radius: rr, half_height: zlen * 0.5 })),
+            Mesh3d(meshes.add(Cylinder {
+                radius: rr,
+                half_height: zlen * 0.5,
+            })),
             MeshMaterial3d(rail.clone()),
             Transform::from_xyz(sx * (aw * 0.5 + rr), rr, 0.0)
                 .with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
@@ -1401,7 +1535,10 @@ fn setup_3d(
         ));
     }
     commands.spawn((
-        Mesh3d(meshes.add(Cylinder { radius: rr, half_height: (aw + rr * 2.0) * 0.5 })),
+        Mesh3d(meshes.add(Cylinder {
+            radius: rr,
+            half_height: (aw + rr * 2.0) * 0.5,
+        })),
         MeshMaterial3d(rail.clone()),
         Transform::from_xyz(0.0, rr, -(ah * 0.5 + rr))
             .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
@@ -1421,7 +1558,10 @@ fn setup_3d(
         let pr = c.paddle_h as f32 * SCALE * 1.2;
         let hl = ((c.paddle_w as f32 * SCALE - pr * 2.0).max(2.0)) * 0.5;
         commands.entity(e).insert((
-            Mesh3d(meshes.add(Capsule3d { radius: pr, half_length: hl })),
+            Mesh3d(meshes.add(Capsule3d {
+                radius: pr,
+                half_length: hl,
+            })),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color: pal.paddle,
                 emissive: LinearRgba::from(pal.accent) * 0.12,
@@ -1429,9 +1569,16 @@ fn setup_3d(
                 perceptual_roughness: 0.28,
                 ..default()
             })),
-            Transform::from_xyz(0.0, pr, 0.0).with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
+            Transform::from_xyz(0.0, pr, 0.0)
+                .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
         ));
-        spawn_floor_shadow(&mut commands, &art, FloorShadow::Paddle, c.paddle_w as f32 * SCALE * 1.05, pr * 2.6);
+        spawn_floor_shadow(
+            &mut commands,
+            &art,
+            FloorShadow::Paddle,
+            c.paddle_w as f32 * SCALE * 1.05,
+            pr * 2.6,
+        );
     }
     if let Ok((e, half)) = balls.single() {
         let r = half.hx as f32 / FP as f32 * SCALE * 2.1;
@@ -1461,7 +1608,13 @@ enum FloorShadow {
     Paddle,
 }
 
-fn spawn_floor_shadow(commands: &mut Commands, art: &ShadowArt, which: FloorShadow, w: f32, d: f32) {
+fn spawn_floor_shadow(
+    commands: &mut Commands,
+    art: &ShadowArt,
+    which: FloorShadow,
+    w: f32,
+    d: f32,
+) {
     commands.spawn((
         Mesh3d(art.mesh.clone()),
         MeshMaterial3d(art.mat.clone()),
@@ -1610,11 +1763,17 @@ fn read_input(world: &mut World) -> (i32, bool) {
     }
     let (touch_just, touch_x) = {
         let touches = world.resource::<Touches>();
-        (touches.any_just_pressed(), touches.iter().next().map(|t| t.position().x))
+        (
+            touches.any_just_pressed(),
+            touches.iter().next().map(|t| t.position().x),
+        )
     };
     let (mouse_just, mouse_held) = {
         let m = world.resource::<ButtonInput<MouseButton>>();
-        (m.just_pressed(MouseButton::Left), m.pressed(MouseButton::Left))
+        (
+            m.just_pressed(MouseButton::Left),
+            m.pressed(MouseButton::Left),
+        )
     };
     if touch_just || mouse_just {
         launch = true;
@@ -1627,7 +1786,10 @@ fn read_input(world: &mut World) -> (i32, bool) {
     // unchanged; only the live steering feel improves.
     let cursor_x = if mouse_held && touch_x.is_none() {
         let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
-        wq.single(&*world).ok().and_then(|w| w.cursor_position()).map(|p| p.x)
+        wq.single(&*world)
+            .ok()
+            .and_then(|w| w.cursor_position())
+            .map(|p| p.x)
     } else {
         None
     };
@@ -1686,7 +1848,15 @@ fn snapshot(world: &mut World) -> Snap {
             (b.vy, b.stuck, px.x, px.y)
         })
         .unwrap_or((0, true, 0.0, 0.0));
-    Snap { bricks: st.bricks_left, level, lives: st.lives, vy, stuck, bx, by }
+    Snap {
+        bricks: st.bricks_left,
+        level,
+        lives: st.lives,
+        vy,
+        stuck,
+        bx,
+        by,
+    }
 }
 
 fn drive(world: &mut World) {
@@ -1735,8 +1905,19 @@ fn drive(world: &mut World) {
     let st = *world.resource::<Status>();
     if !bonus && st.phase != Phase::Playing && !world.resource::<Recorder>().finished {
         world.resource_mut::<Recorder>().finished = true;
-        emit_sfx(if st.phase == Phase::Won { "win" } else { "lose" });
-        dispatch_announce(if st.phase == Phase::Won { "verified" } else { "roundOver" }, 0);
+        emit_sfx(if st.phase == Phase::Won {
+            "win"
+        } else {
+            "lose"
+        });
+        dispatch_announce(
+            if st.phase == Phase::Won {
+                "verified"
+            } else {
+                "roundOver"
+            },
+            0,
+        );
         let bytes = world.resource::<Recorder>().bytes.clone();
         dispatch_finish(st.phase == Phase::Won, &bytes);
     }
@@ -1785,9 +1966,18 @@ fn spawn_particles(world: &mut World, x: f32, y: f32) {
             let spd = rng.frange(50.0, 180.0);
             let sz = rng.frange(3.0, 6.0);
             w.spawn((
-                Sprite { color: accent, custom_size: Some(Vec2::splat(sz)), ..default() },
+                Sprite {
+                    color: accent,
+                    custom_size: Some(Vec2::splat(sz)),
+                    ..default()
+                },
                 Transform::from_xyz(x, y, 6.0),
-                Particle { vx: ang.cos() * spd, vy: ang.sin() * spd, life: 0.0, max: rng.frange(0.25, 0.5) },
+                Particle {
+                    vx: ang.cos() * spd,
+                    vy: ang.sin() * spd,
+                    life: 0.0,
+                    max: rng.frange(0.25, 0.5),
+                },
             ));
         }
     });
@@ -1808,7 +1998,11 @@ fn spawn_debris_3d(world: &mut World, x: f32, z: f32) {
                 Transform::from_xyz(x, BRICK_H3 * 0.5, z),
                 Debris {
                     vel: Vec3::new(ang.cos() * spd, up, ang.sin() * spd),
-                    spin: Vec3::new(rng.frange(-8.0, 8.0), rng.frange(-8.0, 8.0), rng.frange(-8.0, 8.0)),
+                    spin: Vec3::new(
+                        rng.frange(-8.0, 8.0),
+                        rng.frange(-8.0, 8.0),
+                        rng.frange(-8.0, 8.0),
+                    ),
                     life: 0.0,
                     max: rng.frange(0.35, 0.6),
                 },
@@ -1852,9 +2046,15 @@ fn frame_star_3d(cfg: Res<Cfg>, mut q: Query<&mut Transform, With<StarBg3d>>) {
 }
 
 fn emit_sfx(name: &str) {
-    let Some(window) = web_sys::window() else { return };
+    let Some(window) = web_sys::window() else {
+        return;
+    };
     let detail = js_sys::Object::new();
-    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("name"), &JsValue::from_str(name));
+    let _ = js_sys::Reflect::set(
+        &detail,
+        &JsValue::from_str("name"),
+        &JsValue::from_str(name),
+    );
     let init = web_sys::CustomEventInit::new();
     init.set_detail(&detail);
     init.set_bubbles(false);
@@ -1867,10 +2067,20 @@ fn emit_sfx(name: &str) {
 /// an optional number (`n` = level or lives). game.ts localizes it + speaks it via
 /// the hidden aria-live region. The Bevy canvas itself is opaque to screen readers.
 fn dispatch_announce(kind: &str, n: u32) {
-    let Some(window) = web_sys::window() else { return };
+    let Some(window) = web_sys::window() else {
+        return;
+    };
     let detail = js_sys::Object::new();
-    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("kind"), &JsValue::from_str(kind));
-    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("n"), &JsValue::from_f64(n as f64));
+    let _ = js_sys::Reflect::set(
+        &detail,
+        &JsValue::from_str("kind"),
+        &JsValue::from_str(kind),
+    );
+    let _ = js_sys::Reflect::set(
+        &detail,
+        &JsValue::from_str("n"),
+        &JsValue::from_f64(n as f64),
+    );
     let init = web_sys::CustomEventInit::new();
     init.set_detail(&detail);
     init.set_bubbles(false);
@@ -1882,7 +2092,9 @@ fn dispatch_announce(kind: &str, n: u32) {
 /// Tell game.ts the player toggled sound from the in-canvas mute button, so it can
 /// (un)mute the WebAudio SFX (the audio lives JS-side; Bevy only renders the toggle).
 fn dispatch_sound(on: bool) {
-    let Some(window) = web_sys::window() else { return };
+    let Some(window) = web_sys::window() else {
+        return;
+    };
     let detail = js_sys::Object::new();
     let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("on"), &JsValue::from_bool(on));
     let init = web_sys::CustomEventInit::new();
@@ -1894,10 +2106,16 @@ fn dispatch_sound(on: bool) {
 }
 
 fn dispatch_finish(passed: bool, bytes: &[u8]) {
-    let Some(window) = web_sys::window() else { return };
+    let Some(window) = web_sys::window() else {
+        return;
+    };
     let detail = js_sys::Object::new();
     let arr = js_sys::Uint8Array::from(bytes);
-    let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("passed"), &JsValue::from_bool(passed));
+    let _ = js_sys::Reflect::set(
+        &detail,
+        &JsValue::from_str("passed"),
+        &JsValue::from_bool(passed),
+    );
     let _ = js_sys::Reflect::set(&detail, &JsValue::from_str("trace"), &arr);
     let init = web_sys::CustomEventInit::new();
     init.set_detail(&detail);

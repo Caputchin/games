@@ -1551,6 +1551,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "caputchin-replay-rs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e31522d554bf1b57a0336b6953d86fda960751b9d03c1c5fe8b3641c2b05ee1"
+
+[[package]]
 name = "cc"
 version = "1.2.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4060,6 +4066,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ecs",
+ "caputchin-replay-rs",
  "js-sys",
  "wasm-bindgen",
  "web-sys",

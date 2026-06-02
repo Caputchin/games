@@ -63,7 +63,7 @@ pub struct SimConfig {
     pub ball_r: i32,
     pub ball_speed: i32, // subunits / tick (vector magnitude)
     pub num_levels: u32, // walls to clear (in order) to win; capped to LEVEL_ROWS.len()
-    pub brick_gap: i32, // units between bricks
+    pub brick_gap: i32,  // units between bricks
     pub top_margin: i32,
     pub lives: u32,
     pub timeout_ticks: u32,
@@ -74,14 +74,16 @@ impl SimConfig {
     /// order for BOTH the live and headless builds, so the two agree). A
     /// non-positive field keeps the default. Order is the contract with config.ts.
     pub fn from_ints(f: &[i32]) -> Self {
-        let mut c = SimConfig::default();
-        let g = |i: usize, d: i32| *f.get(i).filter(|v| **v > 0).unwrap_or(&d);
-        c.paddle_w = g(0, c.paddle_w);
-        c.ball_speed = g(1, c.ball_speed);
-        c.num_levels = g(2, c.num_levels as i32) as u32;
-        c.lives = g(3, c.lives as i32) as u32;
-        c.timeout_ticks = g(4, c.timeout_ticks as i32) as u32;
-        c
+        let d = SimConfig::default();
+        let g = |i: usize, dv: i32| *f.get(i).filter(|v| **v > 0).unwrap_or(&dv);
+        SimConfig {
+            paddle_w: g(0, d.paddle_w),
+            ball_speed: g(1, d.ball_speed),
+            num_levels: g(2, d.num_levels as i32) as u32,
+            lives: g(3, d.lives as i32) as u32,
+            timeout_ticks: g(4, d.timeout_ticks as i32) as u32,
+            ..d
+        }
     }
 }
 
@@ -229,14 +231,16 @@ fn brick_present(pat: Pattern, col: i32, row: i32, cols: i32, rows: i32) -> bool
         Pattern::Full => true,
         Pattern::Checker => (col + row) % 2 == 0,
         Pattern::Pyramid => (col - cols / 2).abs() <= row,
-        Pattern::Diamond => {
-            (col - cols / 2).abs() + (row - rows / 2).abs() <= cols.max(rows) / 2
-        }
+        Pattern::Diamond => (col - cols / 2).abs() + (row - rows / 2).abs() <= cols.max(rows) / 2,
     }
 }
 
-const PATTERNS: [Pattern; 4] =
-    [Pattern::Full, Pattern::Checker, Pattern::Pyramid, Pattern::Diamond];
+const PATTERNS: [Pattern; 4] = [
+    Pattern::Full,
+    Pattern::Checker,
+    Pattern::Pyramid,
+    Pattern::Diamond,
+];
 
 /// Layout PRNG seed, derived from the server seed but kept SEPARATE from the launch
 /// PRNG stream. Seeding the wall means every session's starting board differs, so an
@@ -245,11 +249,7 @@ const PATTERNS: [Pattern; 4] =
 /// build the identical wall.
 pub fn layout_seed_of(seed: [u32; 4]) -> u32 {
     let s = seed[0].rotate_left(5) ^ seed[1].rotate_left(17) ^ seed[2] ^ seed[3].rotate_left(27);
-    if s == 0 {
-        0x85eb_ca6b
-    } else {
-        s
-    }
+    if s == 0 { 0x85eb_ca6b } else { s }
 }
 
 fn brick_count(pat: Pattern, cols: i32, rows: i32) -> usize {
@@ -281,10 +281,18 @@ fn level_brick_layout(cfg: &SimConfig, level: u32, lseed: u32) -> Vec<(Pos, Half
     } else {
         LEVEL_ROWS[lvl]
     };
-    let cols = if bonus { 5 + (r % 2) as i32 } else { 4 + (r % 3) as i32 }; // bonus 5..=6, else 4..=6
+    let cols = if bonus {
+        5 + (r % 2) as i32
+    } else {
+        4 + (r % 3) as i32
+    }; // bonus 5..=6, else 4..=6
     let mut pat = if bonus {
         // dense walls for bonus (Full / Checker only), so difficulty rises with rows
-        if r & 1 == 0 { Pattern::Full } else { Pattern::Checker }
+        if r & 1 == 0 {
+            Pattern::Full
+        } else {
+            Pattern::Checker
+        }
     } else {
         PATTERNS[((r >> 7) % 4) as usize]
     };
@@ -304,7 +312,16 @@ fn level_brick_layout(cfg: &SimConfig, level: u32, lseed: u32) -> Vec<(Pos, Half
             }
             let x = cfg.brick_gap + col * (bw + cfg.brick_gap) + bw / 2;
             let y = cfg.top_margin + row * (bh + cfg.brick_gap) + bh / 2;
-            out.push((Pos { x: x * FP, y: y * FP }, Half { hx: bw * FP / 2, hy: bh * FP / 2 }));
+            out.push((
+                Pos {
+                    x: x * FP,
+                    y: y * FP,
+                },
+                Half {
+                    hx: bw * FP / 2,
+                    hy: bh * FP / 2,
+                },
+            ));
         }
     }
     out
@@ -339,11 +356,7 @@ pub struct SimSeed(pub [u32; 4]);
 /// re-runs the identical seeded launch stream.
 fn mix_seed(seed: [u32; 4]) -> u32 {
     let s = seed[0] ^ seed[1].rotate_left(11) ^ seed[2].rotate_left(19) ^ seed[3];
-    if s == 0 {
-        0x9e3779b9
-    } else {
-        s
-    }
+    if s == 0 { 0x9e3779b9 } else { s }
 }
 
 /// Spawn the sim entities + resources into an existing `World`. The live build
@@ -359,14 +372,30 @@ pub fn spawn_sim(world: &mut World, cfg: SimConfig, seed: [u32; 4]) {
     let px = cfg.arena_w * FP / 2;
     world.spawn((
         Paddle,
-        Pos { x: px, y: paddle_y(&cfg) },
-        Half { hx: cfg.paddle_w * FP / 2, hy: cfg.paddle_h * FP / 2 },
+        Pos {
+            x: px,
+            y: paddle_y(&cfg),
+        },
+        Half {
+            hx: cfg.paddle_w * FP / 2,
+            hy: cfg.paddle_h * FP / 2,
+        },
     ));
     // ball (starts stuck atop the paddle)
     world.spawn((
-        Ball { vx: 0, vy: 0, stuck: true },
-        Pos { x: px, y: paddle_y(&cfg) - (cfg.paddle_h * FP / 2) - cfg.ball_r * FP },
-        Half { hx: cfg.ball_r * FP, hy: cfg.ball_r * FP },
+        Ball {
+            vx: 0,
+            vy: 0,
+            stuck: true,
+        },
+        Pos {
+            x: px,
+            y: paddle_y(&cfg) - (cfg.paddle_h * FP / 2) - cfg.ball_r * FP,
+        },
+        Half {
+            hx: cfg.ball_r * FP,
+            hy: cfg.ball_r * FP,
+        },
     ));
     // level 0 brick wall (seeded layout)
     let layout = level_brick_layout(&cfg, 0, layout_seed_of(seed));
@@ -452,7 +481,10 @@ pub fn enter_bonus(world: &mut World) {
     let seed = world.resource::<SimSeed>().0;
     let next = world.resource::<Level>().0 + 1;
 
-    let bricks: Vec<Entity> = world.query_filtered::<Entity, With<Brick>>().iter(world).collect();
+    let bricks: Vec<Entity> = world
+        .query_filtered::<Entity, With<Brick>>()
+        .iter(world)
+        .collect();
     for e in bricks {
         world.entity_mut(e).despawn();
     }
@@ -576,7 +608,9 @@ fn sys_paddle_bounce(
     mut balls: Query<(&mut Pos, &mut Ball, &Half), Without<Paddle>>,
 ) {
     let c = cfg.0;
-    let Some((pp, ph)) = paddles.iter().next() else { return };
+    let Some((pp, ph)) = paddles.iter().next() else {
+        return;
+    };
     for (mut pos, mut ball, bh) in &mut balls {
         if ball.stuck || ball.vy <= 0 {
             continue;
@@ -591,6 +625,9 @@ fn sys_paddle_bounce(
     }
 }
 
+// Bevy system params are inherently complex query types; aliasing them would
+// hurt readability more than the lint helps.
+#[allow(clippy::type_complexity)]
 fn sys_bricks(
     mut commands: Commands,
     mut status: ResMut<Status>,
@@ -609,10 +646,18 @@ fn sys_bricks(
             let pen_x = (bh.hx + kh.hx) - (bpos.x - kp.x).abs();
             let pen_y = (bh.hy + kh.hy) - (bpos.y - kp.y).abs();
             if pen_x < pen_y {
-                ball.vx = if bpos.x < kp.x { -ball.vx.abs() } else { ball.vx.abs() };
+                ball.vx = if bpos.x < kp.x {
+                    -ball.vx.abs()
+                } else {
+                    ball.vx.abs()
+                };
                 bpos.x += ball.vx.signum() * pen_x;
             } else {
-                ball.vy = if bpos.y < kp.y { -ball.vy.abs() } else { ball.vy.abs() };
+                ball.vy = if bpos.y < kp.y {
+                    -ball.vy.abs()
+                } else {
+                    ball.vy.abs()
+                };
                 bpos.y += ball.vy.signum() * pen_y;
             }
             commands.entity(ent).despawn();
@@ -725,7 +770,10 @@ pub struct Sim {
 
 impl Sim {
     pub fn new(cfg: SimConfig, seed: [u32; 4]) -> Self {
-        Sim { world: build_world(cfg, seed), schedule: tick_schedule() }
+        Sim {
+            world: build_world(cfg, seed),
+            schedule: tick_schedule(),
+        }
     }
 
     pub fn tick(&mut self, dir: i32, launch: bool) {
@@ -749,7 +797,11 @@ mod tests {
     // Read ball x + stuck and paddle x from the world (a competent auto-player).
     fn read(sim: &mut Sim) -> (i32, bool, i32) {
         let mut bq = sim.world.query::<(&Pos, &Ball)>();
-        let (bx, stuck) = bq.iter(&sim.world).next().map(|(p, b)| (p.x, b.stuck)).unwrap();
+        let (bx, stuck) = bq
+            .iter(&sim.world)
+            .next()
+            .map(|(p, b)| (p.x, b.stuck))
+            .unwrap();
         let mut pq = sim.world.query_filtered::<&Pos, With<Paddle>>();
         let px = pq.iter(&sim.world).next().map(|p| p.x).unwrap();
         (bx, stuck, px)
@@ -792,7 +844,11 @@ mod tests {
             let st = drive([s.wrapping_mul(2654435761), s + 1, s + 7, s + 13], 1200);
             outcomes.insert((st.score, st.tick, st.lives));
         }
-        assert!(outcomes.len() > 4, "expected varied outcomes across seeds, got {}", outcomes.len());
+        assert!(
+            outcomes.len() > 4,
+            "expected varied outcomes across seeds, got {}",
+            outcomes.len()
+        );
     }
 
     #[test]
@@ -831,10 +887,19 @@ mod tests {
         let mut distinct = std::collections::HashSet::new();
         for s in 0..24u32 {
             let w = wall([s.wrapping_mul(2654435761), s + 1, s + 9, s + 17]);
-            assert!(w.len() >= 3, "seed {} gave a near-empty wall ({})", s, w.len());
+            assert!(
+                w.len() >= 3,
+                "seed {} gave a near-empty wall ({})",
+                s,
+                w.len()
+            );
             distinct.insert(w);
         }
-        assert!(distinct.len() > 4, "expected varied starting walls, got {}", distinct.len());
+        assert!(
+            distinct.len() > 4,
+            "expected varied starting walls, got {}",
+            distinct.len()
+        );
     }
 
     #[test]
@@ -869,7 +934,11 @@ mod tests {
                 break;
             }
         }
-        assert_eq!(sim.status().score, fresh.score, "reset == fresh under same seed");
+        assert_eq!(
+            sim.status().score,
+            fresh.score,
+            "reset == fresh under same seed"
+        );
         assert_eq!(sim.status().tick, fresh.tick);
     }
 
@@ -885,7 +954,11 @@ mod tests {
         let st = sim.status();
         assert!(!st.started, "must not be 'started' before any launch");
         assert_eq!(st.play_ticks, 0, "play clock frozen pre-launch");
-        assert_eq!(st.phase, Phase::Playing, "idle pre-launch is not a loss yet");
+        assert_eq!(
+            st.phase,
+            Phase::Playing,
+            "idle pre-launch is not a loss yet"
+        );
         assert_eq!(st.score, 0);
         // launch -> the clock starts ticking from this point.
         sim.tick(0, true);
@@ -894,15 +967,20 @@ mod tests {
         }
         let st = sim.status();
         assert!(st.started, "launching starts the clock");
-        assert!(st.play_ticks > 0 && st.play_ticks <= 31, "play clock counts post-launch");
+        assert!(
+            st.play_ticks > 0 && st.play_ticks <= 31,
+            "play clock counts post-launch"
+        );
     }
 
     #[test]
     fn idle_on_prompt_loses_at_the_budget() {
         // Never launching still terminates the round at the budget (the pre-launch
         // grace bounds the replay), and the loop cap is comfortably above that.
-        let mut cfg = SimConfig::default();
-        cfg.timeout_ticks = 120; // 2s budget for a fast test
+        let cfg = SimConfig {
+            timeout_ticks: 120, // 2s budget for a fast test
+            ..SimConfig::default()
+        };
         let mut sim = Sim::new(cfg, [9, 8, 7, 6]);
         let mut ticks = 0u32;
         for _ in 0..replay_tick_cap(&cfg) {
@@ -915,7 +993,12 @@ mod tests {
         let st = sim.status();
         assert_eq!(st.phase, Phase::Lost, "idling past the budget loses");
         assert_eq!(st.play_ticks, 0, "clock never started (never launched)");
-        assert!(ticks <= cfg.timeout_ticks + 1, "lost at ~budget, got {} vs {}", ticks, cfg.timeout_ticks);
+        assert!(
+            ticks <= cfg.timeout_ticks + 1,
+            "lost at ~budget, got {} vs {}",
+            ticks,
+            cfg.timeout_ticks
+        );
     }
 
     #[test]
@@ -934,7 +1017,11 @@ mod tests {
         let start_lives = sim.status().lives;
         for _ in 0..6000 {
             let mut bq = sim.world.query::<(&Pos, &Ball)>();
-            let (bx, stuck) = bq.iter(&sim.world).next().map(|(p, b)| (p.x, b.stuck)).unwrap();
+            let (bx, stuck) = bq
+                .iter(&sim.world)
+                .next()
+                .map(|(p, b)| (p.x, b.stuck))
+                .unwrap();
             let mut pq = sim.world.query_filtered::<&Pos, With<Paddle>>();
             let px = pq.iter(&sim.world).next().map(|p| p.x).unwrap();
             sim.tick((bx - px).signum(), stuck);

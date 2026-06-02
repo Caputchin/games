@@ -4,8 +4,9 @@
 // widget resolves from the manifest's snake_case keys) into the flat i32 array
 // the Bevy sim reads (`SimConfig::from_ints` in sim.rs). THE single config
 // transform site: both the live build (game.ts -> live.rs start) and the replay
-// (run-core.ts -> ws_run) pass the SAME array into the SAME `from_ints`, so live
-// play and server replay run identical params -> identical verdict.
+// (run.ts -> @caputchin/replay-wasm runWithModule -> cap_run) pass the SAME array
+// into the SAME `from_ints`, so live play and server replay run identical params
+// -> identical verdict.
 //
 // Missing/malformed keys fall back to the manifest `default` preset, then to the
 // hardcoded literals (which mirror sim.rs::SimConfig::default), so the game still

@@ -119,12 +119,12 @@ importers:
       '@caputchin/replay-contract':
         specifier: ^0.2.0
         version: 0.2.0
+      '@caputchin/replay-wasm':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.3
       happy-dom:
         specifier: ^15.0.0
         version: 15.11.7
@@ -173,6 +173,9 @@ packages:
 
   '@caputchin/replay-contract@0.2.0':
     resolution: {integrity: sha512-/bQhRmEwxeb6nyqC0ZGBVjEhLjRJWOUIvR2yC0rCRJj+aY+kfLQmSe8pI3f4Unmb4pv2Y8HK+mwuDOoCbN5//Q==}
+
+  '@caputchin/replay-wasm@0.2.0':
+    resolution: {integrity: sha512-SGY4XGKwQEjua3+/k886KXC7Gu7m6DlUXQ8CxWAjw7uPGH19GbtGMoq9Gc2jhBn9PXF/Q08qej1oY4RCg3WAgQ==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -1034,6 +1037,11 @@ snapshots:
       '@caputchin/replay-contract': 0.2.0
 
   '@caputchin/replay-contract@0.2.0': {}
+
+  '@caputchin/replay-wasm@0.2.0':
+    dependencies:
+      '@caputchin/replay-contract': 0.2.0
+      fflate: 0.8.3
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true

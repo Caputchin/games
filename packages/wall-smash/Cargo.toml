@@ -13,6 +13,9 @@ crate-type = ["cdylib", "rlib"]
 # additionally pulls full Bevy (DefaultPlugins -> WebGL2) for the live browser build.
 [dependencies]
 bevy_ecs = { version = "0.18.1", default-features = false }
+# The headless build's replay C-ABI (cap_alloc/cap_run) is emitted by this crate's
+# `caputchin_replay!` macro; we only supply the deterministic `run`.
+caputchin-replay-rs = "0.2"
 
 bevy = { version = "0.18.1", default-features = false, optional = true, features = [
     "bevy_winit",

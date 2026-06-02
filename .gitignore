@@ -1,6 +1,9 @@
 node_modules/
 dist/
 coverage/
+# Local-dev cargo path-override (redirects caputchin-replay-rs to the sibling
+# caputchin-sdk source); must not ship in this publishable repo.
+.cargo/
 *.log
 .DS_Store
 .env
