@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/Caputchin/games/compare/fruit-slash-v0.3.0...fruit-slash-v0.3.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* **games:** ship .caputchin presets (skins/locales/configs) in the published package ([fa71e62](https://github.com/Caputchin/games/commit/fa71e62376b27e5dcc54f6e862f7e9709beea151))
+
 ## [0.3.0](https://github.com/Caputchin/games/compare/fruit-slash-v0.2.0...fruit-slash-v0.3.0) (2026-06-01)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Caputchin/games/compare/phobos-v0.2.1...phobos-v0.2.2) (2026-06-02)
+
+
+### Bug Fixes
+
+* **games:** ship .caputchin presets (skins/locales/configs) in the published package ([fa71e62](https://github.com/Caputchin/games/commit/fa71e62376b27e5dcc54f6e862f7e9709beea151))
+
 ## [0.2.1](https://github.com/Caputchin/games/compare/phobos-v0.2.0...phobos-v0.2.1) (2026-06-01)
 
 
