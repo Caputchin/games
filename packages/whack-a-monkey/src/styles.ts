@@ -43,6 +43,9 @@ html, body, #cpt-root {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* Query container so the HUD font + spacing track the rendered width (cqw),
+     not a fixed px, so the top row never overflows on a narrow embed. */
+  container-type: inline-size;
 }
 
 .wm-canvas {
@@ -61,8 +64,8 @@ html, body, #cpt-root {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  font-size: 16px;
+  padding: clamp(6px, 1.6cqw, 12px) clamp(8px, 2cqw, 16px);
+  font-size: clamp(11px, 2cqw, 16px);
   font-weight: 600;
   letter-spacing: 0.02em;
   pointer-events: none;
@@ -70,15 +73,15 @@ html, body, #cpt-root {
 }
 .wm-hud .label {
   opacity: 0.7;
-  margin-inline-end: 6px;
+  margin-inline-end: clamp(3px, 0.8cqw, 6px);
   font-weight: 500;
 }
-.wm-hud-left { display: inline-flex; gap: 18px; align-items: center; }
-.wm-hud-right { display: inline-flex; gap: 12px; align-items: center; }
+.wm-hud-left { display: inline-flex; gap: clamp(6px, 2.2cqw, 18px); align-items: center; }
+.wm-hud-right { display: inline-flex; gap: clamp(5px, 1.5cqw, 12px); align-items: center; }
 .wm-hud-time[data-low="true"] { color: #FFD23F; }
 .wm-badge {
   font-weight: 700;
-  font-size: 14px;
+  font-size: clamp(10px, 1.75cqw, 14px);
   letter-spacing: 0.03em;
   color: var(--wm-fg);
   opacity: 0.92;

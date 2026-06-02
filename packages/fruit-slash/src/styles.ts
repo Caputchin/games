@@ -45,6 +45,9 @@ html, body, #cpt-root {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* Query container so the HUD font + spacing track the rendered width (cqw),
+     not a fixed px, so the top row never overflows on a narrow embed. */
+  container-type: inline-size;
 }
 
 .fs-canvas {
@@ -63,8 +66,8 @@ html, body, #cpt-root {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  font-size: 16px;
+  padding: clamp(6px, 1.6cqw, 12px) clamp(8px, 2cqw, 16px);
+  font-size: clamp(11px, 2cqw, 16px);
   font-weight: 600;
   letter-spacing: 0.02em;
   pointer-events: none;
@@ -72,24 +75,24 @@ html, body, #cpt-root {
 }
 .fs-hud .label {
   opacity: 0.7;
-  margin-inline-end: 6px;
+  margin-inline-end: clamp(3px, 0.8cqw, 6px);
   font-weight: 500;
 }
 .fs-hud-lives {
   display: inline-flex;
-  gap: 6px;
+  gap: clamp(4px, 0.8cqw, 6px);
   align-items: center;
 }
 .fs-pip {
-  width: 13px;
-  height: 13px;
+  width: clamp(9px, 1.6cqw, 13px);
+  height: clamp(9px, 1.6cqw, 13px);
   border-radius: 50%;
   background: currentColor;
 }
 .fs-pip[data-spent="true"] { opacity: 0.22; }
 .fs-badge {
   font-weight: 700;
-  font-size: 14px;
+  font-size: clamp(10px, 1.75cqw, 14px);
   letter-spacing: 0.03em;
   color: var(--fs-fg);
   opacity: 0.92;

@@ -62,6 +62,10 @@ html, body, #cpt-root {
 .dr-stage {
   position: absolute;
   inset: 0;
+  /* Query container so the HUD font + spacing track the rendered width (cqw).
+     The world is scaled by --dr-scale but the HUD lives in the unscaled stage,
+     so a fixed px HUD reads oversized on a narrow embed; cqw scales it down. */
+  container-type: inline-size;
 }
 
 .dr-world {
@@ -103,12 +107,12 @@ html, body, #cpt-root {
 
 .dr-hud {
   position: absolute;
-  top: 6px;
-  right: 10px;
+  top: clamp(3px, 1cqw, 6px);
+  right: clamp(6px, 1.6cqw, 10px);
   display: flex;
-  gap: 12px;
+  gap: clamp(7px, 2cqw, 12px);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: clamp(10px, 2.2cqw, 13px);
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--dr-fg);
@@ -116,7 +120,7 @@ html, body, #cpt-root {
 
 .dr-hud .label {
   opacity: 0.6;
-  margin-inline-end: 4px;
+  margin-inline-end: clamp(2px, 0.6cqw, 4px);
   font-weight: 500;
 }
 
