@@ -22,6 +22,7 @@
   "files": [
     "dist",
     "caputchin.json",
+    ".caputchin",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md",
     "TRADEMARK.md"

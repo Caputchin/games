@@ -21,6 +21,7 @@
   "files": [
     "dist",
     "caputchin.json",
+    ".caputchin",
     "LICENSE"
   ],
   "sideEffects": false,
