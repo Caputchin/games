@@ -129,10 +129,13 @@ export function runDinoRunner(opts: GameOptions): () => void {
   stage.append(world, overlay);
   if (soundBtn) stage.appendChild(soundBtn);
 
-  const touch = buildTouchControls();
   const announcer = createAnnouncer(doc);
-  root.append(stage, touch.root, announcer.element);
+  root.append(stage, announcer.element);
   container.appendChild(root);
+
+  // Touch devices have no on-screen buttons: tapping the stage jumps (see
+  // onStagePointer). Drives the start-screen control hint (tap vs keyboard).
+  const isTouch = typeof view.matchMedia === 'function' && view.matchMedia('(pointer: coarse)').matches;
 
   // ---- render-only state (not in the sim) ------------------------------
   // These objects are RENDER-ONLY drivers - they do NOT affect the verdict.
@@ -245,24 +248,16 @@ export function runDinoRunner(opts: GameOptions): () => void {
   doc.addEventListener('keyup', onKeyUp);
   stage.addEventListener('pointerdown', onStagePointer);
   stage.addEventListener('pointerup', onJumpRelease);
-  touch.jump.addEventListener('pointerdown', (e) => { e.preventDefault(); sfx.resume(); onJumpPress(); });
-  touch.jump.addEventListener('pointerup', onJumpRelease);
-  touch.jump.addEventListener('pointercancel', onJumpRelease);
-  touch.duck.addEventListener('pointerdown', (e) => { e.preventDefault(); onDuckPress(); });
-  touch.duck.addEventListener('pointerup', onDuckRelease);
-  touch.duck.addEventListener('pointercancel', onDuckRelease);
 
   // ---- state transitions ----------------------------------------------
   function showStart(): void {
-    overlay.replaceChildren(renderStartScreen(doc, strings, () => onJumpPress()));
-    touch.root.dataset['active'] = 'false';
+    overlay.replaceChildren(renderStartScreen(doc, strings, () => onJumpPress(), isTouch));
     focusOverlayButton();
   }
 
   function startRun(): void {
     overlay.replaceChildren();
     lastMilestone = 0;
-    touch.root.dataset['active'] = 'true';
     announcer.say(strings.t('announceStart'));
     // Sync the render-only runner into 'running' state.
     renderRunner.start();
@@ -304,7 +299,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
     driverStatus = 'crashed';
     renderRunner.crash();
     sfx.hit();
-    touch.root.dataset['active'] = 'false';
 
     const isNewBest = score > bestScore;
     if (isNewBest) bestScore = score;
@@ -575,22 +569,6 @@ export function runDinoRunner(opts: GameOptions): () => void {
       btn.setAttribute('aria-checked', muted ? 'false' : 'true');
     });
     return btn;
-  }
-  function buildTouchControls(): { root: HTMLElement; jump: HTMLButtonElement; duck: HTMLButtonElement } {
-    const rootEl = el('div', 'dr-touch');
-    rootEl.dataset['active'] = 'false';
-    const duckBtn = doc.createElement('button');
-    duckBtn.type = 'button';
-    duckBtn.className = 'dr-touch-button dr-touch-duck';
-    duckBtn.textContent = strings.t('ariaDuck');
-    duckBtn.setAttribute('aria-label', strings.t('ariaDuck'));
-    const jumpBtn = doc.createElement('button');
-    jumpBtn.type = 'button';
-    jumpBtn.className = 'dr-touch-button dr-touch-jump';
-    jumpBtn.textContent = strings.t('ariaJump');
-    jumpBtn.setAttribute('aria-label', strings.t('ariaJump'));
-    rootEl.append(duckBtn, jumpBtn);
-    return { root: rootEl, jump: jumpBtn, duck: duckBtn };
   }
   function pad(n: number): string {
     return String(Math.max(0, n)).padStart(5, '0');

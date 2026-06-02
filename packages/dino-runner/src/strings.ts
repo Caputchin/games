@@ -16,6 +16,7 @@ const FALLBACK = {
   startBody: 'Jump the cactus and duck the birds. Run as far as you can without crashing.',
   startButton: 'Start',
   controlsHint: 'Space or Up to jump, Down to duck',
+  controlsHintTouch: 'Tap to jump',
   gameOverTitle: 'Game over',
   verifiedTitle: 'Verified',
   gameOverScore: 'Score {score}',

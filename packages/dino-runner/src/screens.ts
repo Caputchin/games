@@ -29,7 +29,14 @@ function makeButton(
   return btn;
 }
 
-export function renderStartScreen(doc: Document, strings: Strings, onStart: () => void): HTMLElement {
+export function renderStartScreen(
+  doc: Document,
+  strings: Strings,
+  onStart: () => void,
+  // Touch devices have no keyboard and no on-screen buttons - the only control
+  // is tapping the screen to jump - so the hint swaps to the tap reminder.
+  isTouch: boolean,
+): HTMLElement {
   const root = doc.createElement('div');
   root.className = 'dr-overlay dr-overlay--start';
   root.setAttribute('role', 'group');
@@ -48,7 +55,7 @@ export function renderStartScreen(doc: Document, strings: Strings, onStart: () =
 
   const hint = doc.createElement('p');
   hint.className = 'dr-hint';
-  hint.textContent = strings.t('controlsHint');
+  hint.textContent = strings.t(isTouch ? 'controlsHintTouch' : 'controlsHint');
 
   root.append(title, body, buttons, hint);
   return root;

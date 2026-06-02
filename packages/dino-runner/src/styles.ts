@@ -57,6 +57,14 @@ html, body, #cpt-root {
   height: 100%;
   overflow: hidden;
   background: var(--dr-bg);
+  /* A held tap (e.g. holding jump) must not trigger native text selection or
+     the long-press copy callout on touch, which steals the gesture mid-run.
+     Inherits to all children (HUD, overlay copy). touch-action also drops the
+     double-tap-zoom / 300ms delay on the play surface. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 
 .dr-stage {
@@ -172,13 +180,6 @@ html, body, #cpt-root {
 
 .dr-overlay[data-hidden="true"] { display: none; }
 
-.dr-overlay-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--dr-fg);
-}
-.dr-overlay-icon svg { display: block; width: 100%; height: 100%; }
-
 .dr-title {
   margin: 0;
   font-size: 22px;
@@ -235,58 +236,22 @@ html, body, #cpt-root {
 /* Responsive overlay chrome: game.ts sets data-size on .dr-root from the stage
    height. Dino renders as a short, wide strip, so the start / game-over copy
    would overflow (and clip the title) at a small embed. As the height shrinks,
-   progressively drop to the essentials: hide the flavor body + controls hint,
-   shrink the title and button. The score line (.dr-line--score) is always kept
+   SHRINK the copy (title, body, button, gaps) rather than dropping it, so the
+   description stays visible at every size; only the secondary controls hint is
+   dropped at the very smallest. The score line (.dr-line--score) is always kept
    so the game-over screen never loses the player's result. */
 .dr-root[data-size="md"] .dr-overlay { gap: 6px; padding: 8px 10px; }
 .dr-root[data-size="md"] .dr-title { font-size: 18px; }
-.dr-root[data-size="md"] .dr-line:not(.dr-line--score) { display: none; }
-.dr-root[data-size="md"] .dr-hint { display: none; }
 
 .dr-root[data-size="xs"] .dr-overlay { gap: 4px; padding: 6px 8px; }
 .dr-root[data-size="xs"] .dr-title { font-size: 15px; letter-spacing: 1px; }
-.dr-root[data-size="xs"] .dr-line:not(.dr-line--score) { display: none; }
-.dr-root[data-size="xs"] .dr-hint { display: none; }
+.dr-root[data-size="xs"] .dr-line { font-size: 11px; line-height: 1.3; }
+.dr-root[data-size="xs"] .dr-hint { font-size: 10px; }
 .dr-root[data-size="xs"] .dr-button { padding: 6px 14px; font-size: 12px; }
 .dr-root[data-size="xs"] .dr-button-icon { width: 16px; height: 16px; }
 
 .dr-button-icon { width: 18px; height: 18px; }
 .dr-button-icon svg { display: block; width: 100%; height: 100%; }
-
-/* Touch controls live in the (unscaled) stage so the tap targets stay a
-   comfortable finger size regardless of world scale. Only shown on coarse
-   pointers; keyboard / mouse users never see them. */
-.dr-touch {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  display: none;
-  justify-content: space-between;
-  padding: 0 12px;
-  pointer-events: none;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .dr-touch[data-active="true"] { display: flex; }
-}
-
-.dr-touch-button {
-  appearance: none;
-  pointer-events: auto;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 2px solid var(--dr-button-secondary-border);
-  background: transparent;
-  color: var(--dr-button-secondary-text);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-}
-.dr-touch-button:active { background: var(--dr-button-secondary-hover-bg); }
 
 .dr-announce {
   position: absolute;
