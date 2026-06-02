@@ -232,6 +232,24 @@ html, body, #cpt-root {
 .dr-button:hover { background: var(--dr-button-hover); }
 .dr-button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring); }
 
+/* Responsive overlay chrome: game.ts sets data-size on .dr-root from the stage
+   height. Dino renders as a short, wide strip, so the start / game-over copy
+   would overflow (and clip the title) at a small embed. As the height shrinks,
+   progressively drop to the essentials: hide the flavor body + controls hint,
+   shrink the title and button. The score line (.dr-line--score) is always kept
+   so the game-over screen never loses the player's result. */
+.dr-root[data-size="md"] .dr-overlay { gap: 6px; padding: 8px 10px; }
+.dr-root[data-size="md"] .dr-title { font-size: 18px; }
+.dr-root[data-size="md"] .dr-line:not(.dr-line--score) { display: none; }
+.dr-root[data-size="md"] .dr-hint { display: none; }
+
+.dr-root[data-size="xs"] .dr-overlay { gap: 4px; padding: 6px 8px; }
+.dr-root[data-size="xs"] .dr-title { font-size: 15px; letter-spacing: 1px; }
+.dr-root[data-size="xs"] .dr-line:not(.dr-line--score) { display: none; }
+.dr-root[data-size="xs"] .dr-hint { display: none; }
+.dr-root[data-size="xs"] .dr-button { padding: 6px 14px; font-size: 12px; }
+.dr-root[data-size="xs"] .dr-button-icon { width: 16px; height: 16px; }
+
 .dr-button-icon { width: 18px; height: 18px; }
 .dr-button-icon svg { display: block; width: 100%; height: 100%; }
 
