@@ -33,6 +33,13 @@ struct TickSched(Schedule);
 #[derive(Resource, Default)]
 struct Accum(f32);
 
+/// Last in-window pointer x seen while the mouse button was held. When the
+/// cursor drags OUTSIDE the iframe/window mid-press, Bevy's
+/// `Window::cursor_position()` goes `None` and the paddle would freeze; we keep
+/// steering toward this last value (the edge the cursor exited) until release.
+#[derive(Resource, Default)]
+struct LastCursorX(Option<f32>);
+
 #[derive(Resource, Default)]
 struct Recorder {
     bytes: Vec<u8>,
@@ -414,6 +421,7 @@ pub fn start(
     spawn_sim(app.world_mut(), config, s);
     app.insert_resource(TickSched(tick_schedule()));
     app.insert_resource(Accum::default());
+    app.insert_resource(LastCursorX::default());
     app.insert_resource(Recorder::default());
     app.insert_resource(RenderRng(rng_seed));
     app.insert_resource(LaunchLatch::default());
@@ -1785,12 +1793,25 @@ fn read_input(world: &mut World) -> (i32, bool) {
     // stays in the {-1,0,1} dir model, so the recorded trace + headless replay are
     // unchanged; only the live steering feel improves.
     let cursor_x = if mouse_held && touch_x.is_none() {
-        let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
-        wq.single(&*world)
-            .ok()
-            .and_then(|w| w.cursor_position())
-            .map(|p| p.x)
+        let live_x = {
+            let mut wq = world.query_filtered::<&Window, With<PrimaryWindow>>();
+            wq.single(&*world)
+                .ok()
+                .and_then(|w| w.cursor_position())
+                .map(|p| p.x)
+        };
+        // While the button is held, keep steering even when the cursor leaves the
+        // window (drags outside the iframe): cursor_position() is None out there,
+        // so fall back to the last x we saw in-window (the edge it exited). Update
+        // the cache whenever we do have a live position.
+        let mut last = world.resource_mut::<LastCursorX>();
+        if live_x.is_some() {
+            last.0 = live_x;
+        }
+        live_x.or(last.0)
     } else {
+        // Not pressing: clear the cache so the next press starts fresh.
+        world.resource_mut::<LastCursorX>().0 = None;
         None
     };
     let pointer_x = touch_x.or(cursor_x);
