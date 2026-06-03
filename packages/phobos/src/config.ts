@@ -69,7 +69,7 @@ function jsonBoolean(key: string, hardcoded: boolean): boolean {
 const FALLBACK: RoundConfig = {
   passKills: jsonNumber('pass_kills', 3),
   startLevel: jsonNumber('start_level', 1),
-  waveCount: jsonNumber('wave_count', 5),
+  waveCount: jsonNumber('wave_count', 3),
   skill: jsonNumber('skill', 4),
   fastMonsters: jsonBoolean('fast_monsters', false),
   respawnMonsters: jsonBoolean('respawn_monsters', false),

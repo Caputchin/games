@@ -56,7 +56,7 @@
       "_default": true,
       "pass_kills": 3,
       "start_level": 1,
-      "wave_count": 5,
+      "wave_count": 3,
       "skill": 4,
       "fast_monsters": false,
       "respawn_monsters": false,
