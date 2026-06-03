@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.2](https://github.com/Caputchin/games/compare/dino-runner-v0.4.1...dino-runner-v0.4.2) (2026-06-03)
+
+
+### Bug Fixes
+
+* **dino-runner:** responsive start/game-over overlay so it fits a short embed ([0bb517e](https://github.com/Caputchin/games/commit/0bb517e091e4f7e9b65d14ee8cac38bbcd76c448))
+* **dino-runner:** restore start/over description at all sizes, tap-to-jump mobile, block long-press selection ([2c0842e](https://github.com/Caputchin/games/commit/2c0842ecfbd7d120fba2c4ea6d30dd30b1d7cf2e))
+* **games:** scale in-game HUD with the rendered width so it fits narrow embeds ([bd283f5](https://github.com/Caputchin/games/commit/bd283f54d2861e6e626fc117d4abcebced21fcc9))
+
 ## [0.4.1](https://github.com/Caputchin/games/compare/dino-runner-v0.4.0...dino-runner-v0.4.1) (2026-06-02)
 
 

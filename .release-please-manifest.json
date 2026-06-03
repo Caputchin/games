@@ -1,8 +1,8 @@
 {
   "packages/leaf-memory": "0.4.1",
-  "packages/dino-runner": "0.4.1",
-  "packages/fruit-slash": "0.3.1",
-  "packages/whack-a-monkey": "0.3.1",
-  "packages/phobos": "0.2.2",
-  "packages/wall-smash": "0.2.1"
+  "packages/dino-runner": "0.4.2",
+  "packages/fruit-slash": "0.3.2",
+  "packages/whack-a-monkey": "0.3.2",
+  "packages/phobos": "0.2.3",
+  "packages/wall-smash": "0.2.2"
 }

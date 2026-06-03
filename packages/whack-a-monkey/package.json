@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-whack-a-monkey",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Tap the monkeys before they duck, leave the jungle decoys alone. A Caputchin first-party game.",
   "keywords": [
     "caputchin",

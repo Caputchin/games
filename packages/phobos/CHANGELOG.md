@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Caputchin/games/compare/phobos-v0.2.2...phobos-v0.2.3) (2026-06-03)
+
+
+### Bug Fixes
+
+* **phobos:** level 1 spawns exactly the verify count of monsters (default wave_count to pass_kills) ([c39b74d](https://github.com/Caputchin/games/commit/c39b74dcacf2c19d3de31576c4e66667f29ec013))
+
 ## [0.2.2](https://github.com/Caputchin/games/compare/phobos-v0.2.1...phobos-v0.2.2) (2026-06-02)
 
 
