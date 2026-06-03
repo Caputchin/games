@@ -100,7 +100,7 @@ impl Default for SimConfig {
             paddle_speed: 9 * FP / 2, // 4.5 u/tick
             ball_r: 3,
             ball_speed: 9 * FP / 2, // 4.5 u/tick = 270 u/s
-            num_levels: 2,
+            num_levels: 1,
             brick_gap: 2,
             top_margin: 14,
             lives: 3,

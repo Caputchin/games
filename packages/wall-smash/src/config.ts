@@ -43,7 +43,7 @@ function jsonNumber(key: string, hardcoded: number): number {
 const FALLBACK: WallSmashConfig = {
   paddleWidth: jsonNumber('paddle_width', 44),
   ballSpeed: jsonNumber('ball_speed', 270),
-  numLevels: jsonNumber('num_levels', 2),
+  numLevels: jsonNumber('num_levels', 1),
   lives: jsonNumber('lives', 3),
   timeLimitSeconds: jsonNumber('time_limit_seconds', 45),
 };

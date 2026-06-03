@@ -12,7 +12,7 @@
       "_default": true,
       "paddle_width": 44,
       "ball_speed": 270,
-      "num_levels": 2,
+      "num_levels": 1,
       "lives": 3,
       "time_limit_seconds": 45,
       "sound": true
