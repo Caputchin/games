@@ -2,11 +2,11 @@
   "schema": {
     "ariaGame": {
       "name": "Game region label",
-      "description": "Screen-reader label for the whole play area; explains the goal and controls."
+      "description": "Screen-reader label for the whole play area; explains the goal and the fly-to-steer, auto-fire controls plus the Tab screen-reader target mode."
     },
     "start": {
       "name": "Start prompt",
-      "description": "Overlay prompt shown before the first launch, telling the visitor how to begin."
+      "description": "Overlay prompt shown before the first launch, telling the visitor that movement flies and aims, the swarm must be swept and dodged, and any input launches."
     },
     "hudWave": {
       "name": "HUD wave counter",
@@ -44,6 +44,18 @@
         "n"
       ]
     },
+    "announceTarget": {
+      "name": "Announcer: targeted drone",
+      "description": "Live-region message read when the screen-reader user presses Tab to target a drone; states the drone kind and its clock-position bearing. {kind} is filled with a localized drone-kind name, {clock} with the localized clock-position string.",
+      "tokens": [
+        "kind",
+        "clock"
+      ]
+    },
+    "announceNoTarget": {
+      "name": "Announcer: target destroyed",
+      "description": "Live-region message read when the currently targeted drone is destroyed and no new one is auto-selected; prompts the user to press Tab for the next drone."
+    },
     "announceWin": {
       "name": "Announcer: verified",
       "description": "Live-region message when every wave is cleared and the captcha is satisfied."
@@ -51,6 +63,25 @@
     "announceLose": {
       "name": "Announcer: round over",
       "description": "Live-region message when the shield is depleted and the round ends."
+    },
+    "kindChaser": {
+      "name": "Drone kind: Chaser",
+      "description": "Name of the chaser drone, read in the targeting announcement; fills {kind} in announceTarget."
+    },
+    "kindWeaver": {
+      "name": "Drone kind: Weaver",
+      "description": "Name of the weaver drone, read in the targeting announcement; fills {kind} in announceTarget."
+    },
+    "kindSplitter": {
+      "name": "Drone kind: Splitter",
+      "description": "Name of the splitter drone, read in the targeting announcement; fills {kind} in announceTarget."
+    },
+    "oclock": {
+      "name": "Clock-position bearing",
+      "description": "A 12-hour clock-position bearing for a targeted drone (12 is straight ahead, away from the camera); fills {clock} in announceTarget. {n} is the hour (1 to 12).",
+      "tokens": [
+        "n"
+      ]
     },
     "win": {
       "name": "Verified screen title",
@@ -68,210 +99,276 @@
       "name": "Unmute button",
       "description": "Label/aria-label for the control that unmutes game audio."
     },
-    "pulse": {
-      "name": "Pulse ability button",
-      "description": "Label/aria-label for the special energy-burst ability the pilot can trigger."
+    "a11yHint": {
+      "name": "Screen-reader targeting hint",
+      "description": "Short hint, surfaced to assistive tech, that pressing Tab targets the next drone."
     }
   },
   "presets": {
     "English": {
       "_lang": "en",
       "_default": true,
-      "ariaGame": "Voidshot arena shooter. Pilot your drone toward the cursor; the guns aim and fire automatically. Clear every wave of drones before your shield is depleted.",
-      "start": "Tap or press any key to launch",
+      "ariaGame": "Voidshot arena shooter. Fly your gunship toward the cursor to steer and aim; the guns fire forward automatically. Sweep the fire across the drone swarm while dodging, and clear every wave before your shield is gone. Screen reader: press Tab to target the next drone and your ship engages it.",
+      "start": "Move to fly and aim, sweep the swarm, and dodge. Tap or press a key to launch.",
       "hudWave": "Wave {n}",
       "hudScore": "Score {n}",
       "hudShield": "Shield {n}",
       "announceWave": "Wave {n}: {count} drones inbound",
       "announceShield": "Shield {n} remaining",
+      "announceTarget": "{kind} at {clock}",
+      "announceNoTarget": "Target destroyed. Press Tab for the next drone.",
       "announceWin": "Verified. All waves cleared.",
       "announceLose": "Shield down. Round over.",
+      "kindChaser": "Chaser drone",
+      "kindWeaver": "Weaver drone",
+      "kindSplitter": "Splitter drone",
+      "oclock": "{n} o'clock",
       "win": "Verified",
       "lose": "Shield down",
       "mute": "Mute",
       "unmute": "Unmute",
-      "pulse": "Pulse"
+      "a11yHint": "Tab targets the next drone"
     },
     "Chinese (Simplified)": {
       "_lang": "zh-Hans",
       "_default": true,
-      "ariaGame": "Voidshot 竞技场射击。操控你的无人机朝光标移动，炮塔会自动瞄准并开火。在护盾耗尽前清除每一波无人机。",
-      "start": "点击或按任意键发射",
+      "ariaGame": "Voidshot 竞技场射击。驾驶炮艇朝光标飞行来转向和瞄准，炮火会自动向前射击。一边躲避一边横扫无人机群，在护盾耗尽前清除每一波。屏幕阅读器：按 Tab 锁定下一架无人机，你的战机会自动攻击它。",
+      "start": "移动来飞行和瞄准，横扫机群并躲避。点击或按任意键发射。",
       "hudWave": "第 {n} 波",
       "hudScore": "得分 {n}",
       "hudShield": "护盾 {n}",
       "announceWave": "第 {n} 波：{count} 架无人机来袭",
       "announceShield": "护盾剩余 {n}",
+      "announceTarget": "{kind}，方位 {clock}",
+      "announceNoTarget": "目标已摧毁。按 Tab 锁定下一架无人机。",
       "announceWin": "已通过。所有波次已清除。",
       "announceLose": "护盾耗尽。本回合结束。",
+      "kindChaser": "追击无人机",
+      "kindWeaver": "穿梭无人机",
+      "kindSplitter": "分裂无人机",
+      "oclock": "{n} 点钟方向",
       "win": "已通过",
       "lose": "护盾耗尽",
       "mute": "静音",
       "unmute": "取消静音",
-      "pulse": "脉冲"
+      "a11yHint": "按 Tab 锁定下一架无人机"
     },
     "Spanish": {
       "_lang": "es",
       "_default": true,
-      "ariaGame": "Voidshot, disparos en arena. Pilota tu dron hacia el cursor; los cañones apuntan y disparan solos. Despeja cada oleada de drones antes de que se agote tu escudo.",
-      "start": "Toca o pulsa cualquier tecla para despegar",
+      "ariaGame": "Voidshot, disparos en arena. Pilota tu cañonera hacia el cursor para girar y apuntar; los cañones disparan al frente automáticamente. Barre el fuego sobre el enjambre de drones mientras esquivas y despeja cada oleada antes de quedarte sin escudo. Lector de pantalla: pulsa Tab para fijar el siguiente dron y tu nave lo ataca.",
+      "start": "Muévete para volar y apuntar, barre el enjambre y esquiva. Toca o pulsa una tecla para despegar.",
       "hudWave": "Oleada {n}",
       "hudScore": "Puntos {n}",
       "hudShield": "Escudo {n}",
       "announceWave": "Oleada {n}: llegan {count} drones",
       "announceShield": "Escudo {n} restante",
+      "announceTarget": "{kind} a las {clock}",
+      "announceNoTarget": "Objetivo destruido. Pulsa Tab para el siguiente dron.",
       "announceWin": "Verificado. Todas las oleadas despejadas.",
       "announceLose": "Escudo agotado. Ronda terminada.",
+      "kindChaser": "Dron perseguidor",
+      "kindWeaver": "Dron escurridizo",
+      "kindSplitter": "Dron divisor",
+      "oclock": "{n} en punto",
       "win": "Verificado",
       "lose": "Escudo agotado",
       "mute": "Silenciar",
       "unmute": "Activar sonido",
-      "pulse": "Pulso"
+      "a11yHint": "Tab fija el siguiente dron"
     },
     "Arabic": {
       "_lang": "ar",
       "_direction": "rtl",
       "_default": true,
-      "ariaGame": "Voidshot، إطلاق نار في الساحة. وجّه طائرتك المسيّرة نحو المؤشر؛ المدافع تصوّب وتطلق النار تلقائيًا. أنهِ كل موجة من الطائرات قبل نفاد درعك.",
-      "start": "انقر أو اضغط أي مفتاح للانطلاق",
+      "ariaGame": "Voidshot، إطلاق نار في الساحة. حلّق بمركبتك المسلّحة نحو المؤشر للتوجيه والتصويب؛ المدافع تطلق النار إلى الأمام تلقائيًا. اكتسح النيران فوق سرب الطائرات المسيّرة وأنت تراوغ، وأنهِ كل موجة قبل أن ينفد درعك. لقارئ الشاشة: اضغط Tab لاستهداف الطائرة التالية فتشتبك بها مركبتك.",
+      "start": "تحرّك لتطير وتصوّب، اكتسح السرب وراوغ. انقر أو اضغط أي مفتاح للانطلاق.",
       "hudWave": "الموجة {n}",
       "hudScore": "النقاط {n}",
       "hudShield": "الدرع {n}",
       "announceWave": "الموجة {n}: {count} طائرات قادمة",
       "announceShield": "يتبقى من الدرع {n}",
+      "announceTarget": "{kind} عند {clock}",
+      "announceNoTarget": "تم تدمير الهدف. اضغط Tab للطائرة التالية.",
       "announceWin": "تم التحقق. تم إنهاء كل الموجات.",
       "announceLose": "نفد الدرع. انتهت الجولة.",
+      "kindChaser": "طائرة مطارِدة",
+      "kindWeaver": "طائرة مراوِغة",
+      "kindSplitter": "طائرة منشطِرة",
+      "oclock": "الساعة {n}",
       "win": "تم التحقق",
       "lose": "نفد الدرع",
       "mute": "كتم الصوت",
       "unmute": "تشغيل الصوت",
-      "pulse": "نبضة"
+      "a11yHint": "زر Tab يستهدف الطائرة التالية"
     },
     "Portuguese": {
       "_lang": "pt",
       "_default": true,
-      "ariaGame": "Voidshot, tiro em arena. Pilote seu drone em direção ao cursor; os canhões miram e disparam sozinhos. Limpe cada onda de drones antes que seu escudo acabe.",
-      "start": "Toque ou pressione qualquer tecla para decolar",
+      "ariaGame": "Voidshot, tiro em arena. Pilote sua canhoneira em direção ao cursor para virar e mirar; os canhões disparam para a frente automaticamente. Varra o fogo sobre o enxame de drones enquanto desvia e limpe cada onda antes que seu escudo acabe. Leitor de tela: pressione Tab para mirar o próximo drone e sua nave o ataca.",
+      "start": "Mova-se para voar e mirar, varra o enxame e desvie. Toque ou pressione uma tecla para decolar.",
       "hudWave": "Onda {n}",
       "hudScore": "Pontos {n}",
       "hudShield": "Escudo {n}",
       "announceWave": "Onda {n}: {count} drones se aproximando",
       "announceShield": "Escudo {n} restante",
+      "announceTarget": "{kind} às {clock}",
+      "announceNoTarget": "Alvo destruído. Pressione Tab para o próximo drone.",
       "announceWin": "Verificado. Todas as ondas concluídas.",
       "announceLose": "Escudo esgotado. Rodada encerrada.",
+      "kindChaser": "Drone perseguidor",
+      "kindWeaver": "Drone esquivo",
+      "kindSplitter": "Drone divisor",
+      "oclock": "{n} horas",
       "win": "Verificado",
       "lose": "Escudo esgotado",
       "mute": "Silenciar",
       "unmute": "Ativar som",
-      "pulse": "Pulso"
+      "a11yHint": "Tab mira o próximo drone"
     },
     "French": {
       "_lang": "fr",
       "_default": true,
-      "ariaGame": "Voidshot, tir en arène. Pilotez votre drone vers le curseur; les canons visent et tirent tout seuls. Éliminez chaque vague de drones avant l'épuisement de votre bouclier.",
-      "start": "Touchez ou appuyez sur une touche pour décoller",
+      "ariaGame": "Voidshot, tir en arène. Pilotez votre canonnière vers le curseur pour diriger et viser; les canons tirent devant automatiquement. Balayez le feu sur l'essaim de drones en esquivant et éliminez chaque vague avant l'épuisement de votre bouclier. Lecteur d'écran: appuyez sur Tab pour cibler le prochain drone et votre vaisseau l'engage.",
+      "start": "Déplacez-vous pour voler et viser, balayez l'essaim et esquivez. Touchez ou appuyez sur une touche pour décoller.",
       "hudWave": "Vague {n}",
       "hudScore": "Score {n}",
       "hudShield": "Bouclier {n}",
       "announceWave": "Vague {n}: {count} drones en approche",
       "announceShield": "Bouclier {n} restant",
+      "announceTarget": "{kind} à {clock}",
+      "announceNoTarget": "Cible détruite. Appuyez sur Tab pour le prochain drone.",
       "announceWin": "Vérifié. Toutes les vagues éliminées.",
       "announceLose": "Bouclier épuisé. Manche terminée.",
+      "kindChaser": "Drone poursuiveur",
+      "kindWeaver": "Drone esquiveur",
+      "kindSplitter": "Drone diviseur",
+      "oclock": "{n} heures",
       "win": "Vérifié",
       "lose": "Bouclier épuisé",
       "mute": "Couper le son",
       "unmute": "Activer le son",
-      "pulse": "Impulsion"
+      "a11yHint": "Tab cible le prochain drone"
     },
     "German": {
       "_lang": "de",
       "_default": true,
-      "ariaGame": "Voidshot, Arena-Shooter. Steuere deine Drohne zum Mauszeiger; die Geschütze zielen und feuern von selbst. Räume jede Drohnenwelle, bevor dein Schild erschöpft ist.",
-      "start": "Tippen oder beliebige Taste zum Starten",
+      "ariaGame": "Voidshot, Arena-Shooter. Steuere dein Kampfschiff zum Mauszeiger, um zu lenken und zu zielen; die Geschütze feuern automatisch nach vorne. Streiche das Feuer über den Drohnenschwarm, während du ausweichst, und räume jede Welle, bevor dein Schild weg ist. Screenreader: Drücke Tab, um die nächste Drohne anzuvisieren, dein Schiff greift sie an.",
+      "start": "Bewege dich zum Fliegen und Zielen, streiche über den Schwarm und weiche aus. Tippe oder drücke eine Taste zum Starten.",
       "hudWave": "Welle {n}",
       "hudScore": "Punkte {n}",
       "hudShield": "Schild {n}",
       "announceWave": "Welle {n}: {count} Drohnen im Anflug",
       "announceShield": "Schild {n} übrig",
+      "announceTarget": "{kind} auf {clock}",
+      "announceNoTarget": "Ziel zerstört. Drücke Tab für die nächste Drohne.",
       "announceWin": "Bestätigt. Alle Wellen geräumt.",
       "announceLose": "Schild erschöpft. Runde vorbei.",
+      "kindChaser": "Jäger-Drohne",
+      "kindWeaver": "Weber-Drohne",
+      "kindSplitter": "Teiler-Drohne",
+      "oclock": "{n} Uhr",
       "win": "Bestätigt",
       "lose": "Schild erschöpft",
       "mute": "Stummschalten",
       "unmute": "Ton an",
-      "pulse": "Impuls"
+      "a11yHint": "Tab visiert die nächste Drohne an"
     },
     "Russian": {
       "_lang": "ru",
       "_default": true,
-      "ariaGame": "Voidshot, арена-шутер. Веди дрон к курсору; пушки наводятся и стреляют сами. Уничтожь каждую волну дронов, пока не иссяк щит.",
-      "start": "Нажмите или любую клавишу для старта",
+      "ariaGame": "Voidshot, арена-шутер. Веди боевой корабль к курсору, чтобы поворачивать и целиться; пушки стреляют вперёд автоматически. Веди огонь по рою дронов, уклоняясь, и зачищай каждую волну, пока не иссяк щит. Скринридер: нажмите Tab, чтобы взять на прицел следующий дрон, и корабль атакует его.",
+      "start": "Двигайтесь, чтобы лететь и целиться, ведите огонь по рою и уклоняйтесь. Нажмите или любую клавишу для старта.",
       "hudWave": "Волна {n}",
       "hudScore": "Счёт {n}",
       "hudShield": "Щит {n}",
       "announceWave": "Волна {n}: приближается дронов: {count}",
       "announceShield": "Щит: осталось {n}",
+      "announceTarget": "{kind}, направление {clock}",
+      "announceNoTarget": "Цель уничтожена. Нажмите Tab для следующего дрона.",
       "announceWin": "Пройдено. Все волны уничтожены.",
       "announceLose": "Щит пробит. Раунд окончен.",
+      "kindChaser": "Дрон-преследователь",
+      "kindWeaver": "Дрон-вьюн",
+      "kindSplitter": "Дрон-делитель",
+      "oclock": "{n} часов",
       "win": "Пройдено",
       "lose": "Щит пробит",
       "mute": "Выключить звук",
       "unmute": "Включить звук",
-      "pulse": "Импульс"
+      "a11yHint": "Tab выбирает следующий дрон"
     },
     "Japanese": {
       "_lang": "ja",
       "_default": true,
-      "ariaGame": "Voidshot アリーナシューター。カーソルに向けてドローンを操縦しよう。砲台は自動で照準して発射します。シールドが尽きる前にすべてのドローンの波を撃退しよう。",
-      "start": "タップまたは任意のキーで発進",
+      "ariaGame": "Voidshot アリーナシューター。カーソルに向けて自機を飛ばして方向と照準を合わせよう。砲は自動で前方へ発射します。回避しながらドローンの群れに掃射を浴びせ、シールドが尽きる前にすべての波を撃退しよう。スクリーンリーダー：Tab キーで次のドローンをロックオンすると自機が攻撃します。",
+      "start": "動いて飛びながら照準を合わせ、群れを掃射して回避しよう。タップまたはキーで発進。",
       "hudWave": "ウェーブ {n}",
       "hudScore": "スコア {n}",
       "hudShield": "シールド {n}",
       "announceWave": "ウェーブ {n}：ドローン {count} 機が接近中",
       "announceShield": "シールド残り {n}",
+      "announceTarget": "{clock}の方向に{kind}",
+      "announceNoTarget": "目標を撃破。Tab キーで次のドローンへ。",
       "announceWin": "認証済み。すべてのウェーブを撃退しました。",
       "announceLose": "シールドが尽きました。ラウンド終了。",
+      "kindChaser": "追尾ドローン",
+      "kindWeaver": "回避ドローン",
+      "kindSplitter": "分裂ドローン",
+      "oclock": "{n}時",
       "win": "認証済み",
       "lose": "シールド消失",
       "mute": "ミュート",
       "unmute": "ミュート解除",
-      "pulse": "パルス"
+      "a11yHint": "Tab で次のドローンをロックオン"
     },
     "Korean": {
       "_lang": "ko",
       "_default": true,
-      "ariaGame": "Voidshot 아레나 슈터. 커서를 향해 드론을 조종하세요. 포탑이 자동으로 조준하고 발사합니다. 실드가 바닥나기 전에 모든 드론 웨이브를 처치하세요.",
-      "start": "탭하거나 아무 키나 눌러 발진",
+      "ariaGame": "Voidshot 아레나 슈터. 커서를 향해 함선을 몰아 방향을 잡고 조준하세요. 포는 자동으로 정면을 향해 발사됩니다. 회피하면서 드론 무리에 사격을 휩쓸고, 실드가 바닥나기 전에 모든 웨이브를 처치하세요. 스크린 리더: Tab 키를 누르면 다음 드론을 조준하고 함선이 공격합니다.",
+      "start": "이동해 비행하며 조준하고, 무리를 휩쓸며 회피하세요. 탭하거나 키를 눌러 발진하세요.",
       "hudWave": "웨이브 {n}",
       "hudScore": "점수 {n}",
       "hudShield": "실드 {n}",
       "announceWave": "웨이브 {n}: 드론 {count}기 접근 중",
       "announceShield": "실드 {n} 남음",
+      "announceTarget": "{clock} 방향에 {kind}",
+      "announceNoTarget": "목표 격파. Tab 키를 눌러 다음 드론으로.",
       "announceWin": "인증됨. 모든 웨이브를 처치했어요.",
       "announceLose": "실드가 바닥났어요. 라운드 종료.",
+      "kindChaser": "추격 드론",
+      "kindWeaver": "회피 드론",
+      "kindSplitter": "분열 드론",
+      "oclock": "{n}시 방향",
       "win": "인증됨",
       "lose": "실드 소진",
       "mute": "음소거",
       "unmute": "음소거 해제",
-      "pulse": "펄스"
+      "a11yHint": "Tab으로 다음 드론 조준"
     },
     "Indonesian": {
       "_lang": "id",
       "_default": true,
-      "ariaGame": "Voidshot, penembak arena. Kemudikan dronmu ke arah kursor; meriam membidik dan menembak otomatis. Bersihkan setiap gelombang dron sebelum perisaimu habis.",
-      "start": "Ketuk atau tekan tombol apa saja untuk meluncur",
+      "ariaGame": "Voidshot, penembak arena. Terbangkan kapal tempurmu ke arah kursor untuk bermanuver dan membidik; meriam menembak ke depan secara otomatis. Sapukan tembakan ke gerombolan dron sambil mengelak, dan bersihkan setiap gelombang sebelum perisaimu habis. Pembaca layar: tekan Tab untuk membidik dron berikutnya dan kapalmu menyerangnya.",
+      "start": "Bergeraklah untuk terbang dan membidik, sapu gerombolan, dan mengelak. Ketuk atau tekan tombol untuk meluncur.",
       "hudWave": "Gelombang {n}",
       "hudScore": "Skor {n}",
       "hudShield": "Perisai {n}",
       "announceWave": "Gelombang {n}: {count} dron mendekat",
       "announceShield": "Perisai tersisa {n}",
+      "announceTarget": "{kind} di arah {clock}",
+      "announceNoTarget": "Target hancur. Tekan Tab untuk dron berikutnya.",
       "announceWin": "Terverifikasi. Semua gelombang dibersihkan.",
       "announceLose": "Perisai habis. Ronde selesai.",
+      "kindChaser": "Dron pengejar",
+      "kindWeaver": "Dron pengelak",
+      "kindSplitter": "Dron pembelah",
+      "oclock": "arah jam {n}",
       "win": "Terverifikasi",
       "lose": "Perisai habis",
       "mute": "Bisukan",
       "unmute": "Aktifkan suara",
-      "pulse": "Pulsa"
+      "a11yHint": "Tab membidik dron berikutnya"
     }
   }
 }

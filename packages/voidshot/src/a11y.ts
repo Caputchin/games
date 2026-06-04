@@ -1,7 +1,7 @@
 // Screen-reader announcer. A polite aria-live region the driver pushes game-state
-// changes into (wave start, shield loss, win/lose). Combined with full keyboard
-// play and auto-aim (no precise aiming needed), this is what makes a spatial
-// shooter genuinely operable without sight.
+// changes into (wave start, shield loss, win/lose, and the focused target +
+// bearing in the Tab target-cycle mode). Combined with that assisted targeting
+// mode, this is what makes a spatial shooter operable without sight.
 
 export class Announcer {
   private readonly el: HTMLElement;

@@ -21,12 +21,13 @@ describe('voidshot replay (JS path)', () => {
     const seed: Seed = [7, 11, 13, 17];
     const cfg = configToInts(null);
 
-    // Record a live session: orbit the cursor target until the round resolves.
+    // Record a live session: sweep the cursor target while firing until the round
+    // resolves, so the trace exercises bolts, kills, and splits.
     const live = await LiveSim.create(seed, cfg);
     let st = live.state();
     for (let t = 0; t < 3600 && st.phase === 0; t += 1) {
       const a = t * 0.05;
-      live.step(Math.round(Math.cos(a) * 5000), Math.round(Math.sin(a) * 5000), false);
+      live.step(Math.round(Math.cos(a) * 6000), Math.round(Math.sin(a) * 6000), true);
       st = live.state();
     }
     const finalLive = live.state();

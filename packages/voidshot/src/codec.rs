@@ -1,5 +1,5 @@
 //! Trace wire format. Per-tick player input = quantized cursor target (x,z in
-//! milliunits, i16) + a flags byte (bit0 = pulse). Records are delta-compressed:
+//! milliunits, i16) + a flags byte (bit0 = fire). Records are delta-compressed:
 //! one 9-byte record only when the input changes. The headless replay decodes the
 //! exact records the live build wrote, so both step the sim over identical input.
 //! Pinned by the round-trip test in `tests/` and the TS fixture `trace.ts`.
@@ -7,7 +7,8 @@
 /// Bytes per record: u32 tick + i16 tx + i16 tz + u8 flags.
 pub const REC: usize = 9;
 
-pub const FLAG_PULSE: u8 = 1;
+/// Flags bit0: the player is firing the forward bolt stream this tick.
+pub const FLAG_FIRE: u8 = 1;
 
 /// Quantize a world-unit coordinate to milliunits (i16), clamped to the i16 band.
 pub fn quant(v: f32) -> i16 {

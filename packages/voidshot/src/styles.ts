@@ -1,9 +1,16 @@
 // Scoped CSS for the canvas + HUD overlay. Injected once per mount. The arena
 // canvas fills the container on both axes (responsive); the HUD is a pointer-
 // transparent overlay except for its buttons.
+//
+// The game owns the whole iframe, so html + body must carry a full height -
+// `height:100%` on the container only resolves if every ancestor has a height,
+// otherwise the absolutely-positioned canvas collapses the container to 0 and
+// nothing is visible. The host runtime sizes the iframe (from `preferred` or the
+// layout), so 100% then flows down to the canvas.
 
 export function styleSheet(accent: string): string {
   return `
+html,body{height:100%;margin:0;}
 .vs-root{position:relative;width:100%;height:100%;overflow:hidden;background:#05060f;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;}
 .vs-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
 .vs-hud{position:absolute;inset:0;pointer-events:none;color:#fff;}
@@ -16,7 +23,6 @@ export function styleSheet(accent: string): string {
 .vs-banner{font-size:30px;font-weight:800;letter-spacing:.04em;}
 .vs-hint{font-size:15px;opacity:.85;max-width:18em;line-height:1.4;}
 .vs-btns{position:absolute;bottom:0;right:0;display:flex;gap:10px;padding:12px;}
-.vs-pulsewrap{position:absolute;bottom:0;left:0;padding:12px;}
 .vs-btn{pointer-events:auto;border:1px solid ${accent};background:rgba(8,12,28,.72);color:#fff;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:600;cursor:pointer;min-width:48px;min-height:48px;}
 .vs-btn:active{transform:scale(.95);}
 .vs-btn:focus-visible{outline:2px solid #fff;outline-offset:2px;}

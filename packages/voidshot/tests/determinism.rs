@@ -4,6 +4,10 @@
 //! wasm is the same module both ends, this native test is sufficient evidence the
 //! live play and server replay agree; cross-environment determinism is the
 //! rapier3d enhanced-determinism guarantee, re-checked by replay-selfcheck.
+//!
+//! `empty_trace_loses` and `passive_input_loses` are the anti-auto-win gates: the
+//! captcha is only meaningful if a winning trace requires real play, so doing
+//! nothing must resolve to a loss.
 
 use voidshot::config::SimConfig;
 use voidshot::sim::{Input, Phase, Sim, TICK_HZ};
@@ -12,15 +16,24 @@ use voidshot::{codec, replay, LiveSim};
 #[test]
 fn enemies_snapshot_survives_kills() {
     // Reading the render snapshot must never index a killed enemy's removed body
-    // (the live driver calls this every frame). Step well past several kills.
+    // (the live driver calls this every frame). Fire while stepping so bolts kill
+    // and split enemies, then confirm the snapshots stay sound.
     let mut sim = Sim::new([3, 5, 7, 9], SimConfig::default());
-    for _ in 0..600 {
+    for t in 0..900 {
         if sim.status().phase != Phase::Playing {
             break;
         }
-        sim.step(Input::default());
+        let a = t as f32 * 0.07;
+        sim.step(Input {
+            tx: a.cos() * 6.0,
+            tz: a.sin() * 6.0,
+            fire: true,
+        });
         let _ = sim.enemies(); // must not panic on dead handles
+        let _ = sim.bolts();
         let _ = sim.player_pos();
+        let _ = sim.player_facing();
+        let _ = sim.drain_deaths();
     }
 }
 
@@ -34,19 +47,82 @@ fn deterministic_run_to_run() {
 }
 
 #[test]
+fn empty_trace_loses() {
+    // The captcha invariant: an empty trace (a bot that submits nothing) is no
+    // play at all and must NOT pass. The swarm converges on the idle ship.
+    let (passed, _score, _dur) = replay([1, 2, 3, 4], &[], &[]);
+    assert!(!passed, "an empty trace must never pass the captcha");
+}
+
+#[test]
+fn passive_input_loses() {
+    // Sitting at center, never firing, never steering: the shield depletes (and
+    // the time cap would force a loss anyway). Auto-win must be impossible.
+    let mut sim = Sim::new([2, 4, 6, 8], SimConfig::default());
+    for _ in 0..sim.tick_cap() {
+        if sim.status().phase != Phase::Playing {
+            break;
+        }
+        sim.step(Input::default());
+    }
+    assert_eq!(
+        sim.status().phase,
+        Phase::Lost,
+        "passive play must resolve to a loss"
+    );
+}
+
+#[test]
+fn aimed_fire_destroys_drones_and_wins() {
+    // The flip side of the anti-auto-win gate: real aiming MUST work. A script that
+    // flies at the nearest drone while firing destroys the swarm and clears the
+    // waves - proof the bolts hit and the captcha is solvable by genuine play.
+    let mut sim = Sim::new([9, 8, 7, 6], SimConfig::default());
+    let mut first_kill_tick: Option<u32> = None;
+    for _ in 0..sim.tick_cap() {
+        if sim.status().phase != Phase::Playing {
+            break;
+        }
+        let (px, pz) = sim.player_pos();
+        let near = sim
+            .enemies()
+            .into_iter()
+            .map(|(x, z, _)| (x, z, (x - px) * (x - px) + (z - pz) * (z - pz)))
+            .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
+        let before = sim.status().score;
+        let inp = match near {
+            Some((x, z, _)) => Input { tx: x, tz: z, fire: true },
+            None => Input { tx: px, tz: pz, fire: true },
+        };
+        sim.step(inp);
+        if first_kill_tick.is_none() && sim.status().score > before {
+            first_kill_tick = Some(sim.status().tick);
+        }
+    }
+    assert!(first_kill_tick.is_some(), "aimed fire must destroy drones (bolts hit)");
+    assert_eq!(
+        sim.status().phase,
+        Phase::Won,
+        "focused aiming should clear the waves and win"
+    );
+    assert!(sim.status().score > 0, "kills must score");
+}
+
+#[test]
 fn live_equals_replay() {
     let seed = [7, 11, 13, 17];
     let mut ls = LiveSim::new(seed, SimConfig::default());
 
-    // Scripted "live" input: orbit the cursor target around the arena.
+    // Scripted "live" play: sweep the cursor target around the arena while firing,
+    // so the recorded trace exercises bolts, kills, splits, and contacts.
     for t in 0..3600u32 {
         if ls.status().phase != Phase::Playing {
             break;
         }
         let a = t as f32 * 0.05;
-        let qx = codec::quant(a.cos() * 5.0);
-        let qz = codec::quant(a.sin() * 5.0);
-        ls.step(qx, qz, false);
+        let qx = codec::quant(a.cos() * 6.0);
+        let qz = codec::quant(a.sin() * 6.0);
+        ls.step(qx, qz, true);
     }
 
     let live = ls.status();

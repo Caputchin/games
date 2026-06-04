@@ -16,7 +16,7 @@ import { Input } from './input.js';
 import { Hud } from './hud.js';
 import { Announcer } from './a11y.js';
 import { Sfx } from './audio.js';
-import { buildStrings } from './strings.js';
+import { buildStrings, clockBearing, kindName } from './strings.js';
 import { resolveSkin } from './skin.js';
 import { styleSheet } from './styles.js';
 
@@ -49,19 +49,11 @@ export function startGame(opts: GameOpts): { dispose(): void } {
   const input = new Input(container, renderer);
   const announcer = new Announcer(container);
   const sfx = new Sfx(soundEnabled(config));
-  let pulseFromButton = false;
 
   const hud = new Hud(container, strings, {
     onMute: () => {
       sfx.setMuted(!sfx.isMuted());
       hud.setMuted(sfx.isMuted());
-    },
-    onPulseDown: () => {
-      pulseFromButton = true;
-      markStarted();
-    },
-    onPulseUp: () => {
-      pulseFromButton = false;
     },
   });
   hud.setMaxShield(shieldHits);
@@ -77,6 +69,8 @@ export function startGame(opts: GameOpts): { dispose(): void } {
   let prevWave = 0;
   let prevScore = 0;
   let prevShield = shieldHits;
+  let aimX = 0;
+  let aimZ = 0;
 
   function markStarted(): void {
     if (!started) {
@@ -96,7 +90,7 @@ export function startGame(opts: GameOpts): { dispose(): void } {
     .then((s) => {
       sim = s;
       const st = s.state();
-      renderer.render(st);
+      renderer.render(st, { x: aimX, z: aimZ }, 0);
       hud.update(st);
       raf = requestAnimationFrame(loop);
     })
@@ -108,19 +102,21 @@ export function startGame(opts: GameOpts): { dispose(): void } {
     raf = requestAnimationFrame(loop);
     if (!sim) return;
 
+    const inp = input.read();
+    aimX = inp.tx;
+    aimZ = inp.tz;
+
     if (started && !finished) {
       if (!last) last = t;
       let dt = t - last;
       last = t;
       if (dt > 250) dt = 250; // clamp tab-out / long frame
       acc += dt;
-      const inp = input.read();
       const qx = Math.round(inp.tx * 1000);
       const qz = Math.round(inp.tz * 1000);
-      const pulse = inp.pulse || pulseFromButton;
       let steps = 0;
       while (acc >= DT_MS && steps < 8) {
-        sim.step(qx, qz, pulse);
+        sim.step(qx, qz, inp.fire);
         acc -= DT_MS;
         steps += 1;
       }
@@ -128,7 +124,8 @@ export function startGame(opts: GameOpts): { dispose(): void } {
 
     const st = sim.state();
     input.setPlayer(st.px, st.pz);
-    renderer.render(st);
+    input.setEnemies(st.enemies);
+    renderer.render(st, { x: aimX, z: aimZ }, t);
     hud.update(st);
     react(st);
 
@@ -149,6 +146,20 @@ export function startGame(opts: GameOpts): { dispose(): void } {
       prevShield = st.shield;
       sfx.hit();
       announcer.say(strings.t('announceShield', { n: Math.max(0, st.shield) }));
+    }
+    // Accessible target announcements (only changes in the Tab target-cycle mode).
+    if (input.consumeFocusChanged()) {
+      const f = input.currentFocus();
+      if (f) {
+        announcer.say(
+          strings.t('announceTarget', {
+            kind: kindName(strings, f.kind),
+            clock: clockBearing(strings, f.x - st.px, f.z - st.pz),
+          }),
+        );
+      } else {
+        announcer.say(strings.t('announceNoTarget'));
+      }
     }
   }
 

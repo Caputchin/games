@@ -1,14 +1,13 @@
 // DOM HUD overlay: wave + score readout, shield pips, the start hint, the
-// win/lose banner, and the mute + touch-pulse buttons. Pointer-transparent except
-// the buttons, so it never blocks the canvas input. RENDER-ONLY.
+// win/lose banner, and the mute button. Pointer-transparent except the button, so
+// it never blocks the canvas input. The ship auto-fires forward, so there is no
+// fire button; aiming is steering, shown by the in-canvas reticle. RENDER-ONLY.
 
 import type { LiveState } from './wasm.js';
 import type { Strings } from './strings.js';
 
 export interface HudCallbacks {
   onMute(): void;
-  onPulseDown(): void;
-  onPulseUp(): void;
 }
 
 export class Hud {
@@ -49,18 +48,7 @@ export class Hud {
     this.muteBtn.addEventListener('click', () => cb.onMute());
     btns.append(this.muteBtn);
 
-    const pulseWrap = div('vs-pulsewrap');
-    const pulseBtn = button('vs-btn', strings.t('pulse'));
-    pulseBtn.setAttribute('aria-label', strings.t('pulse'));
-    pulseBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      cb.onPulseDown();
-    });
-    pulseBtn.addEventListener('pointerup', () => cb.onPulseUp());
-    pulseBtn.addEventListener('pointercancel', () => cb.onPulseUp());
-    pulseWrap.append(pulseBtn);
-
-    this.el.append(top, this.center, btns, pulseWrap);
+    this.el.append(top, this.center, btns);
     parent.appendChild(this.el);
   }
 

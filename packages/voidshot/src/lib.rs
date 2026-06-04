@@ -24,7 +24,7 @@ fn decode_input(qx: i16, qz: i16, flags: u8) -> Input {
     Input {
         tx: codec::dequant(qx),
         tz: codec::dequant(qz),
-        pulse: flags & codec::FLAG_PULSE != 0,
+        fire: flags & codec::FLAG_FIRE != 0,
     }
 }
 
@@ -94,7 +94,7 @@ pub struct LiveSim {
 }
 
 /// State buffer header length (ints before the per-enemy triples).
-const STATE_HEADER: usize = 8;
+const STATE_HEADER: usize = 12;
 
 impl LiveSim {
     pub fn new(seed: [u32; 4], cfg: SimConfig) -> Self {
@@ -108,8 +108,8 @@ impl LiveSim {
 
     /// Advance one fixed tick with the current quantized input, recording the
     /// input into the trace on change so the recorded trace replays identically.
-    pub fn step(&mut self, qx: i16, qz: i16, pulse: bool) {
-        let flags = if pulse { codec::FLAG_PULSE } else { 0 };
+    pub fn step(&mut self, qx: i16, qz: i16, fire: bool) {
+        let flags = if fire { codec::FLAG_FIRE } else { 0 };
         let cur = (qx, qz, flags);
         if self.prev != Some(cur) {
             let tick = self.sim.status().tick;
@@ -150,21 +150,25 @@ pub unsafe extern "C" fn live_new(
     Box::into_raw(Box::new(LiveSim::new([s0, s1, s2, s3], cfg)))
 }
 
-/// Advance one tick (quantized cursor target + pulse bit).
+/// Advance one tick (quantized cursor target + fire bit).
 ///
 /// # Safety
 /// `ls` must be a live pointer from `live_new` not yet freed.
 #[no_mangle]
-pub unsafe extern "C" fn live_step(ls: *mut LiveSim, qx: i32, qz: i32, pulse: i32) {
+pub unsafe extern "C" fn live_step(ls: *mut LiveSim, qx: i32, qz: i32, fire: i32) {
     let ls = unsafe { &mut *ls };
-    ls.step(clamp_i16(qx), clamp_i16(qz), pulse != 0);
+    ls.step(clamp_i16(qx), clamp_i16(qz), fire != 0);
 }
 
 /// Fill and return a pointer to the render state buffer (i32, little-endian in
 /// linear memory). Layout:
 ///   [0] phase (0 playing, 1 won, 2 lost)  [1] score  [2] shield  [3] tick
-///   [4] wave  [5] player_x_milli  [6] player_z_milli  [7] enemy_count
-///   [8 + 3k ..] per alive enemy: kind, x_milli, z_milli
+///   [4] wave  [5] player_x_milli  [6] player_z_milli
+///   [7] facing_x_milli  [8] facing_z_milli  (unit vector * 1000)
+///   [9] enemy_count  [10] bolt_count  [11] death_count
+///   then enemy_count triples:  kind, x_milli, z_milli
+///   then bolt_count quads:     x_milli, z_milli, dirx_milli, dirz_milli
+///   then death_count triples:  kind, x_milli, z_milli  (this window's kills, VFX)
 /// Valid until the next `live_step`/`live_state` call.
 ///
 /// # Safety
@@ -174,12 +178,14 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     let ls = unsafe { &mut *ls };
     let st = ls.sim.status();
     let (px, pz) = ls.sim.player_pos();
-    let alive: Vec<(f32, f32, u8, bool)> =
-        ls.sim.enemies().into_iter().filter(|e| e.3).collect();
+    let (fx, fz) = ls.sim.player_facing();
+    let enemies = ls.sim.enemies();
+    let bolts = ls.sim.bolts();
+    let deaths = ls.sim.drain_deaths();
 
     let buf = &mut ls.state_buf;
     buf.clear();
-    buf.reserve(STATE_HEADER + alive.len() * 3);
+    buf.reserve(STATE_HEADER + enemies.len() * 3 + bolts.len() * 4 + deaths.len() * 3);
     buf.push(match st.phase {
         Phase::Playing => 0,
         Phase::Won => 1,
@@ -191,8 +197,23 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     buf.push(st.wave as i32);
     buf.push(milli(px));
     buf.push(milli(pz));
-    buf.push(alive.len() as i32);
-    for (x, z, kind, _) in alive {
+    buf.push(milli(fx));
+    buf.push(milli(fz));
+    buf.push(enemies.len() as i32);
+    buf.push(bolts.len() as i32);
+    buf.push(deaths.len() as i32);
+    for (x, z, kind) in enemies {
+        buf.push(kind as i32);
+        buf.push(milli(x));
+        buf.push(milli(z));
+    }
+    for (x, z, dx, dz) in bolts {
+        buf.push(milli(x));
+        buf.push(milli(z));
+        buf.push(milli(dx));
+        buf.push(milli(dz));
+    }
+    for (x, z, kind) in deaths {
         buf.push(kind as i32);
         buf.push(milli(x));
         buf.push(milli(z));
