@@ -19,6 +19,7 @@
     "./packages/wall-smash",
     "./packages/monkey-maze",
     "./packages/paddle-rally",
-    "./packages/blockfall"
+    "./packages/blockfall",
+    "./packages/voidshot"
   ]
 }

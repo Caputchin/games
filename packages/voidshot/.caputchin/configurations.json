@@ -1,0 +1,37 @@
+{
+  "schema": {
+    "wave_count": { "type": "range", "min": 1, "max": 4, "step": 1 },
+    "enemies_per_wave": { "type": "range", "min": 3, "max": 12, "step": 1 },
+    "enemy_speed": { "type": "range", "min": 2, "max": 7, "step": 0.5 },
+    "shield_hits": { "type": "range", "min": 1, "max": 6, "step": 1 },
+    "time_limit_seconds": { "type": "range", "min": 15, "max": 90, "step": 5 },
+    "sound": "boolean"
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "wave_count": 2,
+      "enemies_per_wave": 5,
+      "enemy_speed": 3.5,
+      "shield_hits": 3,
+      "time_limit_seconds": 60,
+      "sound": true
+    },
+    "casual": {
+      "wave_count": 1,
+      "enemies_per_wave": 4,
+      "enemy_speed": 2.5,
+      "shield_hits": 5,
+      "time_limit_seconds": 60,
+      "sound": true
+    },
+    "hardcore": {
+      "wave_count": 3,
+      "enemies_per_wave": 8,
+      "enemy_speed": 5.5,
+      "shield_hits": 1,
+      "time_limit_seconds": 45,
+      "sound": true
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "terms_accepted": true,
+  "license": "MIT AND Apache-2.0 AND Unlicense",
+  "marketplace": {
+    "name": "Voidshot",
+    "description": "Pilot your drone through a neon swarm and clear every wave before your shield burns out.",
+    "preview": "preview.png",
+    "categories": [
+      "Arcade",
+      "Shooter"
+    ],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": true,
+      "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-voidshot",
+  "entry": "dist/voidshot.js",
+  "run": {
+    "entry": "dist/run.js",
+    "modules": [
+      {
+        "name": "voidshot.wasm",
+        "path": "dist/voidshot.wasm",
+        "type": "wasm"
+      }
+    ]
+  },
+  "preferred": {
+    "width": 480,
+    "height": 480
+  }
+}

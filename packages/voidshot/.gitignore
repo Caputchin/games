@@ -1,0 +1,7 @@
+/target
+/dist
+/build
+/node_modules
+# Generated wasm inline (build artifact); the committed .d.ts stub stands in for typecheck.
+/src/generated/*.ts
+!/src/generated/*.d.ts

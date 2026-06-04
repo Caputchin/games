@@ -7,5 +7,6 @@
   "packages/wall-smash": "0.2.2",
   "packages/monkey-maze": "0.2.0",
   "packages/paddle-rally": "0.2.0",
-  "packages/blockfall": "0.2.0"
+  "packages/blockfall": "0.2.0",
+  "packages/voidshot": "0.1.0"
 }

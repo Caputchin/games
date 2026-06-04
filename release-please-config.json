@@ -41,6 +41,10 @@
     "packages/blockfall": {
       "component": "blockfall",
       "package-name": "@caputchin/game-blockfall"
+    },
+    "packages/voidshot": {
+      "component": "voidshot",
+      "package-name": "@caputchin/game-voidshot"
     }
   }
 }

@@ -1,0 +1,55 @@
+{
+  "name": "@caputchin/game-voidshot",
+  "version": "0.1.0",
+  "description": "Pilot your drone through a neon swarm and clear every wave to prove you're human. A rapier3d + OGL captcha. A Caputchin first-party game.",
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "rapier",
+    "ogl",
+    "shooter",
+    "game"
+  ],
+  "homepage": "https://github.com/Caputchin/caputchin-games#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caputchin/caputchin-games",
+    "directory": "packages/voidshot"
+  },
+  "license": "MIT AND Apache-2.0 AND Unlicense",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "caputchin.json",
+    ".caputchin",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": [
+    "./dist/voidshot.js"
+  ],
+  "scripts": {
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "pretest": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "test": "cargo test && vitest run",
+    "test:watch": "vitest",
+    "prebuild": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "build": "tsup",
+    "predev": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@caputchin/game-sdk": "^3.1.0",
+    "@caputchin/replay-contract": "^0.3.0",
+    "@caputchin/replay-wasm": "^0.2.0",
+    "@types/node": "^20.0.0",
+    "happy-dom": "^15.0.0",
+    "ogl": "^1.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

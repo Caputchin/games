@@ -15,6 +15,7 @@ The official first-party game pack for the [Caputchin](https://caputchin.com) ma
 | [Monkey Maze](packages/monkey-maze/) | Chomp every banana through the jungle maze while the critters hunt you. Grab a power-coconut to turn the tables. |
 | [Paddle Rally](packages/paddle-rally/) | Table-tennis captcha: out-rally a CPU paddle, or keep the ball alive solo. Built on Phaser. |
 | [Blockfall](packages/blockfall/) | Stack the falling blocks and clear lines to prove you're human. |
+| [Voidshot](packages/voidshot/) | Pilot your drone through a neon swarm and clear every wave before your shield burns out. Built on rapier3d + OGL. |
 
 More games land here over time. Each one is browsable and embeddable on its own from the [Caputchin marketplace](https://caputchin.com/marketplace).
 
@@ -43,6 +44,7 @@ GPL-2.0-only because it links the open-source GPL DOOM engine.
 | [Monkey Maze](packages/monkey-maze/) | MIT |
 | [Paddle Rally](packages/paddle-rally/) | MIT |
 | [Blockfall](packages/blockfall/) | MIT |
+| [Voidshot](packages/voidshot/) | MIT AND Apache-2.0 AND Unlicense |
 
 The repository-level [`LICENSE`](LICENSE) (MIT) covers the repo tooling and the
 MIT games, and records the per-package map in full. Bundled third-party assets

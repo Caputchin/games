@@ -213,6 +213,36 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
 
+  packages/voidshot:
+    devDependencies:
+      '@caputchin/game-sdk':
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@caputchin/replay-wasm':
+        specifier: ^0.2.0
+        version: 0.2.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      happy-dom:
+        specifier: ^15.0.0
+        version: 15.11.7
+      ogl:
+        specifier: ^1.0.0
+        version: 1.0.11
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.14)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
+
   packages/wall-smash:
     devDependencies:
       '@caputchin/game-sdk':
@@ -955,6 +985,9 @@ packages:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
 
+  ogl@1.0.11:
+    resolution: {integrity: sha512-kUpC154AFfxi16pmZUK4jk3J+8zxwTWGPo03EoYA8QPbzikHoaC82n6pNTbd+oEaJonaE8aPWBlX7ad9zrqLsA==}
+
   pathe@1.1.2:
     resolution: {integrity: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==}
 
@@ -1680,6 +1713,8 @@ snapshots:
   nanoid@3.3.12: {}
 
   object-assign@4.1.1: {}
+
+  ogl@1.0.11: {}
 
   pathe@1.1.2: {}
 

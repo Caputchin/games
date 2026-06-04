@@ -1,0 +1,59 @@
+{
+  "schema": {
+    "background": { "type": "color", "name": "Background", "description": "Void backdrop behind the arena." },
+    "arena": { "type": "color", "name": "Arena floor", "description": "The disc the battle plays out on." },
+    "grid": { "type": "color", "name": "Arena rim", "description": "The arena boundary ring." },
+    "player": { "type": "color", "name": "Player drone", "description": "Your drone core and glow." },
+    "chaser": { "type": "color", "name": "Chaser drones", "description": "Straight-seeking enemy drones." },
+    "weaver": { "type": "color", "name": "Weaver drones", "description": "Weaving enemy drones." },
+    "splitter": { "type": "color", "name": "Splitter drones", "description": "Splitter enemy drones." },
+    "accent": { "type": "color", "name": "HUD accent", "description": "Shield pips, buttons, and HUD highlights." }
+  },
+  "presets": {
+    "neon-cyan": {
+      "_default": true,
+      "_theme": "dark",
+      "background": "#05060f",
+      "arena": "#0e1430",
+      "grid": "#1c2a55",
+      "player": "#36f0ff",
+      "chaser": "#ff3d7f",
+      "weaver": "#ffd23d",
+      "splitter": "#7dff5a",
+      "accent": "#36f0ff"
+    },
+    "ember": {
+      "_theme": "dark",
+      "background": "#0c0604",
+      "arena": "#23110a",
+      "grid": "#5a2a14",
+      "player": "#ffb347",
+      "chaser": "#ff5630",
+      "weaver": "#ffd23d",
+      "splitter": "#ff8fa3",
+      "accent": "#ffb347"
+    },
+    "toxic": {
+      "_theme": "dark",
+      "background": "#060c06",
+      "arena": "#0f2010",
+      "grid": "#1f4a22",
+      "player": "#7dff5a",
+      "chaser": "#caff33",
+      "weaver": "#33ffd6",
+      "splitter": "#ff5ad0",
+      "accent": "#7dff5a"
+    },
+    "mono": {
+      "_theme": "dark",
+      "background": "#070708",
+      "arena": "#16171a",
+      "grid": "#33363d",
+      "player": "#ffffff",
+      "chaser": "#9aa0aa",
+      "weaver": "#c8cdd6",
+      "splitter": "#6c727c",
+      "accent": "#ffffff"
+    }
+  }
+}
