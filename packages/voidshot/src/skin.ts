@@ -11,6 +11,8 @@ export interface RenderSkin {
   arena: string;
   grid: string;
   player: string;
+  /** Enemy drone hull color (their glow uses the per-type chaser/weaver/splitter). */
+  drone: string;
   chaser: string;
   weaver: string;
   splitter: string;
@@ -22,6 +24,7 @@ const DEFAULT: RenderSkin = {
   arena: '#0e1430',
   grid: '#1c2a55',
   player: '#36f0ff',
+  drone: '#9aa6bd',
   chaser: '#ff3d7f',
   weaver: '#ffd23d',
   splitter: '#7dff5a',
@@ -39,6 +42,7 @@ export function resolveSkin(skin: ResolvedSkin | null | undefined): RenderSkin {
     arena: color(skin, 'arena', DEFAULT.arena),
     grid: color(skin, 'grid', DEFAULT.grid),
     player: color(skin, 'player', DEFAULT.player),
+    drone: color(skin, 'drone', DEFAULT.drone),
     chaser: color(skin, 'chaser', DEFAULT.chaser),
     weaver: color(skin, 'weaver', DEFAULT.weaver),
     splitter: color(skin, 'splitter', DEFAULT.splitter),

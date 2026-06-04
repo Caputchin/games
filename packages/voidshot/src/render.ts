@@ -334,12 +334,11 @@ export class Renderer3D implements Viewport {
       // its own color, distinct from the same-palette enemy drones).
       let col = part.color;
       if (recolor) {
+        // Map each part to the tint by luminance, with a brightness FLOOR so even
+        // the model's darkest parts stay clearly visible against the arena.
         const lum = 0.299 * col[0] + 0.587 * col[1] + 0.114 * col[2];
-        col = [
-          Math.min(1, lum * recolor[0] * 1.5 + 0.04),
-          Math.min(1, lum * recolor[1] * 1.5 + 0.04),
-          Math.min(1, lum * recolor[2] * 1.5 + 0.04),
-        ];
+        const k = 0.4 + 0.6 * lum;
+        col = [Math.min(1, k * recolor[0]), Math.min(1, k * recolor[1]), Math.min(1, k * recolor[2])];
       }
       mesh.__mat = {
         color: new Color(col[0], col[1], col[2]),
@@ -366,7 +365,13 @@ export class Renderer3D implements Viewport {
   private ensureEnemies(n: number): void {
     if (!this.enemyTemplate) return;
     while (this.enemies.length < n) {
-      const inst = this.buildInstance(this.enemyTemplate, hexToRgb(this.skin.chaser));
+      // Recolor the drone hull to the skin's grey `drone` color (visible on the
+      // arena); the per-type glow/rim color is set per frame in render().
+      const inst = this.buildInstance(
+        this.enemyTemplate,
+        hexToRgb(this.skin.chaser),
+        hexToRgb(this.skin.drone),
+      );
       inst.pivot.visible = false;
       // subtle colored aura per drone (small + faint so the model detail shows)
       const halo = new Mesh(this.gl, {
