@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@caputchin/game-sdk": "^3.1.0",
-    "@caputchin/preset-melonjs": "^0.2.0",
+    "@caputchin/preset-melonjs": "^0.2.1",
     "@types/node": "^20.0.0",
     "happy-dom": "^15.0.0",
     "melonjs": "^19.6.0",

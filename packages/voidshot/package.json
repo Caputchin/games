@@ -44,7 +44,7 @@
   "devDependencies": {
     "@caputchin/game-sdk": "^3.1.0",
     "@caputchin/replay-contract": "^0.3.0",
-    "@caputchin/replay-wasm": "^0.2.0",
+    "@caputchin/replay-wasm": "^0.3.0",
     "@types/node": "^20.0.0",
     "happy-dom": "^15.0.0",
     "ogl": "^1.0.0",
