@@ -182,20 +182,20 @@ export function startGame(opts: GameOpts): { dispose(): void } {
       announcer.say(strings.t('announceShield', { n: Math.max(0, st.shield) }));
     } else if (st.shield > prevShield) {
       prevShield = st.shield;
-      sfx.wave();
+      sfx.power();
       announcer.say(strings.t('announcePower', { name: powerName(strings, 3) })); // heal
     }
     // Powerup pickups (weapon change / invuln gained) - announce for accessibility.
     if (st.weapon !== prevWeapon) {
       if (st.weapon !== 0) {
-        sfx.wave();
+        sfx.power();
         announcer.say(strings.t('announcePower', { name: powerName(strings, st.weapon - 1) }));
       }
       prevWeapon = st.weapon;
     }
     const invOn = st.invulnTicksLeft > 0;
     if (invOn && !prevInvuln) {
-      sfx.wave();
+      sfx.power();
       announcer.say(strings.t('announcePower', { name: powerName(strings, 4) })); // invuln
     }
     prevInvuln = invOn;

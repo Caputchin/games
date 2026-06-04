@@ -146,10 +146,13 @@ fn asteroids_drop_and_are_deterministic() {
 
 #[test]
 fn powerups_spawn_deterministically() {
-    // Powerups spawn rarely on a seeded cadence (~12.5s); aim in endless so the ship
-    // survives to see one. Run-to-run identical (no input dependence on the spawn).
+    // Powerups spawn rarely on a seeded cadence (~12.5s); use a gentle config (slow
+    // weak enemies, big shield) so the ship reliably survives to tick ~750 to see
+    // one. Run-to-run identical (no input dependence on the spawn).
     let run = || {
-        let mut sim = Sim::new([2, 7, 1, 9], SimConfig::default(), true);
+        // [wave_count, enemies_per_wave, enemy_speed_milli, shield_hits, time_limit_ticks]
+        let cfg = SimConfig::from_ints(&[2, 3, 1000, 9, 3600]);
+        let mut sim = Sim::new([2, 7, 1, 9], cfg, true);
         let mut saw = false;
         for _ in 0..900 {
             if sim.status().phase != Phase::Playing {

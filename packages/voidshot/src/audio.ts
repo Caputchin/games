@@ -65,6 +65,14 @@ export class Sfx {
   wave(): void {
     this.blip(440, 0.18, 'triangle', 0.06);
   }
+  power(): void {
+    // bright ascending sparkle when a powerup is collected (distinct from the wave cue)
+    const ac = this.ac();
+    if (!ac) return;
+    [880, 1175, 1568].forEach((f, i) =>
+      this.blipAt(ac, f, ac.currentTime + i * 0.06, 0.15, 'triangle', 0.06),
+    );
+  }
   win(): void {
     const ac = this.ac();
     if (!ac) return;

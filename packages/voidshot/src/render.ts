@@ -579,22 +579,34 @@ export class Renderer3D implements Viewport {
     group.visible = false;
     group.setParent(this.scene);
     const color = new Color(1, 1, 1);
-    const ring = new Mesh(this.gl, {
-      geometry: new Torus(this.gl, { radius: 0.5, tube: 0.11, radialSegments: 10, tubularSegments: 28 }),
-      program: this.emissiveProg('#ffffff', 0.9),
+    const boltProg = this.emissiveProg('#ffffff', 0.97);
+    // lightning bolt: three angled segments forming a zigzag (x, y, rotZ, length)
+    const segs: [number, number, number, number][] = [
+      [0.07, 0.24, -0.42, 0.34],
+      [-0.01, 0.0, 0.7, 0.3],
+      [-0.08, -0.24, -0.42, 0.34],
+    ];
+    for (const [sx, sy, rz, len] of segs) {
+      const m = new Mesh(this.gl, {
+        geometry: new Box(this.gl, { width: 0.13, height: len, depth: 0.1 }),
+        program: boltProg,
+      });
+      m.position.set(sx, sy, 0);
+      m.rotation.z = rz;
+      m.onBeforeRender(() => {
+        (m.program.uniforms.uColor.value as Color).copy(color);
+      });
+      m.setParent(group);
+    }
+    // faint aura so the bolt reads from a distance
+    const halo = new Mesh(this.gl, {
+      geometry: new Sphere(this.gl, { radius: 0.5, widthSegments: 14, heightSegments: 10 }),
+      program: this.emissiveProg('#ffffff', 0.1),
     });
-    ring.onBeforeRender(() => {
-      (ring.program.uniforms.uColor.value as Color).copy(color);
+    halo.onBeforeRender(() => {
+      (halo.program.uniforms.uColor.value as Color).copy(color);
     });
-    ring.setParent(group);
-    const core = new Mesh(this.gl, {
-      geometry: new Sphere(this.gl, { radius: 0.24, widthSegments: 12, heightSegments: 9 }),
-      program: this.emissiveProg('#ffffff', 0.95),
-    });
-    core.onBeforeRender(() => {
-      (core.program.uniforms.uColor.value as Color).copy(color);
-    });
-    core.setParent(group);
+    halo.setParent(group);
     return { group, color };
   }
 
@@ -729,8 +741,10 @@ export class Renderer3D implements Viewport {
         continue;
       }
       node.group.visible = true;
-      node.group.position.set(p.x, 0.7 + Math.sin(timeMs * 0.004 + i) * 0.18, p.z);
-      node.group.rotation.y += dt * 2.2;
+      node.group.position.set(p.x, 0.9 + Math.sin(timeMs * 0.004 + i) * 0.2, p.z);
+      node.group.rotation.x = -0.5; // tilt the bolt to face the tilted camera
+      node.group.rotation.z = Math.sin(timeMs * 0.007 + i) * 0.18; // gentle vibrate
+      node.group.scale.set(1.5, 1.5, 1.5); // bigger so the bolt reads clearly
       node.color.set(...hexToRgb(POWERUP_COLORS[p.kind] ?? '#ffffff'));
     }
 
