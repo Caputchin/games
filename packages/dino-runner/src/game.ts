@@ -13,7 +13,8 @@
 // the server is only the recorded trace; the seed comes from `ctx.seed`.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
-import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
+import { randomSeed } from '@caputchin/game-sdk';
+import { encodeTrace, type TickInput } from '@caputchin/engine-kit';
 import { engine, toScore } from './sim/engine.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './sim/constants.js';
 import type { SimAction, SimRunner, SimObstacle } from './sim/types.js';
@@ -63,12 +64,6 @@ export interface GameOptions {
   /** Injectable for tests; default to the view's rAF/caf. */
   raf?: (cb: (ts: number) => void) => number;
   caf?: (handle: number) => void;
-}
-
-/** Build a throwaway seed for a no-verify mount (no server seed issued). */
-function randomSeed(): Seed {
-  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
-  return [u(), u(), u(), u()];
 }
 
 export function runDinoRunner(opts: GameOptions): () => void {

@@ -5,7 +5,7 @@
 // (seed, config, recorded actions) MUST yield an identical outcome live and on
 // replay.
 
-import type { RngState } from '@caputchin/engine-runtime';
+import type { RngState } from '@caputchin/determinism';
 import type { SimBox } from './constants.js';
 export type { SimBox };
 

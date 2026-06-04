@@ -1,6 +1,6 @@
 // Shared constants for the Leaf Memory sim.
 
-import { FIXED_TIMESTEP_MS } from '@caputchin/engine-runtime';
+import { FIXED_TIMESTEP_MS } from '@caputchin/engine-kit';
 
 export { FIXED_TIMESTEP_MS };
 

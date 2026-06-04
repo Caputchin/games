@@ -9,7 +9,7 @@ import liveWasmB64 from './generated/phobos-live-wasm.js';
 import { STAGE_WIDTH, STAGE_HEIGHT, mountStyles } from './styles.js';
 import { DOOM_KEYS, mapKey } from './input.js';
 import { resolvePhobosConfig, effectiveMaxTics } from './config.js';
-import { inflateWasm } from './wasm-inline.js';
+import { inflateWasm } from '@caputchin/replay-wasm';
 
 interface Bridge {
   pass(result: { trace: string }): void;

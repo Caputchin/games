@@ -14,7 +14,7 @@
 // run fails) and the trace decode (a malformed blob yields a failing verdict,
 // never a throw).
 
-import { toRun } from '@caputchin/engine-runtime';
+import { toRun } from '@caputchin/engine-kit';
 import { engine } from './sim/engine.js';
 import { MAX_TICKS } from './sim/constants.js';
 

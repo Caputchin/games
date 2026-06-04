@@ -5,7 +5,7 @@
 // The flip-back delay is a countdown in ticks stored in state, not a
 // setTimeout - this is the critical change that makes live == replay.
 
-import type { RngState } from '@caputchin/engine-runtime';
+import type { RngState } from '@caputchin/determinism';
 
 /** An identity value for each distinct leaf shape. Encoded as a small
  *  integer so the state stays serializable without importing leaf.ts. */

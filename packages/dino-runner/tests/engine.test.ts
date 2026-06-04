@@ -4,8 +4,8 @@
 // unit tests (jump arc, duck, collision origin) against the new sim engine.
 
 import { describe, it, expect } from 'vitest';
-import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-runtime';
-import type { Seed } from '@caputchin/engine-runtime';
+import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-kit';
+import type { Seed } from '@caputchin/replay-contract';
 import { engine, toScore, SIM_GROUND_Y } from '../src/sim/engine.js';
 import { RUNNER_START_X } from '../src/sim/constants.js';
 import { play } from './sim-driver.js';

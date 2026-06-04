@@ -9,11 +9,11 @@
 // trajectory is identical whatever the timestep.
 //
 // Determinism: the one transcendental, the launch's `sqrt`, goes
-// through `cap.math.sqrt` (IEEE-754 correctly-rounded, so bit-identical across
+// through `capMath.sqrt` (IEEE-754 correctly-rounded, so bit-identical across
 // runtimes). Randomness arrives as an injected `next: () => number` drawn from
-// `cap.rng`, never `Math.random`.
+// `rng`, never `Math.random`.
 
-import { cap } from '@caputchin/engine-runtime';
+import { rng, capMath } from '@caputchin/determinism';
 
 export interface LaunchState {
   x: number;
@@ -62,7 +62,7 @@ export function horizontalSpan(s: LaunchState, gravity: number): { minX: number;
 
 /** Derive a launch guaranteed on-screen: enters from the bottom, apex stays
  *  >= apexMarginTop below the top, horizontal stays within the side margins.
- *  Deterministic given `next` (a `cap.rng` draw function). */
+ *  Deterministic given `next` (a `rng` draw function). */
 export function deriveLaunch(next: () => number, b: LaunchBounds): LaunchState {
   const y0 = b.height + b.radius; // spawn just below the bottom border
   // Apex center range. Top clearance scales down on short fields so the range
@@ -72,7 +72,7 @@ export function deriveLaunch(next: () => number, b: LaunchBounds): LaunchState {
   const apexMax = Math.max(apexMin + 10, b.height * 0.62);
   const apexCenter = apexMin + next() * (apexMax - apexMin);
   const rise = y0 - apexCenter; // > 0
-  const vy = -cap.math.sqrt(2 * b.gravity * rise); // upward (negative)
+  const vy = -capMath.sqrt(2 * b.gravity * rise); // upward (negative)
   const t = (-2 * vy) / b.gravity; // flight time back to y0
 
   const minX = b.sideMargin;

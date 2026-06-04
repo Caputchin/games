@@ -5,7 +5,7 @@
 // (seed, config, recorded actions) MUST yield an identical outcome live and on
 // replay.
 
-import type { RngState } from '@caputchin/engine-runtime';
+import type { RngState } from '@caputchin/determinism';
 
 /** Server-supplied, gate-affecting gameplay config the run executes under. Only
  *  these five fields change the sim; presentation toggles (sound / show*) live in

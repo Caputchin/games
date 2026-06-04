@@ -9,7 +9,7 @@ import {
   type LaunchState,
 } from '../src/sim/launch.js';
 
-// A deterministic [0,1) generator for the test (mirrors what cap.rng provides at
+// A deterministic [0,1) generator for the test (mirrors what rng provides at
 // runtime). deriveLaunch takes a bare `next: () => number` so it stays agnostic
 // to the rng implementation.
 function makeNext(seed: number): () => number {

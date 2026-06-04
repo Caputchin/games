@@ -8,7 +8,7 @@
 // The logical world is FIXED. The mole grid is fixed world coords so hit
 // geometry is identical live and on replay (the server has no container).
 
-import { FIXED_TIMESTEP_MS } from '@caputchin/engine-runtime';
+import { FIXED_TIMESTEP_MS } from '@caputchin/engine-kit';
 
 /** Fixed logical world. */
 export const WORLD_WIDTH = 800;

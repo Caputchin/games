@@ -14,7 +14,8 @@
 // `ctx.seed`.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
-import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
+import { makeNow, randomSeed } from '@caputchin/game-sdk';
+import { encodeTrace, type TickInput } from '@caputchin/engine-kit';
 import { engine } from './sim/engine.js';
 import {
   WORLD_WIDTH,
@@ -94,13 +95,6 @@ function computeHoleCenters(): Vec[] {
 // Hole centers in fixed world coords - shared by driver and renderer.
 const HOLES: readonly Vec[] = computeHoleCenters();
 
-/** Build a throwaway seed for a no-verify mount. This is DRIVER-side (not
- *  the sim), so Math.random is fine here. */
-function randomSeed(): Seed {
-  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
-  return [u(), u(), u(), u()];
-}
-
 export interface GameOptions {
   container: HTMLElement;
   bridge: Bridge;
@@ -116,7 +110,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
   const view = doc.defaultView ?? window;
   const raf = opts.raf ?? view.requestAnimationFrame.bind(view);
   const caf = opts.caf ?? view.cancelAnimationFrame.bind(view);
-  const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
+  const now = opts.now ?? makeNow(view);
 
   const strings = buildStrings(ctx?.locale);
   // The RAW dashboard config. The display resolver below derives presentation

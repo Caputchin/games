@@ -18,7 +18,8 @@
 // step with the standard accumulator + catch-up clamp pattern.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
-import { encodeTrace, FIXED_TIMESTEP_MS, type TickInput } from '@caputchin/engine-runtime';
+import { makeNow, randomSeed } from '@caputchin/game-sdk';
+import { encodeTrace, FIXED_TIMESTEP_MS, type TickInput } from '@caputchin/engine-kit';
 import { engine } from './sim/engine.js';
 // engine.view is always defined (see sim/engine.ts). Bind once here so call
 // sites get a non-optional reference without per-call `!` assertions.
@@ -66,12 +67,6 @@ const HARDER_KEYS: StringKey[] = [
 const MAX_FRAME_DT = 0.1; // seconds
 const MAX_STEPS_PER_FRAME = 10;
 
-// Throwaway seed for no-verify mounts (Math.random is driver-side, fine).
-function randomSeed(): Seed {
-  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
-  return [u(), u(), u(), u()];
-}
-
 export interface GameOptions {
   container: HTMLElement;
   bridge: Bridge;
@@ -91,7 +86,7 @@ export function runLeafMemory(opts: GameOptions): () => void {
   const view = doc.defaultView ?? window;
   const raf = opts.raf ?? view.requestAnimationFrame.bind(view);
   const caf = opts.caf ?? view.cancelAnimationFrame.bind(view);
-  const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
+  const now = opts.now ?? makeNow(view);
 
   const strings = buildStrings(ctx?.locale);
   const leafSvgs = resolveLeafSvgs(ctx?.skin ?? null);

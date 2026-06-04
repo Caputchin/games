@@ -6,7 +6,8 @@
 
 import { engine } from '../src/sim/engine.js';
 import { GOOD, type SimAction } from '../src/sim/types.js';
-import type { Seed, TickInput } from '@caputchin/engine-runtime';
+import type { Seed } from '@caputchin/replay-contract';
+import type { TickInput } from '@caputchin/engine-kit';
 
 export interface PlayResult {
   score: number;

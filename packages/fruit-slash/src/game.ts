@@ -13,7 +13,8 @@
 // pointer trace; the seed comes from `ctx.seed`.
 
 import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
-import { encodeTrace, type TickInput } from '@caputchin/engine-runtime';
+import { makeNow, randomSeed } from '@caputchin/game-sdk';
+import { encodeTrace, type TickInput } from '@caputchin/engine-kit';
 import { engine } from './sim/engine.js';
 import { WORLD_WIDTH, WORLD_HEIGHT, TARGET_RADIUS, STEP_S } from './sim/constants.js';
 import { GOOD, type Fx, type SimAction, type SimState, type SimView } from './sim/types.js';
@@ -73,21 +74,13 @@ export interface GameOptions {
   now?: () => number;
 }
 
-/** Build a throwaway seed for a no-verify mount (no server seed issued). The
- *  replay never runs without a session, so any seed gives play variety; this is
- *  DRIVER-side (not the sim), so Math.random is fine here. */
-function randomSeed(): Seed {
-  const u = (): number => Math.floor(Math.random() * 0x100000000) >>> 0;
-  return [u(), u(), u(), u()];
-}
-
 export function runFruitSlash(opts: GameOptions): () => void {
   const { container, bridge, ctx } = opts;
   const doc = container.ownerDocument;
   const view = doc.defaultView ?? window;
   const raf = opts.raf ?? view.requestAnimationFrame.bind(view);
   const caf = opts.caf ?? view.cancelAnimationFrame.bind(view);
-  const now = opts.now ?? (() => (view.performance?.now ? view.performance.now() : Date.now()));
+  const now = opts.now ?? makeNow(view);
 
   const strings = buildStrings(ctx?.locale);
   // The RAW dashboard config. The display resolver below derives presentation

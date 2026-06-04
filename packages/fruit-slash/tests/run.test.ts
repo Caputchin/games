@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { encodeTrace } from '@caputchin/engine-runtime';
-import type { Seed } from '@caputchin/engine-runtime';
+import { encodeTrace } from '@caputchin/engine-kit';
+import type { Seed } from '@caputchin/replay-contract';
 import { run } from '../src/run.js';
 import { play } from './sim-driver.js';
 

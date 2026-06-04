@@ -13,7 +13,7 @@
 // height, so an adaptive world would make the replay diverge from the live play.
 // The renderer letterboxes this fixed world into whatever container it gets.
 
-import { FIXED_TIMESTEP_MS } from '@caputchin/engine-runtime';
+import { FIXED_TIMESTEP_MS } from '@caputchin/engine-kit';
 import type { LaunchBounds } from './launch.js';
 
 /** Fixed logical world. Entities live in these units; the renderer scales the

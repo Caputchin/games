@@ -20,7 +20,7 @@
 // `bridge.pass` round is the configured start level, so the replay resolves to
 // the matching SimConfig and the win verifies.
 
-import { toRun } from '@caputchin/engine-runtime';
+import { toRun } from '@caputchin/engine-kit';
 import { engine } from './sim/engine.js';
 import { MAX_TICKS } from './sim/constants.js';
 

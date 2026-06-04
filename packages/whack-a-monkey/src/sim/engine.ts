@@ -5,7 +5,7 @@
 // identical outcome - that is what makes the server's replayed verdict
 // trustworthy.
 //
-// Determinism rules obeyed here: all randomness comes from `cap.rng` (seeded
+// Determinism rules obeyed here: all randomness comes from `rng` (seeded
 // from the server seed, state kept in SimState); no Date / Math.random / DOM /
 // async. State is threaded linearly by the kit; the reducer mutates in place
 // and returns the same reference (no aliasing, faster than cloning each tick).
@@ -15,7 +15,8 @@
 // in that tick window. The server replays the exact same ticks. Variable real
 // dt is a live-driver concern only - the sim never sees it.
 
-import { cap, defineEngine, rngFromState } from '@caputchin/engine-runtime';
+import { defineEngine } from '@caputchin/engine-kit';
+import { rng, rngFromState } from '@caputchin/determinism';
 import {
   STEP_S,
   HOLE_COUNT,
@@ -156,7 +157,7 @@ function timingFraction(m: SimMole): number {
 
 export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
-    const r = cap.rng(seed);
+    const r = rng(seed);
     // ONE transform site: raw dashboard config (or null) -> this round's
     // SimConfig. Live play and replay both arrive here, so they cannot diverge.
     const cfg = resolveSimConfig(config);

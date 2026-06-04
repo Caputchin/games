@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runLeafMemory } from '../src/game';
 import type { Bridge, GameContext, ResolvedLocale } from '@caputchin/game-sdk';
-import { FIXED_TIMESTEP_MS } from '@caputchin/engine-runtime';
+import { FIXED_TIMESTEP_MS } from '@caputchin/engine-kit';
 
 function ctxWithLocale(iso: string, direction: 'ltr' | 'rtl' = 'ltr'): GameContext {
   return {

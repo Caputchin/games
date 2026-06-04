@@ -4,13 +4,14 @@
 // SAME ticks over (seed, config, trace). Identical inputs => identical outcome,
 // which is what makes the server's replayed verdict trustworthy.
 //
-// Determinism rules obeyed here: all randomness comes from `cap.rng` (seeded from
+// Determinism rules obeyed here: all randomness comes from `rng` (seeded from
 // the server seed, state kept in SimState); the only transcendentals (launch
-// sqrt, ramp exp) go through `cap.math`; no Date / Math.random / DOM / async.
+// sqrt, ramp exp) go through `capMath`; no Date / Math.random / DOM / async.
 // State is threaded linearly by the kit, so the reducer mutates in place and
 // returns the same reference (no aliasing, faster than cloning each tick).
 
-import { cap, defineEngine, rngFromState } from '@caputchin/engine-runtime';
+import { defineEngine } from '@caputchin/engine-kit';
+import { rng, rngFromState, capMath } from '@caputchin/determinism';
 import { integrate, isOffBottom } from './launch.js';
 import { swipeHitsCircle } from './geometry.js';
 import { evaluate } from './scoring.js';
@@ -67,7 +68,7 @@ function sliceSegment(state: SimState, ax: number, ay: number, bx: number, by: n
 
 export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
-    const r = cap.rng(seed);
+    const r = rng(seed);
     // ONE transform site: raw dashboard config (or null) -> this round's
     // SimConfig. Live play and replay both arrive here, so they cannot diverge.
     const cfg = resolveSimConfig(config);

@@ -4,13 +4,14 @@
 // server replays the SAME ticks over (seed, config, trace). Identical inputs =>
 // identical outcome, which makes the server's replayed verdict trustworthy.
 //
-// Determinism rules obeyed here: all randomness comes from `cap.rng` (seeded
+// Determinism rules obeyed here: all randomness comes from `rng` (seeded
 // from the server seed, state kept in SimState.rng); the jump arc uses the same
 // physics constants as the original Runner class; no Date / Math.random / DOM /
 // async. State is threaded linearly; mutation-in-place is fine (single thread,
 // no aliasing across ticks).
 
-import { cap, defineEngine, rngFromState } from '@caputchin/engine-runtime';
+import { defineEngine } from '@caputchin/engine-kit';
+import { rng, rngFromState } from '@caputchin/determinism';
 import {
   STEP_S,
   WORLD_WIDTH,
@@ -282,7 +283,7 @@ function checkCollision(runner: SimRunner, obstacles: readonly SimObstacle[]): b
 
 export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
-    const r = cap.rng(seed);
+    const r = rng(seed);
     // ONE transform site: raw dashboard config (or null) -> this round's
     // SimConfig. Live play and replay both arrive here, so they cannot diverge.
     const cfg = resolveSimConfig(config);

@@ -6,7 +6,7 @@
 // trustworthy.
 //
 // Determinism rules obeyed here:
-//   - All randomness comes from `cap.rng` (seeded from ctx.seed, state kept
+//   - All randomness comes from `rng` (seeded from ctx.seed, state kept
 //     in SimState). Board shuffle is the only random operation; card picks
 //     after that are fully deterministic from player input.
 //   - Time is tick-counted (ticksElapsed), never wall-clock.
@@ -23,7 +23,8 @@
 // config into this round's SimConfig, so both execution paths (live driver and
 // replay, both via `init`) derive identical sim params.
 
-import { cap, defineEngine } from '@caputchin/engine-runtime';
+import { defineEngine } from '@caputchin/engine-kit';
+import { rng } from '@caputchin/determinism';
 import { LEAF_IDS } from '../leaves.js';
 import { resolveSimConfig } from './config.js';
 import type { SimState, SimAction, SimView } from './types.js';
@@ -48,7 +49,7 @@ function shuffleDeck(deck: number[], intInRange: (n: number) => number): number[
 
 export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   init({ seed, config }) {
-    const r = cap.rng(seed);
+    const r = rng(seed);
 
     // ONE transform site: raw dashboard config (or null) -> this round's
     // SimConfig. Live play and replay both arrive here, so they cannot diverge.

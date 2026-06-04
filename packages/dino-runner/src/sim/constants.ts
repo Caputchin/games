@@ -12,7 +12,7 @@
 // the replay diverge from the live play. The renderer letterboxes this fixed
 // world into whatever container it gets.
 
-import { FIXED_TIMESTEP_MS } from '@caputchin/engine-runtime';
+import { FIXED_TIMESTEP_MS } from '@caputchin/engine-kit';
 
 /** Fixed reference FPS constant (physics tuned against). 60fps = 16.67ms, but
  *  we use FIXED_TIMESTEP_MS (16ms) from the kit. Stored for documentation. */
