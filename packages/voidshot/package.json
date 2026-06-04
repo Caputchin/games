@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-voidshot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pilot your drone through a neon swarm and clear every wave to prove you're human. A rapier3d + OGL captcha. A Caputchin first-party game.",
   "keywords": [
     "caputchin",
