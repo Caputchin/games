@@ -42,6 +42,13 @@ export interface Bolt {
   dz: number;
 }
 
+export interface Asteroid {
+  x: number;
+  z: number;
+  /** Height above the plane; 0 at impact. */
+  y: number;
+}
+
 export interface Death {
   kind: number;
   x: number;
@@ -62,7 +69,8 @@ export interface LiveState {
   fz: number;
   enemies: Enemy[];
   bolts: Bolt[];
-  /** Drones that died this draw window (for explosion VFX). */
+  asteroids: Asteroid[];
+  /** Drones + asteroid blasts that resolved this draw window (for explosion VFX). */
   deaths: Death[];
 }
 
@@ -135,8 +143,9 @@ export class LiveSim {
     const i = (k: number): number => dv.getInt32(base + k * 4, true);
     const enemyCount = i(9);
     const boltCount = i(10);
-    const deathCount = i(11);
-    let off = 12;
+    const asteroidCount = i(11);
+    const deathCount = i(12);
+    let off = 13;
 
     const enemies: Enemy[] = [];
     for (let k = 0; k < enemyCount; k += 1) {
@@ -152,6 +161,11 @@ export class LiveSim {
         dz: i(off + 3) / 1000,
       });
       off += 4;
+    }
+    const asteroids: Asteroid[] = [];
+    for (let k = 0; k < asteroidCount; k += 1) {
+      asteroids.push({ x: i(off) / 1000, z: i(off + 1) / 1000, y: i(off + 2) / 1000 });
+      off += 3;
     }
     const deaths: Death[] = [];
     for (let k = 0; k < deathCount; k += 1) {
@@ -171,6 +185,7 @@ export class LiveSim {
       fz: i(8) / 1000,
       enemies,
       bolts,
+      asteroids,
       deaths,
     };
   }

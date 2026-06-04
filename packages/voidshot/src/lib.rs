@@ -96,8 +96,8 @@ pub struct LiveSim {
     endless: bool,
 }
 
-/// State buffer header length (ints before the per-enemy triples).
-const STATE_HEADER: usize = 12;
+/// State buffer header length (ints before the per-entity sections).
+const STATE_HEADER: usize = 13;
 
 impl LiveSim {
     pub fn new(seed: [u32; 4], cfg: SimConfig, endless: bool) -> Self {
@@ -173,10 +173,11 @@ pub unsafe extern "C" fn live_step(ls: *mut LiveSim, qx: i32, qz: i32, fire: i32
 ///   [0] phase (0 playing, 1 won, 2 lost)  [1] score  [2] shield  [3] tick
 ///   [4] wave  [5] player_x_milli  [6] player_z_milli
 ///   [7] facing_x_milli  [8] facing_z_milli  (unit vector * 1000)
-///   [9] enemy_count  [10] bolt_count  [11] death_count
-///   then enemy_count triples:  kind, x_milli, z_milli
-///   then bolt_count quads:     x_milli, z_milli, dirx_milli, dirz_milli
-///   then death_count triples:  kind, x_milli, z_milli  (this window's kills, VFX)
+///   [9] enemy_count  [10] bolt_count  [11] asteroid_count  [12] death_count
+///   then enemy_count triples:   kind, x_milli, z_milli
+///   then bolt_count quads:      x_milli, z_milli, dirx_milli, dirz_milli
+///   then asteroid_count triples: x_milli, z_milli, y_milli (height above plane)
+///   then death_count triples:   kind, x_milli, z_milli  (this window's blasts, VFX)
 /// Valid until the next `live_step`/`live_state` call.
 ///
 /// # Safety
@@ -189,11 +190,14 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     let (fx, fz) = ls.sim.player_facing();
     let enemies = ls.sim.enemies();
     let bolts = ls.sim.bolts();
+    let asteroids = ls.sim.asteroids();
     let deaths = ls.sim.drain_deaths();
 
     let buf = &mut ls.state_buf;
     buf.clear();
-    buf.reserve(STATE_HEADER + enemies.len() * 3 + bolts.len() * 4 + deaths.len() * 3);
+    buf.reserve(
+        STATE_HEADER + enemies.len() * 3 + bolts.len() * 4 + asteroids.len() * 3 + deaths.len() * 3,
+    );
     buf.push(match st.phase {
         Phase::Playing => 0,
         Phase::Won => 1,
@@ -209,6 +213,7 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     buf.push(milli(fz));
     buf.push(enemies.len() as i32);
     buf.push(bolts.len() as i32);
+    buf.push(asteroids.len() as i32);
     buf.push(deaths.len() as i32);
     for (x, z, kind) in enemies {
         buf.push(kind as i32);
@@ -220,6 +225,11 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
         buf.push(milli(z));
         buf.push(milli(dx));
         buf.push(milli(dz));
+    }
+    for (x, z, y) in asteroids {
+        buf.push(milli(x));
+        buf.push(milli(z));
+        buf.push(milli(y));
     }
     for (x, z, kind) in deaths {
         buf.push(kind as i32);

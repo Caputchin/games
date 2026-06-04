@@ -31,6 +31,7 @@ fn enemies_snapshot_survives_kills() {
         });
         let _ = sim.enemies(); // must not panic on dead handles
         let _ = sim.bolts();
+        let _ = sim.asteroids();
         let _ = sim.player_pos();
         let _ = sim.player_facing();
         let _ = sim.drain_deaths();
@@ -106,6 +107,41 @@ fn aimed_fire_destroys_drones_and_wins() {
         "focused aiming should clear the waves and win"
     );
     assert!(sim.status().score > 0, "kills must score");
+}
+
+#[test]
+fn asteroids_drop_and_are_deterministic() {
+    // Asteroids spawn on a seeded cadence (no input), so they are bit-identical
+    // run-to-run; run in endless mode + aim so the ship survives long enough to
+    // see at least one drop.
+    let run = || {
+        let mut sim = Sim::new([4, 4, 4, 4], SimConfig::default(), true);
+        let mut saw = false;
+        for _ in 0..480 {
+            if sim.status().phase != Phase::Playing {
+                break;
+            }
+            let (px, pz) = sim.player_pos();
+            let near = sim
+                .enemies()
+                .into_iter()
+                .map(|(x, z, _)| (x, z, (x - px) * (x - px) + (z - pz) * (z - pz)))
+                .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
+            let inp = match near {
+                Some((x, z, _)) => Input { tx: x, tz: z, fire: true },
+                None => Input { tx: px, tz: pz, fire: true },
+            };
+            sim.step(inp);
+            if !sim.asteroids().is_empty() {
+                saw = true;
+            }
+        }
+        (saw, sim.status().score)
+    };
+    let a = run();
+    let b = run();
+    assert!(a.0, "an asteroid should drop within ~8s");
+    assert_eq!(a, b, "seeded asteroid spawns must be run-to-run identical");
 }
 
 #[test]

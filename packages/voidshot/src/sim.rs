@@ -40,6 +40,12 @@ const FACE_DEADZONE: f32 = 0.05; // below this steer distance the facing is held
 const SPLIT_CHILDREN: u32 = 2;
 const SPLIT_SPREAD: f32 = 0.9; // child spawn offset from the dead splitter
 const ENDLESS_CAP_PER_WAVE: u32 = 16; // cap concurrent drones in endless mode
+const ASTEROID_INTERVAL: u32 = 330; // ~5.5s between asteroid drops
+const ASTEROID_JITTER: u32 = 150; // + seeded 0..2.5s so the cadence is not robotic
+const ASTEROID_FALL: f32 = 13.0; // descent units/sec
+const ASTEROID_HIGH_Y: f32 = 13.0; // spawn height (telegraph window ~1s)
+const ASTEROID_BLAST_R: f32 = 2.7; // impact radius - dodge the marked zone
+const ASTEROID_KIND: u8 = 3; // deaths-buffer kind code for the impact blast VFX
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Phase {
@@ -91,6 +97,16 @@ struct Bolt {
     dist: f32,
 }
 
+/// A falling asteroid: fixed (x, z) impact point, descending `y`. On reaching the
+/// plane it blasts a radius - damaging the player and destroying enemies caught in
+/// it. The renderer telegraphs the landing with a growing ground shadow.
+#[derive(Clone, Copy)]
+struct Asteroid {
+    x: f32,
+    z: f32,
+    y: f32,
+}
+
 pub struct Sim {
     cfg: SimConfig,
     rng: Rng,
@@ -108,6 +124,8 @@ pub struct Sim {
     player: RigidBodyHandle,
     enemies: Vec<Enemy>,
     bolts: Vec<Bolt>,
+    asteroids: Vec<Asteroid>,
+    next_asteroid: u32,
     /// Death positions this draw window (x, z, kind), drained by the renderer for
     /// explosion VFX. Bounded by total kills per round (render-only).
     deaths: Vec<(f32, f32, u8)>,
@@ -162,6 +180,8 @@ impl Sim {
             player,
             enemies: Vec::new(),
             bolts: Vec::new(),
+            asteroids: Vec::new(),
+            next_asteroid: ASTEROID_INTERVAL, // first drop ~5.5s in
             deaths: Vec::new(),
             fx: 0.0,
             fz: -1.0, // initial nose points "north" (away from the camera)
@@ -218,6 +238,11 @@ impl Sim {
         self.bolts.iter().map(|b| (b.x, b.z, b.dx, b.dz)).collect()
     }
 
+    /// (x, z, height) for each falling asteroid, for the renderer (shadow + rock).
+    pub fn asteroids(&self) -> Vec<(f32, f32, f32)> {
+        self.asteroids.iter().map(|a| (a.x, a.z, a.y)).collect()
+    }
+
     /// Take and clear this window's death events (render-only explosion VFX).
     pub fn drain_deaths(&mut self) -> Vec<(f32, f32, u8)> {
         core::mem::take(&mut self.deaths)
@@ -239,6 +264,8 @@ impl Sim {
         self.clamp_to_plane();
         self.fire(input);
         self.step_bolts();
+        self.spawn_asteroids();
+        self.step_asteroids();
         self.contact();
         self.check_end();
 
@@ -494,6 +521,66 @@ impl Sim {
             &mut self.multibody_joints,
             true,
         );
+    }
+
+    /// Drop a new asteroid on a seeded cadence onto a random arena point.
+    fn spawn_asteroids(&mut self) {
+        if self.tick < self.next_asteroid {
+            return;
+        }
+        let angle = self.rng.range(0.0, std::f32::consts::TAU);
+        let r = self.rng.range(0.0, RIM_R - 1.5);
+        self.asteroids.push(Asteroid {
+            x: r * angle.cos(),
+            z: r * angle.sin(),
+            y: ASTEROID_HIGH_Y,
+        });
+        self.next_asteroid = self.tick + ASTEROID_INTERVAL + self.rng.below(ASTEROID_JITTER);
+    }
+
+    /// Descend asteroids; on impact, blast the radius (destroy caught enemies, cost
+    /// the player a shield) and emit the blast VFX. Fixed Vec/swap_remove order, so
+    /// it is bit-identical both ends.
+    fn step_asteroids(&mut self) {
+        let step = ASTEROID_FALL / TICK_HZ as f32;
+        let r2 = ASTEROID_BLAST_R * ASTEROID_BLAST_R;
+        let mut i = 0;
+        while i < self.asteroids.len() {
+            self.asteroids[i].y -= step;
+            if self.asteroids[i].y > 0.0 {
+                i += 1;
+                continue;
+            }
+            let ax = self.asteroids[i].x;
+            let az = self.asteroids[i].z;
+            self.asteroids.swap_remove(i);
+
+            let caught: Vec<usize> = (0..self.enemies.len())
+                .filter(|&k| {
+                    let e = &self.enemies[k];
+                    if !e.alive {
+                        return false;
+                    }
+                    let t = self.bodies[e.handle].translation();
+                    let dx = t.x - ax;
+                    let dz = t.z - az;
+                    dx * dx + dz * dz < r2
+                })
+                .collect();
+            for k in caught {
+                self.destroy_enemy(k);
+            }
+
+            if self.hit_cd == 0 {
+                let (px, pz) = self.player_pos();
+                if (px - ax) * (px - ax) + (pz - az) * (pz - az) < r2 {
+                    self.shield -= 1;
+                    self.hit_cd = HIT_INVULN;
+                }
+            }
+            self.deaths.push((ax, az, ASTEROID_KIND));
+            // do not advance i: swap_remove moved a not-yet-stepped asteroid to i
+        }
     }
 
     fn contact(&mut self) {

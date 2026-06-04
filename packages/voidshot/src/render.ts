@@ -40,6 +40,9 @@ const BURST_POOL = 24;
 const BURST_LIFE = 0.4; // seconds
 const PLAYER_TARGET_R = 1.6; // model bounding radius -> world units
 const ENEMY_TARGET_R = 1.25;
+const ASTEROID_HIGH_Y = 13; // spawn height, mirrors sim.rs ASTEROID_HIGH_Y
+const ASTEROID_BLAST_R = 2.7; // warning-ring radius, mirrors sim.rs ASTEROID_BLAST_R
+const ASTEROID_KIND = 3; // deaths kind code for the impact blast (mirrors sim.rs)
 
 const VERT = /* glsl */ `
   attribute vec3 position;
@@ -179,11 +182,18 @@ interface BoltNode {
   mesh: Mesh;
 }
 
+interface AsteroidNode {
+  group: Transform;
+  rock: Transform;
+  ring: { alpha: number };
+}
+
 interface Burst {
   group: Transform;
   prog: Program;
   active: boolean;
   life: number;
+  scaleMul: number;
 }
 
 export class Renderer3D implements Viewport {
@@ -199,6 +209,7 @@ export class Renderer3D implements Viewport {
   private readonly enemies: Instance[] = [];
   private enemyTemplate: Template | null = null;
   private readonly bolts: BoltNode[] = [];
+  private readonly asteroids: AsteroidNode[] = [];
   private readonly bursts: Burst[] = [];
   private readonly reticle: Transform;
   private loaded = false;
@@ -347,19 +358,69 @@ export class Renderer3D implements Viewport {
         rough: part.roughness,
       };
       mesh.__rim = rim;
-      mesh.onBeforeRender(() => {
-        const u = this.pbr.uniforms;
-        const m = mesh.__mat!;
-        (u.uColor.value as Color).copy(m.color);
-        (u.uEmissive.value as Color).copy(m.emissive);
-        u.uMetal.value = m.metal;
-        u.uRough.value = m.rough;
-        (u.uRim.value as Color).copy(mesh.__rim!.color);
-        u.uRimAmt.value = mesh.__rim!.amt;
-      });
+      mesh.onBeforeRender(() => this.applyPbr(mesh));
       mesh.setParent(centerer);
     }
     return { pivot, rim };
+  }
+
+  /** Push a PartMesh's stored material + its instance rim into the shared PBR
+   *  program just before that mesh draws (one program, per-mesh uniforms). */
+  private applyPbr(mesh: PartMesh): void {
+    const u = this.pbr.uniforms;
+    const m = mesh.__mat!;
+    (u.uColor.value as Color).copy(m.color);
+    (u.uEmissive.value as Color).copy(m.emissive);
+    u.uMetal.value = m.metal;
+    u.uRough.value = m.rough;
+    (u.uRim.value as Color).copy(mesh.__rim!.color);
+    u.uRimAmt.value = mesh.__rim!.amt;
+  }
+
+  private buildAsteroid(): AsteroidNode {
+    const group = new Transform();
+    group.visible = false;
+    group.setParent(this.scene);
+
+    // faceted rock lit by the PBR shader
+    const rock = new Transform();
+    rock.setParent(group);
+    const rockMesh = new Mesh(this.gl, {
+      geometry: new Sphere(this.gl, { radius: 0.85, widthSegments: 6, heightSegments: 5 }),
+      program: this.pbr,
+    }) as PartMesh;
+    rockMesh.__mat = {
+      color: new Color(0.42, 0.4, 0.46),
+      emissive: new Color(0.04, 0.02, 0.0),
+      metal: 0.0,
+      rough: 0.95,
+    };
+    rockMesh.__rim = { color: new Color(1.0, 0.5, 0.2), amt: 0.5 };
+    rockMesh.onBeforeRender(() => this.applyPbr(rockMesh));
+    rockMesh.setParent(rock);
+
+    // warning ring on the plane (the blast zone); alpha grows as the rock nears
+    const ringState = { alpha: 0 };
+    const ring = new Mesh(this.gl, {
+      geometry: new Torus(this.gl, {
+        radius: ASTEROID_BLAST_R,
+        tube: 0.14,
+        radialSegments: 8,
+        tubularSegments: 56,
+      }),
+      program: this.emissiveProg('#ff7a2a', 1),
+    });
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0.04, 0);
+    ring.onBeforeRender(() => {
+      ring.program.uniforms.uAlpha.value = ringState.alpha;
+    });
+    ring.setParent(group);
+    return { group, rock, ring: ringState };
+  }
+
+  private ensureAsteroids(n: number): void {
+    while (this.asteroids.length < n) this.asteroids.push(this.buildAsteroid());
   }
 
   private ensureEnemies(n: number): void {
@@ -504,7 +565,7 @@ export class Renderer3D implements Viewport {
       program: own,
     });
     shell.setParent(group);
-    return { group, prog: own, active: false, life: 0 };
+    return { group, prog: own, active: false, life: 0, scaleMul: 1 };
   }
 
   setSkin(skin: RenderSkin): void {
@@ -589,13 +650,34 @@ export class Renderer3D implements Viewport {
       node.group.rotation.y = yaw(b.dx, b.dz);
     }
 
-    for (const d of s.deaths) this.spawnBurst(d.x, d.z, enemyColor(this.skin, d.kind));
+    // Asteroids: tumbling rock descending + a warning ring that intensifies as it nears.
+    this.ensureAsteroids(s.asteroids.length);
+    for (let i = 0; i < this.asteroids.length; i += 1) {
+      const node = this.asteroids[i]!;
+      const a = s.asteroids[i];
+      if (!a) {
+        if (node.group.visible) node.group.visible = false;
+        continue;
+      }
+      node.group.visible = true;
+      node.group.position.set(a.x, 0, a.z);
+      node.rock.position.y = a.y + 0.6;
+      node.rock.rotation.x += dt * 2.2;
+      node.rock.rotation.y += dt * 1.5;
+      // warning ring visible from the spawn (min floor) and brightening to impact
+      node.ring.alpha = Math.min(0.9, 0.35 + 0.55 * (1 - a.y / ASTEROID_HIGH_Y));
+    }
+
+    for (const d of s.deaths) {
+      if (d.kind === ASTEROID_KIND) this.spawnBurst(d.x, d.z, '#ff7a2a', 3.6);
+      else this.spawnBurst(d.x, d.z, enemyColor(this.skin, d.kind));
+    }
     this.updateBursts(dt);
 
     this.renderer.render({ scene: this.scene, camera: this.camera });
   }
 
-  private spawnBurst(x: number, z: number, hex: string): void {
+  private spawnBurst(x: number, z: number, hex: string, scaleMul = 1): void {
     const b = this.bursts.find((q) => !q.active);
     if (!b) return;
     (b.prog.uniforms.uColor.value as Color).set(...hexToRgb(hex));
@@ -605,6 +687,7 @@ export class Renderer3D implements Viewport {
     b.group.visible = true;
     b.active = true;
     b.life = 0;
+    b.scaleMul = scaleMul;
   }
 
   private updateBursts(dt: number): void {
@@ -617,7 +700,7 @@ export class Renderer3D implements Viewport {
         b.group.visible = false;
         continue;
       }
-      const sc = 0.4 + t * 2.4;
+      const sc = (0.4 + t * 2.4) * b.scaleMul;
       b.group.scale.set(sc, sc, sc);
       b.prog.uniforms.uAlpha.value = (1 - t) * 0.85;
     }
