@@ -31,7 +31,7 @@ export class Hud {
     this.el.dir = strings.dir;
 
     const top = div('vs-top');
-    const left = div('');
+    const left = div('vs-readout');
     this.waveEl = span();
     this.scoreEl = span();
     left.append(this.waveEl, document.createTextNode('   '), this.scoreEl);
@@ -44,7 +44,10 @@ export class Hud {
     this.hint = div('vs-hint');
     this.actionBtn = button('vs-action', '');
     this.actionBtn.style.display = 'none';
-    this.center.append(this.banner, this.hint, this.actionBtn);
+    // Translucent panel behind the overlay text so it reads over the busy scene.
+    const panel = div('vs-panel');
+    panel.append(this.banner, this.hint, this.actionBtn);
+    this.center.append(panel);
 
     const btns = div('vs-btns');
     this.muteBtn = button('vs-btn', strings.t('mute'));

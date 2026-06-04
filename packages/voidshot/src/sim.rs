@@ -23,14 +23,14 @@ use rapier3d::prelude::*;
 
 pub const TICK_HZ: i64 = 60;
 
-const ARENA_R: f32 = 10.0;
-const RIM_R: f32 = 9.4;
+const ARENA_R: f32 = 14.0; // larger arena -> more room for the swarm to move
+const RIM_R: f32 = 13.2;
 const PLAYER_R: f32 = 0.45;
 const ENEMY_R: f32 = 0.5;
-const PLAYER_SPEED: f32 = 8.5; // units/sec; faster than enemies so dodging works
+const PLAYER_SPEED: f32 = 12.0; // units/sec; nimble in the bigger arena
 const FIRE_COOLDOWN: u32 = 7; // ticks between bolts
-const BOLT_SPEED: f32 = 24.0; // units/sec
-const BOLT_RANGE: f32 = 15.0; // max travel before the bolt expires
+const BOLT_SPEED: f32 = 26.0; // units/sec
+const BOLT_RANGE: f32 = 19.0; // max travel before the bolt expires (scales w/ arena)
 const BOLT_R: f32 = 0.5; // bolt radius, added to ENEMY_R for the hit test
 const CONTACT_R: f32 = PLAYER_R + ENEMY_R + 0.05;
 const HIT_INVULN: u32 = 36; // ticks of shield invulnerability after a hit

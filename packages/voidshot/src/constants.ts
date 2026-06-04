@@ -5,7 +5,7 @@ export const TICK_HZ = 60;
 export const DT_MS = 1000 / TICK_HZ;
 
 /** Arena radius in world units. Mirrors `ARENA_R` in sim.rs. */
-export const ARENA_R = 10;
+export const ARENA_R = 14;
 
 export const KIND_CHASER = 0;
 export const KIND_WEAVER = 1;

@@ -38,8 +38,8 @@ const FIT = 1.2; // arena bounding radius (* ARENA_R) the camera must frame
 const BOLT_POOL = 48;
 const BURST_POOL = 24;
 const BURST_LIFE = 0.4; // seconds
-const PLAYER_TARGET_R = 1.3; // model bounding radius -> world units
-const ENEMY_TARGET_R = 1.0;
+const PLAYER_TARGET_R = 1.6; // model bounding radius -> world units
+const ENEMY_TARGET_R = 1.25;
 
 const VERT = /* glsl */ `
   attribute vec3 position;
