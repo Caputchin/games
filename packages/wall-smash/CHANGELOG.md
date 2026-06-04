@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/Caputchin/games/compare/wall-smash-v0.2.1...wall-smash-v0.2.2) (2026-06-04)
+
+
+### Bug Fixes
+
+* **wall-smash:** keep steering the paddle when the mouse drags outside the iframe ([b421ea9](https://github.com/Caputchin/games/commit/b421ea95204ea340369a390cd50cd3cf6023f34a))
+* **wall-smash:** pass the captcha after 1 wall by default (num_levels 2 to 1) ([378e17f](https://github.com/Caputchin/games/commit/378e17fef8687c83e00583cd61d07276411b97e9))
+
 ## [0.2.1](https://github.com/Caputchin/games/compare/wall-smash-v0.2.0...wall-smash-v0.2.1) (2026-06-01)
 
 

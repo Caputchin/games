@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/Caputchin/games/compare/fruit-slash-v0.3.1...fruit-slash-v0.3.2) (2026-06-04)
+
+
+### Bug Fixes
+
+* **games:** scale in-game HUD with the rendered width so it fits narrow embeds ([bd283f5](https://github.com/Caputchin/games/commit/bd283f54d2861e6e626fc117d4abcebced21fcc9))
+
 ## [0.3.1](https://github.com/Caputchin/games/compare/fruit-slash-v0.3.0...fruit-slash-v0.3.1) (2026-06-02)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-monkey-maze",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Chomp bananas through the jungle maze while the critters hunt you. A melonJS-engine Caputchin first-party game.",
   "keywords": [
     "caputchin",
