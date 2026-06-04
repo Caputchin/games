@@ -12,6 +12,9 @@ The official first-party game pack for the [Caputchin](https://caputchin.com) ma
 | [Whack-a-Monkey](packages/whack-a-monkey/) | Tap the monkeys as they peek out, leave the jungle animals alone. |
 | [Phobos](packages/phobos/) | Clear the demons to prove you're human. A real DOOM-engine captcha. |
 | [Wall Smash](packages/wall-smash/) | Bounce the ball off your paddle to smash every brick before time runs out. |
+| [Monkey Maze](packages/monkey-maze/) | Chomp every banana through the jungle maze while the critters hunt you. Grab a power-coconut to turn the tables. |
+| [Paddle Rally](packages/paddle-rally/) | Table-tennis captcha: out-rally a CPU paddle, or keep the ball alive solo. Built on Phaser. |
+| [Blockfall](packages/blockfall/) | Stack the falling blocks and clear lines to prove you're human. |
 
 More games land here over time. Each one is browsable and embeddable on its own from the [Caputchin marketplace](https://caputchin.com/marketplace).
 
@@ -37,6 +40,9 @@ GPL-2.0-only because it links the open-source GPL DOOM engine.
 | [Whack-a-Monkey](packages/whack-a-monkey/) | MIT |
 | [Phobos](packages/phobos/) | GPL-2.0-only |
 | [Wall Smash](packages/wall-smash/) | MIT |
+| [Monkey Maze](packages/monkey-maze/) | MIT |
+| [Paddle Rally](packages/paddle-rally/) | MIT |
+| [Blockfall](packages/blockfall/) | MIT |
 
 The repository-level [`LICENSE`](LICENSE) (MIT) covers the repo tooling and the
 MIT games, and records the per-package map in full. Bundled third-party assets

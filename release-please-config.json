@@ -29,6 +29,18 @@
     "packages/wall-smash": {
       "component": "wall-smash",
       "package-name": "@caputchin/game-wall-smash"
+    },
+    "packages/monkey-maze": {
+      "component": "monkey-maze",
+      "package-name": "@caputchin/game-monkey-maze"
+    },
+    "packages/paddle-rally": {
+      "component": "paddle-rally",
+      "package-name": "@caputchin/game-paddle-rally"
+    },
+    "packages/blockfall": {
+      "component": "blockfall",
+      "package-name": "@caputchin/game-blockfall"
     }
   }
 }
