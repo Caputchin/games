@@ -1,0 +1,39 @@
+{
+  "schema": {
+    "bg": { "type": "color", "name": "Background" },
+    "line": { "type": "color", "name": "Centre net" },
+    "player": { "type": "color", "name": "Your paddle" },
+    "cpu": { "type": "color", "name": "Rival paddle" },
+    "ball": { "type": "color", "name": "Ball" }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "_theme": "dark",
+      "bg": "#10241c",
+      "line": "#2f5d49",
+      "player": "#8a5a2b",
+      "cpu": "#6b4f8a",
+      "ball": "#c9874a"
+    },
+    "night": {
+      "_extends": "default",
+      "_theme": "dark",
+      "bg": "#0b1020",
+      "line": "#243049",
+      "player": "#4a90d9",
+      "cpu": "#d94a6b",
+      "ball": "#e9d28a"
+    },
+    "sandlot": {
+      "_extends": "default",
+      "_theme": "light",
+      "_default": true,
+      "bg": "#eef1e6",
+      "line": "#a7bba0",
+      "player": "#8a5a2b",
+      "cpu": "#7a4fa3",
+      "ball": "#b5702e"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "terms_accepted": true,
+  "license": "MIT",
+  "marketplace": {
+    "name": "Paddle Rally",
+    "description": "Rally the ball past your rival. First to three points proves you're human.",
+    "preview": "preview.png",
+    "categories": ["Arcade", "Reflex"],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": true,
+      "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-paddle-rally",
+  "entry": "dist/paddle-rally.js",
+  "run": {
+    "entry": "dist/run.js"
+  },
+  "preferred": {
+    "width": 640,
+    "height": 400
+  }
+}

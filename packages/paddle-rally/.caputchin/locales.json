@@ -1,0 +1,252 @@
+{
+  "schema": {
+    "ariaGame": {
+      "name": "Game region label",
+      "description": "Screen-reader label and intro for the whole play area, including how to move the paddle."
+    },
+    "score": {
+      "name": "Score label",
+      "description": "Word announced before the running score, as in Score 3 2."
+    },
+    "startObjective": {
+      "name": "Start screen objective",
+      "description": "One line on the start screen explaining the goal: get the ball past the rival and reach the target score first."
+    },
+    "startControls": {
+      "name": "Start screen controls",
+      "description": "One line on the start screen explaining how to move the paddle and how to begin."
+    },
+    "startPrompt": {
+      "name": "Start prompt",
+      "description": "Short call to action on the start screen, e.g. press space or tap to start."
+    },
+    "win": {
+      "name": "Win banner",
+      "description": "Shown when the player reaches the target first; invites them to keep playing in endless mode."
+    },
+    "lose": {
+      "name": "Lose banner",
+      "description": "Shown when the rival reaches the target first; invites the player to play again."
+    },
+    "endless": {
+      "name": "Endless notice",
+      "description": "Announced when the ungated endless rally begins after a finished round."
+    },
+    "verified": {
+      "name": "Verified word",
+      "description": "Short word announced when the player wins and the captcha is satisfied."
+    },
+    "soundOn": {
+      "name": "Sound on",
+      "description": "Announced when the player turns sound on with the mute control."
+    },
+    "soundOff": {
+      "name": "Sound off",
+      "description": "Announced when the player turns sound off (mutes) with the mute control."
+    },
+    "soloObjective": {
+      "name": "Solo objective",
+      "description": "Solo start screen. {n} = returns to survive.",
+      "tokens": ["n"]
+    },
+    "soloLose": {
+      "name": "Solo miss",
+      "description": "Solo loss screen."
+    },
+    "soloProgress": {
+      "name": "Solo progress",
+      "description": "Solo progress (screen reader). {n} = returns made, {total} = total to survive.",
+      "tokens": ["n", "total"]
+    }
+  },
+  "presets": {
+    "English": {
+      "_lang": "en",
+      "_default": true,
+      "ariaGame": "Paddle Rally. Use the up and down arrows, or drag, to move your paddle.",
+      "score": "Score",
+      "startObjective": "Get the ball past your rival to score. Reach the target first to win.",
+      "startControls": "Move with the arrow keys or by dragging. Press space or tap to begin.",
+      "startPrompt": "Press space or tap to start",
+      "win": "Nice run. Tap or press space to keep rallying.",
+      "lose": "The rival reached the target. Tap or press space to try again.",
+      "endless": "Endless rally. Keep playing.",
+      "verified": "Verified",
+      "soundOn": "Sound on",
+      "soundOff": "Sound off",
+      "soloObjective": "No rival, just a wall. Keep the ball alive and survive {n} returns to clear the check.",
+      "soloLose": "Missed it. Tap or press space to try again.",
+      "soloProgress": "Returns survived: {n} of {total}."
+    },
+    "Chinese (Simplified)": {
+      "_lang": "zh-Hans",
+      "ariaGame": "Paddle Rally。用上下方向键，或拖动，来移动你的球拍。",
+      "score": "比分",
+      "startObjective": "把球打过对手得分。先达到目标分就获胜。",
+      "startControls": "用方向键或拖动来移动。按空格或点击开始。",
+      "startPrompt": "按空格或点击开始",
+      "win": "打得漂亮。点击或按空格继续来回对打。",
+      "lose": "对手先达到目标分。点击或按空格再来一局。",
+      "endless": "无尽对打。继续玩吧。",
+      "verified": "已通过",
+      "soundOn": "声音已开",
+      "soundOff": "声音已关",
+      "soloObjective": "没有对手，只有一面墙。让球保持不落，撑过 {n} 次回击就能通过验证。",
+      "soloLose": "没接住。点击或按空格再试一次。",
+      "soloProgress": "已撑过回击：{n} / {total}。"
+    },
+    "Spanish": {
+      "_lang": "es",
+      "ariaGame": "Paddle Rally. Usa las flechas arriba y abajo, o arrastra, para mover tu paleta.",
+      "score": "Marcador",
+      "startObjective": "Pasa la pelota más allá de tu rival para puntuar. Llega antes a la meta para ganar.",
+      "startControls": "Muévete con las flechas o arrastrando. Pulsa espacio o toca para empezar.",
+      "startPrompt": "Pulsa espacio o toca para empezar",
+      "win": "Buen peloteo. Toca o pulsa espacio para seguir jugando.",
+      "lose": "El rival llegó antes a la meta. Toca o pulsa espacio para jugar otra vez.",
+      "endless": "Peloteo sin fin. Sigue jugando.",
+      "verified": "Verificado",
+      "soundOn": "Sonido activado",
+      "soundOff": "Sonido desactivado",
+      "soloObjective": "Sin rival, solo una pared. Mantén la pelota en juego y aguanta {n} devoluciones para pasar la verificación.",
+      "soloLose": "Se te escapó. Toca o pulsa espacio para volver a intentarlo.",
+      "soloProgress": "Devoluciones aguantadas: {n} de {total}."
+    },
+    "Arabic": {
+      "_lang": "ar",
+      "ariaGame": "Paddle Rally. استخدم سهمي الأعلى والأسفل، أو اسحب، لتحريك مضربك.",
+      "score": "النتيجة",
+      "startObjective": "مرّر الكرة بجانب خصمك لتسجّل نقطة. من يصل إلى الهدف أولًا يفوز.",
+      "startControls": "تحرّك بمفاتيح الأسهم أو بالسحب. اضغط مسافة أو انقر لتبدأ.",
+      "startPrompt": "اضغط مسافة أو انقر لتبدأ",
+      "win": "أداء رائع. انقر أو اضغط مسافة لمواصلة التبادل.",
+      "lose": "وصل الخصم إلى الهدف أولًا. انقر أو اضغط مسافة لتلعب من جديد.",
+      "endless": "تبادُل بلا نهاية. واصِل اللعب.",
+      "verified": "تم التحقق",
+      "soundOn": "الصوت مفعّل",
+      "soundOff": "الصوت متوقف",
+      "soloObjective": "لا خصم، مجرّد جدار. أبقِ الكرة في اللعب واصمد أمام {n} ردّات لاجتياز التحقق.",
+      "soloLose": "فاتتك. انقر أو اضغط مسافة لتحاول من جديد.",
+      "soloProgress": "ردّات صمدت أمامها: {n} من {total}."
+    },
+    "Portuguese": {
+      "_lang": "pt",
+      "ariaGame": "Paddle Rally. Use as setas para cima e para baixo, ou arraste, para mover sua raquete.",
+      "score": "Placar",
+      "startObjective": "Passe a bola pelo rival para pontuar. Chegue primeiro ao alvo para vencer.",
+      "startControls": "Mova-se com as setas ou arrastando. Pressione espaço ou toque para começar.",
+      "startPrompt": "Pressione espaço ou toque para começar",
+      "win": "Boa jogada. Toque ou pressione espaço para continuar o rali.",
+      "lose": "O rival chegou primeiro ao alvo. Toque ou pressione espaço para jogar de novo.",
+      "endless": "Rali sem fim. Continue jogando.",
+      "verified": "Verificado",
+      "soundOn": "Som ativado",
+      "soundOff": "Som desativado",
+      "soloObjective": "Sem rival, só uma parede. Mantenha a bola em jogo e aguente {n} devoluções para passar na verificação.",
+      "soloLose": "Deixou escapar. Toque ou pressione espaço para tentar de novo.",
+      "soloProgress": "Devoluções aguentadas: {n} de {total}."
+    },
+    "French": {
+      "_lang": "fr",
+      "ariaGame": "Paddle Rally. Utilise les flèches haut et bas, ou fais glisser, pour déplacer ta raquette.",
+      "score": "Score",
+      "startObjective": "Fais passer la balle devant l'adversaire pour marquer. Atteins le score le premier pour gagner.",
+      "startControls": "Déplace-toi avec les flèches ou en faisant glisser. Appuie sur espace ou touche pour commencer.",
+      "startPrompt": "Appuie sur espace ou touche pour commencer",
+      "win": "Bel échange. Touche ou appuie sur espace pour continuer la partie.",
+      "lose": "L'adversaire a atteint le score le premier. Touche ou appuie sur espace pour rejouer.",
+      "endless": "Échange sans fin. Continue à jouer.",
+      "verified": "Vérifié",
+      "soundOn": "Son activé",
+      "soundOff": "Son désactivé",
+      "soloObjective": "Pas d'adversaire, juste un mur. Garde la balle en jeu et tiens {n} renvois pour valider le contrôle.",
+      "soloLose": "Tu l'as laissée filer. Touche ou appuie sur espace pour réessayer.",
+      "soloProgress": "Renvois tenus : {n} sur {total}."
+    },
+    "German": {
+      "_lang": "de",
+      "ariaGame": "Paddle Rally. Mit den Pfeiltasten hoch und runter, oder per Ziehen, bewegst du dein Paddel.",
+      "score": "Punkte",
+      "startObjective": "Spiel den Ball am Gegner vorbei, um zu punkten. Wer zuerst die Zielpunktzahl erreicht, gewinnt.",
+      "startControls": "Bewege dich mit den Pfeiltasten oder per Ziehen. Drücke die Leertaste oder tippe, um zu starten.",
+      "startPrompt": "Leertaste drücken oder tippen zum Starten",
+      "win": "Schöner Ballwechsel. Tippe oder drücke die Leertaste, um weiterzuspielen.",
+      "lose": "Der Gegner war zuerst am Ziel. Tippe oder drücke die Leertaste für eine neue Runde.",
+      "endless": "Endloser Ballwechsel. Spiel einfach weiter.",
+      "verified": "Bestätigt",
+      "soundOn": "Ton an",
+      "soundOff": "Ton aus",
+      "soloObjective": "Kein Gegner, nur eine Wand. Halte den Ball im Spiel und überstehe {n} Rückschläge, um die Prüfung zu bestehen.",
+      "soloLose": "Verpasst. Tippe oder drücke die Leertaste, um es noch einmal zu versuchen.",
+      "soloProgress": "Überstandene Rückschläge: {n} von {total}."
+    },
+    "Russian": {
+      "_lang": "ru",
+      "ariaGame": "Paddle Rally. Двигай ракетку стрелками вверх и вниз или перетаскиванием.",
+      "score": "Счёт",
+      "startObjective": "Проведи мяч мимо соперника, чтобы заработать очко. Первым набери нужные очки, чтобы победить.",
+      "startControls": "Двигайся стрелками или перетаскиванием. Нажми пробел или коснись экрана, чтобы начать.",
+      "startPrompt": "Нажми пробел или коснись, чтобы начать",
+      "win": "Отличная игра. Нажми или пробел, чтобы продолжить розыгрыш.",
+      "lose": "Соперник первым набрал нужные очки. Нажми или пробел, чтобы сыграть снова.",
+      "endless": "Бесконечный розыгрыш. Продолжай играть.",
+      "verified": "Пройдено",
+      "soundOn": "Звук включён",
+      "soundOff": "Звук выключен",
+      "soloObjective": "Соперника нет, только стена. Держи мяч в игре и выдержи {n} отбиваний, чтобы пройти проверку.",
+      "soloLose": "Не успел. Нажми или пробел, чтобы попробовать снова.",
+      "soloProgress": "Отбиваний выдержано: {n} из {total}."
+    },
+    "Japanese": {
+      "_lang": "ja",
+      "ariaGame": "Paddle Rally。上下の矢印キー、またはドラッグでパドルを動かそう。",
+      "score": "スコア",
+      "startObjective": "ボールを相手の横を抜いて得点しよう。先に目標スコアに達したら勝ち。",
+      "startControls": "矢印キーかドラッグで動かそう。スペースキーかタップで開始。",
+      "startPrompt": "スペースかタップで開始",
+      "win": "ナイスラリー。タップかスペースキーでそのまま続けよう。",
+      "lose": "相手が先に目標スコアに到達。タップかスペースキーでもう一度。",
+      "endless": "エンドレスラリー。そのまま続けてね。",
+      "verified": "認証済み",
+      "soundOn": "サウンドオン",
+      "soundOff": "サウンドオフ",
+      "soloObjective": "相手なし、あるのは壁だけ。ボールを落とさず {n} 回の返球を耐えきれば認証クリア。",
+      "soloLose": "逃しちゃった。タップかスペースキーでもう一度。",
+      "soloProgress": "耐えた返球：{n} / {total}。"
+    },
+    "Korean": {
+      "_lang": "ko",
+      "ariaGame": "Paddle Rally. 위아래 화살표 키나 드래그로 패들을 움직이세요.",
+      "score": "점수",
+      "startObjective": "공을 상대 옆으로 보내 득점하세요. 목표 점수에 먼저 도달하면 승리예요.",
+      "startControls": "화살표 키나 드래그로 움직이세요. 스페이스를 누르거나 탭하면 시작해요.",
+      "startPrompt": "스페이스를 누르거나 탭하면 시작",
+      "win": "멋진 랠리예요. 탭하거나 스페이스를 눌러 계속 이어가세요.",
+      "lose": "상대가 먼저 목표 점수에 도달했어요. 탭하거나 스페이스를 눌러 다시 하세요.",
+      "endless": "끝없는 랠리. 계속 즐기세요.",
+      "verified": "인증됨",
+      "soundOn": "소리 켜짐",
+      "soundOff": "소리 꺼짐",
+      "soloObjective": "상대 없이 벽 하나뿐이에요. 공을 떨어뜨리지 말고 {n}번의 받아치기를 버텨 검증을 통과하세요.",
+      "soloLose": "놓쳤어요. 탭하거나 스페이스를 눌러 다시 해보세요.",
+      "soloProgress": "버텨낸 받아치기: {n} / {total}."
+    },
+    "Indonesian": {
+      "_lang": "id",
+      "ariaGame": "Paddle Rally. Gunakan panah atas dan bawah, atau seret, untuk menggerakkan pemukulmu.",
+      "score": "Skor",
+      "startObjective": "Lewatkan bola melewati lawan untuk mencetak skor. Capai target lebih dulu untuk menang.",
+      "startControls": "Bergerak dengan tombol panah atau dengan menyeret. Tekan spasi atau ketuk untuk mulai.",
+      "startPrompt": "Tekan spasi atau ketuk untuk mulai",
+      "win": "Permainan bagus. Ketuk atau tekan spasi untuk terus bermain.",
+      "lose": "Lawan lebih dulu mencapai target. Ketuk atau tekan spasi untuk main lagi.",
+      "endless": "Reli tanpa henti. Terus bermain.",
+      "verified": "Terverifikasi",
+      "soundOn": "Suara aktif",
+      "soundOff": "Suara mati",
+      "soloObjective": "Tanpa lawan, cuma tembok. Jaga bola tetap hidup dan bertahan {n} pengembalian untuk lolos verifikasi.",
+      "soloLose": "Kelewatan. Ketuk atau tekan spasi untuk coba lagi.",
+      "soloProgress": "Pengembalian yang bertahan: {n} dari {total}."
+    }
+  }
+}

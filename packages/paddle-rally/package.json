@@ -1,0 +1,51 @@
+{
+  "name": "@caputchin/game-paddle-rally",
+  "version": "0.1.0",
+  "description": "Rally the ball past a CPU rival, or keep it alive solo, to prove you're human. A Phaser-engine captcha. A Caputchin first-party game.",
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "phaser",
+    "pong",
+    "game"
+  ],
+  "homepage": "https://github.com/Caputchin/caputchin-games#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caputchin/caputchin-games",
+    "directory": "packages/paddle-rally"
+  },
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "caputchin.json",
+    ".caputchin",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": [
+    "./dist/paddle-rally.js"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "node scripts/check.mjs"
+  },
+  "devDependencies": {
+    "@caputchin/game-sdk": "^3.1.0",
+    "@caputchin/preset-phaser": "^0.2.0",
+    "@caputchin/replay-contract": "^0.3.0",
+    "@caputchin/replay-selfcheck": "^0.2.0",
+    "@types/node": "^20.0.0",
+    "phaser": "^4.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
