@@ -1,0 +1,284 @@
+{
+  "schema": {
+    "ariaGame": {
+      "name": "Screen-reader game intro",
+      "description": "Spoken to assistive tech when the game loads: what the game is and that clearing lines verifies the visitor."
+    },
+    "startBody": {
+      "name": "Start screen instructions",
+      "description": "How-to-play text on the start screen, before the round begins: how to move, drop, and rotate, and the goal. {n} is the number of rows to clear.",
+      "tokens": [
+        "n"
+      ]
+    },
+    "startButton": {
+      "name": "Start button label",
+      "description": "Label on the button that begins the round."
+    },
+    "scoreLabel": {
+      "name": "Score label",
+      "description": "Short HUD label before the numeric score."
+    },
+    "linesLabel": {
+      "name": "Lines label",
+      "description": "Short HUD label before the lines-cleared count (shown as cleared/target)."
+    },
+    "clearedOne": {
+      "name": "One line cleared announcement",
+      "description": "Spoken when exactly one line clears."
+    },
+    "clearedMany": {
+      "name": "Multiple lines cleared announcement",
+      "description": "Spoken when 2 to 4 lines clear at once; {n} is the count.",
+      "tokens": [
+        "n"
+      ]
+    },
+    "verified": {
+      "name": "Verified announcement",
+      "description": "Spoken when the pass threshold is reached; the captcha is satisfied."
+    },
+    "verifiedBody": {
+      "name": "Verified prompt body",
+      "description": "Congratulation line on the prompt that pops when the pass threshold is reached, inviting the player to keep playing for fun."
+    },
+    "keepPlaying": {
+      "name": "Keep-playing button label",
+      "description": "Button on the verified prompt that resumes the same board (the captcha is already satisfied; this is just for fun)."
+    },
+    "tryAgain": {
+      "name": "Try-again button label",
+      "description": "Button on the end panel after an unverified top-out; starts a fresh puzzle to try to verify."
+    },
+    "playAgain": {
+      "name": "Play-again button label",
+      "description": "Button on the end panel after a verified player tops out; starts a fresh puzzle for fun."
+    },
+    "gameOver": {
+      "name": "Game over announcement",
+      "description": "Spoken when the stack tops out; {score} is the final score.",
+      "tokens": [
+        "score"
+      ]
+    },
+    "verifiedTitle": {
+      "name": "Verified badge title",
+      "description": "Short word on the verified badge / end panel."
+    },
+    "gameOverTitle": {
+      "name": "Game over title",
+      "description": "Short headline on the game-over panel."
+    }
+  },
+  "presets": {
+    "English": {
+      "_lang": "en",
+      "_default": true,
+      "ariaGame": "Blockfall, a falling-blocks puzzle. Clear lines to verify you are human.",
+      "startBody": "Drag a block over an open gap, tap to spin it, swipe down to drop. Or play with the arrow keys and space. Clear {n} rows to verify you are human.",
+      "startButton": "Start",
+      "scoreLabel": "Score",
+      "linesLabel": "Lines",
+      "clearedOne": "One line cleared.",
+      "clearedMany": "{n} lines cleared.",
+      "verified": "Verified. You may keep playing.",
+      "verifiedBody": "You're verified. Keep playing?",
+      "keepPlaying": "Keep playing",
+      "tryAgain": "Try again",
+      "playAgain": "Play again",
+      "gameOver": "Stack topped out. Final score {score}.",
+      "verifiedTitle": "Verified",
+      "gameOverTitle": "Topped out"
+    },
+    "Chinese (Simplified)": {
+      "_lang": "zh-Hans",
+      "_default": true,
+      "ariaGame": "Blockfall，一款方块下落的拼图游戏。消除整行即可证明你是真人。",
+      "startBody": "把方块拖到空缺处，点一下旋转，向下滑动让它落下。也可以用方向键和空格键来玩。消除 {n} 行即可证明你是真人。",
+      "startButton": "开始",
+      "scoreLabel": "得分",
+      "linesLabel": "行数",
+      "clearedOne": "消除一行。",
+      "clearedMany": "一次消除 {n} 行。",
+      "verified": "验证通过，可以继续玩。",
+      "verifiedBody": "你已通过验证。要继续玩吗？",
+      "keepPlaying": "继续玩",
+      "tryAgain": "再试一次",
+      "playAgain": "再玩一局",
+      "gameOver": "方块堆顶了。最终得分 {score}。",
+      "verifiedTitle": "已通过",
+      "gameOverTitle": "堆到顶了"
+    },
+    "Spanish": {
+      "_lang": "es",
+      "_default": true,
+      "ariaGame": "Blockfall, un puzle de bloques que caen. Completa líneas para demostrar que eres humano.",
+      "startBody": "Arrastra un bloque hasta un hueco libre, tócalo para girarlo y desliza hacia abajo para soltarlo. O juega con las flechas y la barra espaciadora. Completa {n} líneas para demostrar que eres humano.",
+      "startButton": "Empezar",
+      "scoreLabel": "Puntos",
+      "linesLabel": "Líneas",
+      "clearedOne": "Una línea completada.",
+      "clearedMany": "{n} líneas completadas.",
+      "verified": "Verificado. Puedes seguir jugando.",
+      "verifiedBody": "Ya estás verificado. ¿Seguimos jugando?",
+      "keepPlaying": "Seguir jugando",
+      "tryAgain": "Reintentar",
+      "playAgain": "Jugar otra vez",
+      "gameOver": "Los bloques llegaron arriba. Puntuación final {score}.",
+      "verifiedTitle": "Verificado",
+      "gameOverTitle": "Llegaste al tope"
+    },
+    "Arabic": {
+      "_lang": "ar",
+      "_default": true,
+      "ariaGame": "Blockfall، لعبة ألغاز بمكعبات تتساقط. أكمل صفوفًا لتثبت أنك إنسان.",
+      "startBody": "اسحب المكعب إلى فراغ خالٍ، وانقر عليه لتدويره، ثم اسحب للأسفل لإسقاطه. أو العب بمفاتيح الأسهم ومفتاح المسافة. أكمل {n} صفوف لتثبت أنك إنسان.",
+      "startButton": "ابدأ",
+      "scoreLabel": "النقاط",
+      "linesLabel": "الصفوف",
+      "clearedOne": "تم مسح صف واحد.",
+      "clearedMany": "تم مسح {n} صفوف.",
+      "verified": "تم التحقق. يمكنك مواصلة اللعب.",
+      "verifiedBody": "تم التحقق منك. هل تريد مواصلة اللعب؟",
+      "keepPlaying": "واصل اللعب",
+      "tryAgain": "حاول مرة أخرى",
+      "playAgain": "العب من جديد",
+      "gameOver": "وصلت المكعبات إلى القمة. النتيجة النهائية {score}.",
+      "verifiedTitle": "تم التحقق",
+      "gameOverTitle": "وصلت القمة"
+    },
+    "Portuguese": {
+      "_lang": "pt",
+      "_default": true,
+      "ariaGame": "Blockfall, um quebra-cabeça de blocos que caem. Complete linhas para provar que você é humano.",
+      "startBody": "Arraste um bloco até um espaço livre, toque para girá-lo e deslize para baixo para soltá-lo. Ou jogue com as setas e a barra de espaço. Complete {n} linhas para provar que você é humano.",
+      "startButton": "Começar",
+      "scoreLabel": "Pontos",
+      "linesLabel": "Linhas",
+      "clearedOne": "Uma linha completada.",
+      "clearedMany": "{n} linhas completadas.",
+      "verified": "Verificado. Você pode continuar jogando.",
+      "verifiedBody": "Você está verificado. Quer continuar jogando?",
+      "keepPlaying": "Continuar jogando",
+      "tryAgain": "Tentar de novo",
+      "playAgain": "Jogar de novo",
+      "gameOver": "Os blocos chegaram ao topo. Pontuação final {score}.",
+      "verifiedTitle": "Verificado",
+      "gameOverTitle": "Chegou ao topo"
+    },
+    "French": {
+      "_lang": "fr",
+      "_default": true,
+      "ariaGame": "Blockfall, un casse-tête de blocs qui tombent. Complétez des lignes pour prouver que vous êtes humain.",
+      "startBody": "Faites glisser un bloc vers un espace libre, touchez-le pour le faire pivoter, puis balayez vers le bas pour le lâcher. Ou jouez avec les flèches et la barre d'espace. Complétez {n} lignes pour prouver que vous êtes humain.",
+      "startButton": "Commencer",
+      "scoreLabel": "Score",
+      "linesLabel": "Lignes",
+      "clearedOne": "Une ligne complétée.",
+      "clearedMany": "{n} lignes complétées.",
+      "verified": "Vérifié. Vous pouvez continuer à jouer.",
+      "verifiedBody": "Vous êtes vérifié. On continue à jouer ?",
+      "keepPlaying": "Continuer à jouer",
+      "tryAgain": "Réessayer",
+      "playAgain": "Rejouer",
+      "gameOver": "Les blocs ont atteint le haut. Score final {score}.",
+      "verifiedTitle": "Vérifié",
+      "gameOverTitle": "Plateau rempli"
+    },
+    "German": {
+      "_lang": "de",
+      "_default": true,
+      "ariaGame": "Blockfall, ein Puzzle mit fallenden Blöcken. Räume Reihen ab, um zu beweisen, dass du ein Mensch bist.",
+      "startBody": "Zieh einen Block auf eine freie Lücke, tippe ihn an, um ihn zu drehen, und wisch nach unten, um ihn fallen zu lassen. Oder spiel mit den Pfeiltasten und der Leertaste. Räume {n} Reihen ab, um zu beweisen, dass du ein Mensch bist.",
+      "startButton": "Los geht's",
+      "scoreLabel": "Punkte",
+      "linesLabel": "Reihen",
+      "clearedOne": "Eine Reihe abgeräumt.",
+      "clearedMany": "{n} Reihen abgeräumt.",
+      "verified": "Bestätigt. Du kannst weiterspielen.",
+      "verifiedBody": "Du bist bestätigt. Weiterspielen?",
+      "keepPlaying": "Weiterspielen",
+      "tryAgain": "Nochmal versuchen",
+      "playAgain": "Nochmal spielen",
+      "gameOver": "Die Blöcke sind oben angekommen. Endpunktzahl {score}.",
+      "verifiedTitle": "Bestätigt",
+      "gameOverTitle": "Oben angekommen"
+    },
+    "Russian": {
+      "_lang": "ru",
+      "_default": true,
+      "ariaGame": "Blockfall, головоломка с падающими блоками. Собирай ряды, чтобы доказать, что ты человек.",
+      "startBody": "Перетащи блок на свободное место, коснись его, чтобы повернуть, и проведи вниз, чтобы он упал. Или играй стрелками и пробелом. Собери {n} рядов, чтобы доказать, что ты человек.",
+      "startButton": "Начать",
+      "scoreLabel": "Очки",
+      "linesLabel": "Ряды",
+      "clearedOne": "Собран один ряд.",
+      "clearedMany": "Собрано рядов: {n}.",
+      "verified": "Пройдено. Можно играть дальше.",
+      "verifiedBody": "Ты прошёл проверку. Играем дальше?",
+      "keepPlaying": "Играть дальше",
+      "tryAgain": "Ещё раз",
+      "playAgain": "Сыграть снова",
+      "gameOver": "Блоки дошли до верха. Итоговый счёт {score}.",
+      "verifiedTitle": "Пройдено",
+      "gameOverTitle": "Стакан заполнен"
+    },
+    "Japanese": {
+      "_lang": "ja",
+      "_default": true,
+      "ariaGame": "Blockfall、ブロックが落ちてくるパズルです。ラインをそろえて、あなたが人間であることを証明しましょう。",
+      "startBody": "ブロックを空いている場所までドラッグし、タップで回転、下にスワイプで落とします。矢印キーとスペースキーでも遊べます。{n}ラインそろえて、あなたが人間であることを証明しましょう。",
+      "startButton": "スタート",
+      "scoreLabel": "スコア",
+      "linesLabel": "ライン",
+      "clearedOne": "1ライン消去。",
+      "clearedMany": "{n}ライン消去。",
+      "verified": "認証されました。このまま続けて遊べます。",
+      "verifiedBody": "認証されました。このまま続けて遊びますか？",
+      "keepPlaying": "続けて遊ぶ",
+      "tryAgain": "もう一度",
+      "playAgain": "もう一度遊ぶ",
+      "gameOver": "ブロックが上まで積み上がりました。最終スコア {score}。",
+      "verifiedTitle": "認証済み",
+      "gameOverTitle": "ゲームオーバー"
+    },
+    "Korean": {
+      "_lang": "ko",
+      "_default": true,
+      "ariaGame": "Blockfall, 블록이 떨어지는 퍼즐입니다. 줄을 지워서 당신이 사람임을 증명하세요.",
+      "startBody": "블록을 빈 자리로 드래그하고, 탭하면 회전, 아래로 쓸어내리면 떨어집니다. 방향키와 스페이스바로도 즐길 수 있어요. {n}줄을 지워서 당신이 사람임을 증명하세요.",
+      "startButton": "시작",
+      "scoreLabel": "점수",
+      "linesLabel": "줄",
+      "clearedOne": "한 줄을 지웠습니다.",
+      "clearedMany": "{n}줄을 지웠습니다.",
+      "verified": "인증되었습니다. 계속 플레이할 수 있어요.",
+      "verifiedBody": "인증되었어요. 계속 플레이할까요?",
+      "keepPlaying": "계속하기",
+      "tryAgain": "다시 시도",
+      "playAgain": "다시 하기",
+      "gameOver": "블록이 끝까지 쌓였습니다. 최종 점수 {score}.",
+      "verifiedTitle": "인증됨",
+      "gameOverTitle": "끝까지 쌓임"
+    },
+    "Indonesian": {
+      "_lang": "id",
+      "_default": true,
+      "ariaGame": "Blockfall, teka-teki balok jatuh. Selesaikan baris untuk membuktikan kamu manusia.",
+      "startBody": "Seret balok ke celah yang kosong, ketuk untuk memutarnya, lalu usap ke bawah untuk menjatuhkannya. Atau mainkan dengan tombol panah dan spasi. Selesaikan {n} baris untuk membuktikan kamu manusia.",
+      "startButton": "Mulai",
+      "scoreLabel": "Skor",
+      "linesLabel": "Baris",
+      "clearedOne": "Satu baris selesai.",
+      "clearedMany": "{n} baris selesai.",
+      "verified": "Terverifikasi. Kamu boleh terus bermain.",
+      "verifiedBody": "Kamu sudah terverifikasi. Mau lanjut bermain?",
+      "keepPlaying": "Lanjut bermain",
+      "tryAgain": "Coba lagi",
+      "playAgain": "Main lagi",
+      "gameOver": "Balok menumpuk sampai atas. Skor akhir {score}.",
+      "verifiedTitle": "Terverifikasi",
+      "gameOverTitle": "Menumpuk sampai atas"
+    }
+  }
+}

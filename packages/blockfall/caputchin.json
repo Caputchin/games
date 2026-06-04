@@ -1,0 +1,34 @@
+{
+  "terms_accepted": true,
+  "license": "MIT",
+  "marketplace": {
+    "name": "Blockfall",
+    "description": "Stack the falling blocks and clear lines to prove you're human.",
+    "preview": "preview.png",
+    "categories": [
+      "Puzzle",
+      "Arcade"
+    ],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": false,
+      "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-blockfall",
+  "entry": "dist/blockfall.js",
+  "run": {
+    "entry": "dist/run.js"
+  },
+  "preferred": {
+    "width": 270,
+    "height": 480,
+    "layout": "inline"
+  }
+}

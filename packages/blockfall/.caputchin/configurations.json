@@ -1,0 +1,75 @@
+{
+  "schema": {
+    "cols": {
+      "type": "range",
+      "min": 6,
+      "max": 12,
+      "step": 1,
+      "name": "Board width",
+      "description": "Number of columns in the play well."
+    },
+    "rows": {
+      "type": "range",
+      "min": 7,
+      "max": 16,
+      "step": 1,
+      "name": "Board height",
+      "description": "Number of rows in the play well."
+    },
+    "pass_lines": {
+      "type": "range",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "name": "Lines to verify",
+      "description": "Lines a visitor must clear to pass. The captcha is satisfied the moment this many lines are cleared."
+    },
+    "gravity": {
+      "type": "range",
+      "min": 4,
+      "max": 60,
+      "step": 2,
+      "name": "Fall speed",
+      "description": "Ticks the piece takes to fall one cell. Higher means slower; a hard drop places it instantly either way."
+    },
+    "lock_delay": {
+      "type": "range",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "name": "Lock delay",
+      "description": "Ticks a resting piece waits before it locks, giving time for a last slide or rotate."
+    },
+    "sound": {
+      "type": "boolean",
+      "name": "Sound effects",
+      "description": "Play subtle sound effects (piece lock, line clear, verified, top-out). Visitors can always mute in-game."
+    }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "cols": 7,
+      "rows": 12,
+      "pass_lines": 2,
+      "gravity": 55,
+      "lock_delay": 16,
+      "sound": true
+    },
+    "casual": {
+      "_extends": "default",
+      "pass_lines": 1,
+      "gravity": 60
+    },
+    "challenge": {
+      "_extends": "default",
+      "pass_lines": 4,
+      "gravity": 30
+    },
+    "wide": {
+      "_extends": "default",
+      "cols": 12,
+      "pass_lines": 3
+    }
+  }
+}

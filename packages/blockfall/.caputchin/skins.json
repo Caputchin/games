@@ -1,0 +1,64 @@
+{
+  "schema": {
+    "well": { "type": "color", "name": "Board background", "description": "Fill of the play well behind the blocks." },
+    "grid": { "type": "color", "name": "Board frame", "description": "Border drawn around the play well." },
+    "text": { "type": "color", "name": "Text", "description": "Score and label text color." },
+    "accent": { "type": "color", "name": "Verified accent", "description": "Color of the verified badge and the lines counter once passed." },
+    "danger": { "type": "color", "name": "Topped-out accent", "description": "Color of the game-over title." },
+    "piece0": { "type": "color", "name": "Block color 1", "description": "Color of the line (I) piece." },
+    "piece1": { "type": "color", "name": "Block color 2", "description": "Color of the square (O) piece." },
+    "piece2": { "type": "color", "name": "Block color 3", "description": "Color of the tri (T) piece." },
+    "piece3": { "type": "color", "name": "Block color 4", "description": "Color of the S piece." },
+    "piece4": { "type": "color", "name": "Block color 5", "description": "Color of the Z piece." },
+    "piece5": { "type": "color", "name": "Block color 6", "description": "Color of the J piece." },
+    "piece6": { "type": "color", "name": "Block color 7", "description": "Color of the L piece." }
+  },
+  "presets": {
+    "default": {
+      "_default": true,
+      "_theme": "dark",
+      "well": "#11131c",
+      "grid": "#20243a",
+      "text": "#e6e9f5",
+      "accent": "#67c98b",
+      "danger": "#e85b7a",
+      "piece0": "#e8794b",
+      "piece1": "#5b8cff",
+      "piece2": "#4ec3c9",
+      "piece3": "#e6b34a",
+      "piece4": "#9b6cff",
+      "piece5": "#67c98b",
+      "piece6": "#e85b7a"
+    },
+    "mono": {
+      "_theme": "dark",
+      "well": "#0e0e10",
+      "grid": "#26262b",
+      "text": "#f2f2f4",
+      "accent": "#cfcfd6",
+      "danger": "#9a9aa2",
+      "piece0": "#d7d7dd",
+      "piece1": "#b9b9c1",
+      "piece2": "#cacad1",
+      "piece3": "#a9a9b2",
+      "piece4": "#c0c0c8",
+      "piece5": "#b1b1ba",
+      "piece6": "#d0d0d7"
+    },
+    "daylight": {
+      "_theme": "light",
+      "well": "#f4f5fb",
+      "grid": "#d6dae8",
+      "text": "#1c2030",
+      "accent": "#2f9e63",
+      "danger": "#cc4763",
+      "piece0": "#d2622f",
+      "piece1": "#3a6ee0",
+      "piece2": "#2ba0a6",
+      "piece3": "#cc9325",
+      "piece4": "#7c4ad8",
+      "piece5": "#2f9e63",
+      "piece6": "#cc4763"
+    }
+  }
+}
