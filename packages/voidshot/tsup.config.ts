@@ -20,6 +20,11 @@ export default defineConfig([
     noExternal: [/.*/],
     clean: true,
     target: 'es2020',
+    // Inline the vendored .glb models as Uint8Array (render-only; the CSP forbids
+    // fetch, so the geometry must travel inside the IIFE like the wasm does).
+    esbuildOptions(options) {
+      options.loader = { ...options.loader, '.glb': 'binary' };
+    },
   },
   {
     entry: { run: 'src/run.ts' },

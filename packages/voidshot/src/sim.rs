@@ -39,6 +39,7 @@ const FACE_LERP: f32 = 0.3; // facing smoothing toward the steer direction, per 
 const FACE_DEADZONE: f32 = 0.05; // below this steer distance the facing is held
 const SPLIT_CHILDREN: u32 = 2;
 const SPLIT_SPREAD: f32 = 0.9; // child spawn offset from the dead splitter
+const ENDLESS_CAP_PER_WAVE: u32 = 16; // cap concurrent drones in endless mode
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Phase {
@@ -120,10 +121,14 @@ pub struct Sim {
     fire_cd: u32,
     hit_cd: u32,
     spawned_waves: u32,
+    /// Endless (post-verification) play: keep spawning escalating waves with no
+    /// win and no time cap; ends only when the shield is depleted. Never used by
+    /// the replay path (the captcha is always finite), so it has no verdict role.
+    endless: bool,
 }
 
 impl Sim {
-    pub fn new(seed: [u32; 4], cfg: SimConfig) -> Self {
+    pub fn new(seed: [u32; 4], cfg: SimConfig, endless: bool) -> Self {
         let mut bodies = RigidBodySet::new();
         let mut colliders = ColliderSet::new();
 
@@ -167,6 +172,7 @@ impl Sim {
             fire_cd: 0,
             hit_cd: 0,
             spawned_waves: 0,
+            endless,
         }
     }
 
@@ -242,18 +248,26 @@ impl Sim {
 
         // Hard time cap: not clearing the waves in the budget is a loss. This makes
         // passive play (no real steering) a loss and bounds the live loop the same
-        // way the config cap bounds the replay loop.
-        if self.phase == Phase::Playing && self.tick >= self.cfg.time_limit_ticks {
+        // way the config cap bounds the replay loop. Endless play has no cap - it
+        // runs until the shield is gone (and never reaches the replay path).
+        if !self.endless && self.phase == Phase::Playing && self.tick >= self.cfg.time_limit_ticks {
             self.phase = Phase::Lost;
         }
     }
 
     fn maybe_spawn_wave(&mut self) {
-        if self.spawned_waves >= self.cfg.wave_count || self.living_count() > 0 {
+        if self.living_count() > 0 {
+            return;
+        }
+        if !self.endless && self.spawned_waves >= self.cfg.wave_count {
             return;
         }
         let w = self.spawned_waves;
-        let count = self.cfg.enemies_per_wave + w;
+        let count = if self.endless {
+            (self.cfg.enemies_per_wave + w).min(ENDLESS_CAP_PER_WAVE)
+        } else {
+            self.cfg.enemies_per_wave + w
+        };
         for i in 0..count {
             let angle = self.rng.range(0.0, std::f32::consts::TAU);
             let r = RIM_R - self.rng.range(0.0, 0.6);
@@ -510,7 +524,7 @@ impl Sim {
     fn check_end(&mut self) {
         if self.shield <= 0 {
             self.phase = Phase::Lost;
-        } else if self.spawned_waves >= self.cfg.wave_count && self.living_count() == 0 {
+        } else if !self.endless && self.spawned_waves >= self.cfg.wave_count && self.living_count() == 0 {
             self.phase = Phase::Won;
         }
     }

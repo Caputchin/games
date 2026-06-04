@@ -1,21 +1,22 @@
 // OGL renderer. RENDER-ONLY: it draws the sim's state buffer and never feeds the
-// sim, so its look (and the non-deterministic VFX: rotor spin, explosions) cannot
-// affect the verdict.
+// sim, so its look (and the non-deterministic VFX) cannot affect the verdict.
 //
-// A tilted 3/4 perspective camera gives real depth (foreshortening, a lit swarm,
-// glow) while a cursor->arena-plane ray (Camera.unproject) keeps steering exact.
-// Geometry is procedural: enemies are quad-drones (hub + four booms + spinning
-// rotors), the player is an arrow gunship oriented to its facing, bolts are
-// forward tracers, and the reticle marks where the stream will sweep. Fully
-// responsive: the canvas fills the container on both axes and the camera reframes
-// the arena for any aspect (portrait or landscape).
+// Real CC-BY low-poly models (vendored .glb, inlined - see model.ts) give the player
+// gunship + enemy drones their multi-material silhouettes; a PBR-lite shader (three
+// view-space lights + blinn specular + fresnel rim + emissive) lights them so they
+// read as solid 3D craft, not flat chrome. A per-instance rim color signals the
+// enemy type / player, set per-draw via a single shared program + onBeforeRender.
+// A tilted 3/4 camera + gradient arena + starfield backdrop give depth and mood.
+// Fully responsive: the canvas fills the container; the camera reframes any aspect.
+// If a model ever fails to parse, a procedural fallback template keeps it playable.
 
 import {
-  Box,
   Camera,
   Color,
   Cylinder,
   Mesh,
+  Box,
+  Mat4,
   Program,
   Renderer,
   Sphere,
@@ -23,18 +24,22 @@ import {
   Transform,
   Vec3,
 } from 'ogl';
-import { ARENA_R, KIND_WEAVER } from './constants.js';
+import { ARENA_R, KIND_SPLITTER, KIND_WEAVER } from './constants.js';
 import { enemyColor, hexToRgb, type RenderSkin } from './skin.js';
 import type { Viewport } from './input.js';
 import type { LiveState } from './wasm.js';
+import { loadModelParts, partsBounds, type ModelPart } from './model.js';
+import droneGlb from './assets/drone.glb';
+import shipGlb from './assets/ship.glb';
 
 const FOV = 45;
-const ELEV = (61 * Math.PI) / 180; // camera elevation from the ground plane
-const FIT = 1.18; // arena bounding radius (* ARENA_R) the camera must frame
-const ENEMY_POOL = 64;
+const ELEV = (57 * Math.PI) / 180; // camera elevation from the ground plane
+const FIT = 1.2; // arena bounding radius (* ARENA_R) the camera must frame
 const BOLT_POOL = 48;
 const BURST_POOL = 24;
-const BURST_LIFE = 0.36; // seconds
+const BURST_LIFE = 0.4; // seconds
+const PLAYER_TARGET_R = 1.3; // model bounding radius -> world units
+const ENEMY_TARGET_R = 1.0;
 
 const VERT = /* glsl */ `
   attribute vec3 position;
@@ -43,29 +48,65 @@ const VERT = /* glsl */ `
   uniform mat4 projectionMatrix;
   uniform mat3 normalMatrix;
   varying vec3 vNormal;
+  varying vec3 vViewPos;
   void main() {
     vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vViewPos = mv.xyz;
+    gl_Position = projectionMatrix * mv;
   }
 `;
 
-// Lit: view-space lambert + ambient + a camera-facing rim, so rotating drones read
-// as solid 3D bodies.
-const FRAG_LIT = /* glsl */ `
+// PBR-lite: 3 view-space lights, blinn specular sharpened by 1-roughness and tinted
+// by metalness, hemisphere ambient, emissive, and a fresnel rim in the instance's
+// signal color. Enough sheen + shaping to read as a real 3D craft.
+const FRAG_PBR = /* glsl */ `
   precision highp float;
   uniform vec3 uColor;
+  uniform vec3 uEmissive;
+  uniform float uMetal;
+  uniform float uRough;
+  uniform vec3 uRim;
+  uniform float uRimAmt;
   varying vec3 vNormal;
+  varying vec3 vViewPos;
+
+  const vec3 L1 = vec3(0.35, 0.55, 0.75);   // key (upper front)
+  const vec3 L2 = vec3(-0.6, 0.2, 0.3);     // fill (left)
+  const vec3 L3 = vec3(0.1, -0.4, -0.7);    // back/under rim
+  const vec3 C1 = vec3(1.0, 0.96, 0.9);
+  const vec3 C2 = vec3(0.45, 0.6, 0.95);
+  const vec3 C3 = vec3(0.9, 0.5, 0.7);
+
+  float spec(vec3 n, vec3 l, vec3 v, float shin) {
+    vec3 h = normalize(l + v);
+    return pow(max(dot(n, h), 0.0), shin);
+  }
   void main() {
     vec3 n = normalize(vNormal);
-    vec3 L = normalize(vec3(0.35, 0.65, 0.7));
-    float diff = max(dot(n, L), 0.0);
-    float rim = pow(1.0 - max(n.z, 0.0), 2.5) * 0.5;
-    vec3 c = uColor * (0.32 + 0.8 * diff) + uColor * rim;
-    gl_FragColor = vec4(c, 1.0);
+    vec3 v = normalize(-vViewPos);
+    float shin = mix(8.0, 90.0, 1.0 - uRough);
+    float specK = mix(0.04, 1.0, uMetal);
+    vec3 specTint = mix(vec3(1.0), uColor, uMetal);
+
+    vec3 diff = C1 * max(dot(n, normalize(L1)), 0.0)
+              + C2 * max(dot(n, normalize(L2)), 0.0) * 0.6
+              + C3 * max(dot(n, normalize(L3)), 0.0) * 0.4;
+    float s = spec(n, normalize(L1), v, shin) * 1.0
+            + spec(n, normalize(L2), v, shin) * 0.5;
+
+    // hemisphere ambient (sky cool / ground dark)
+    float hemi = 0.5 + 0.5 * n.y;
+    vec3 amb = mix(vec3(0.05, 0.06, 0.1), vec3(0.16, 0.2, 0.28), hemi);
+
+    float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+    vec3 rim = uRim * fres * uRimAmt;
+
+    vec3 col = uColor * (amb + diff) + specTint * s * specK + uEmissive + rim;
+    gl_FragColor = vec4(col, 1.0);
   }
 `;
 
-// Emissive: flat bright color at a fixed alpha (halos, bolts, reticle, bursts).
 const FRAG_EMISSIVE = /* glsl */ `
   precision highp float;
   uniform vec3 uColor;
@@ -73,12 +114,64 @@ const FRAG_EMISSIVE = /* glsl */ `
   void main() { gl_FragColor = vec4(uColor, uAlpha); }
 `;
 
-interface EnemyNode {
-  group: Transform;
-  body: Mesh;
-  arms: Mesh[];
-  rotors: Transform[];
-  halo: Mesh;
+// Arena floor: radial gradient + soft edge fade, lit subtly by normal.
+const FRAG_GROUND = /* glsl */ `
+  precision highp float;
+  uniform vec3 uInner;
+  uniform vec3 uOuter;
+  varying vec3 vNormal;
+  varying vec3 vViewPos;
+  void main() {
+    float r = clamp(length(vViewPos.xz) / ${(ARENA_R).toFixed(1)}, 0.0, 1.0);
+    vec3 c = mix(uInner, uOuter, r);
+    gl_FragColor = vec4(c, 1.0);
+  }
+`;
+
+// Starfield backdrop on a large inverted sphere: vertical gradient + hashed stars.
+const VERT_BG = /* glsl */ `
+  attribute vec3 position;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  varying vec3 vP;
+  void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+`;
+const FRAG_BG = /* glsl */ `
+  precision highp float;
+  uniform vec3 uTop;
+  uniform vec3 uBottom;
+  varying vec3 vP;
+  float hash(vec3 p){ p = fract(p*0.3183099+0.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+  void main() {
+    vec3 d = normalize(vP);
+    vec3 grad = mix(uBottom, uTop, clamp(d.y*0.5+0.5, 0.0, 1.0));
+    // small point stars: high-frequency cell, round falloff toward the cell center
+    vec3 cell = floor(d * 240.0);
+    float h = hash(cell);
+    if (h > 0.985) {
+      vec3 c = (cell + 0.5) / 240.0;
+      float dist = length(normalize(c) - d) * 240.0;
+      float dot = max(0.0, 1.0 - dist) * (0.5 + 0.5 * hash(cell + 3.0));
+      grad += dot;
+    }
+    gl_FragColor = vec4(grad, 1.0);
+  }
+`;
+
+interface PartMesh extends Mesh {
+  __mat?: { color: Color; emissive: Color; metal: number; rough: number };
+  __rim?: { color: Color; amt: number };
+}
+
+interface Instance {
+  pivot: Transform;
+  rim: { color: Color; amt: number };
+}
+
+interface Template {
+  parts: ModelPart[];
+  scale: number;
+  center: Vec3;
 }
 
 interface BoltNode {
@@ -98,16 +191,17 @@ export class Renderer3D implements Viewport {
   private readonly gl: Renderer['gl'];
   private readonly camera: Camera;
   private readonly scene: Transform;
+  private readonly pbr: Program;
+  private readonly emissive = new Map<string, Program>();
 
-  private readonly player: Transform;
-  private readonly enemies: EnemyNode[] = [];
+  private player: Instance | null = null;
+  private playerThruster: Mesh | null = null;
+  private readonly enemies: Instance[] = [];
+  private enemyTemplate: Template | null = null;
   private readonly bolts: BoltNode[] = [];
   private readonly bursts: Burst[] = [];
   private readonly reticle: Transform;
-
-  // Cached lit programs keyed by hex (per drone color); emissive cache likewise.
-  private readonly lit = new Map<string, Program>();
-  private readonly emissive = new Map<string, Program>();
+  private loaded = false;
 
   private spin = 0;
   private prevTime = 0;
@@ -130,36 +224,165 @@ export class Renderer3D implements Viewport {
     const bg = hexToRgb(skin.background);
     this.gl.clearColor(bg[0], bg[1], bg[2], 1);
 
-    this.camera = new Camera(this.gl, { fov: FOV, near: 0.1, far: 400 });
+    this.camera = new Camera(this.gl, { fov: FOV, near: 0.1, far: 600 });
     this.scene = new Transform();
 
+    this.pbr = new Program(this.gl, {
+      vertex: VERT,
+      fragment: FRAG_PBR,
+      uniforms: {
+        uColor: { value: new Color(0.8, 0.8, 0.8) },
+        uEmissive: { value: new Color(0, 0, 0) },
+        uMetal: { value: 0.2 },
+        uRough: { value: 0.6 },
+        uRim: { value: new Color(0.2, 0.9, 1) },
+        uRimAmt: { value: 0.6 },
+      },
+    });
+
+    this.buildBackdrop();
     this.buildGround();
-    this.player = this.buildPlayer();
-    this.player.setParent(this.scene);
-    for (let i = 0; i < ENEMY_POOL; i += 1) this.enemies.push(this.buildEnemy());
-    for (let i = 0; i < BOLT_POOL; i += 1) this.bolts.push(this.buildBolt());
-    for (let i = 0; i < BURST_POOL; i += 1) this.bursts.push(this.buildBurst());
     this.reticle = this.buildReticle();
     this.reticle.setParent(this.scene);
+    for (let i = 0; i < BOLT_POOL; i += 1) this.bolts.push(this.buildBolt());
+    for (let i = 0; i < BURST_POOL; i += 1) this.bursts.push(this.buildBurst());
 
     this.resize();
   }
 
-  // --- program caches --------------------------------------------------------
-  private litProg(hex: string): Program {
-    let p = this.lit.get(hex);
-    if (!p) {
-      const [r, g, b] = hexToRgb(hex);
-      p = new Program(this.gl, {
-        vertex: VERT,
-        fragment: FRAG_LIT,
-        uniforms: { uColor: { value: new Color(r, g, b) } },
-      });
-      this.lit.set(hex, p);
-    }
-    return p;
+  /** Whether the models have finished loading (driver waits before stepping). */
+  isLoaded(): boolean {
+    return this.loaded;
   }
 
+  // --- model loading ---------------------------------------------------------
+  async loadModels(): Promise<void> {
+    let shipParts: ModelPart[];
+    let droneParts: ModelPart[];
+    try {
+      [shipParts, droneParts] = await Promise.all([
+        loadModelParts(this.gl, shipGlb),
+        loadModelParts(this.gl, droneGlb),
+      ]);
+    } catch {
+      shipParts = this.fallbackParts();
+      droneParts = this.fallbackParts();
+    }
+    const shipTpl = this.makeTemplate(shipParts, PLAYER_TARGET_R);
+    this.enemyTemplate = this.makeTemplate(droneParts, ENEMY_TARGET_R);
+
+    this.player = this.buildInstance(shipTpl, hexToRgb(this.skin.player), hexToRgb(this.skin.player));
+    this.player.pivot.visible = false;
+    // thruster glow behind the gunship
+    this.playerThruster = new Mesh(this.gl, {
+      geometry: new Sphere(this.gl, { radius: 0.3, widthSegments: 12, heightSegments: 8 }),
+      program: this.emissiveProg(this.skin.player, 0.5),
+    });
+    this.playerThruster.position.set(0, 0, 0.7);
+    this.playerThruster.setParent(this.player.pivot);
+
+    this.ensureEnemies(8);
+    this.loaded = true;
+  }
+
+  private makeTemplate(parts: ModelPart[], targetR: number): Template {
+    const { center, radius } = partsBounds(parts);
+    return { parts, scale: targetR / radius, center };
+  }
+
+  private fallbackParts(): ModelPart[] {
+    // A simple lit craft if a model fails to parse: body + two fins.
+    const mk = (geo: ModelPart['geometry'], color: [number, number, number]): ModelPart => ({
+      geometry: geo,
+      matrix: new Mat4(),
+      color,
+      emissive: [0, 0, 0],
+      alpha: 1,
+      metallic: 0.3,
+      roughness: 0.5,
+    });
+    return [
+      mk(new Box(this.gl, { width: 0.6, height: 0.4, depth: 1.4 }), [0.7, 0.75, 0.8]),
+      mk(new Box(this.gl, { width: 1.4, height: 0.12, depth: 0.5 }), [0.5, 0.55, 0.62]),
+    ];
+  }
+
+  private buildInstance(
+    tpl: Template,
+    rimColor: [number, number, number],
+    recolor?: [number, number, number],
+  ): Instance {
+    const pivot = new Transform();
+    pivot.setParent(this.scene);
+    pivot.visible = false;
+
+    // normalize: recenter (centerer) -> scale (root)
+    const root = new Transform();
+    root.scale.set(tpl.scale, tpl.scale, tpl.scale);
+    root.setParent(pivot);
+    const centerer = new Transform();
+    centerer.position.set(-tpl.center.x, -tpl.center.y, -tpl.center.z);
+    centerer.setParent(root);
+
+    const rim = { color: new Color(rimColor[0], rimColor[1], rimColor[2]), amt: 0.6 };
+    for (const part of tpl.parts) {
+      const mesh = new Mesh(this.gl, { geometry: part.geometry, program: this.pbr }) as PartMesh;
+      mesh.matrix.copy(part.matrix);
+      mesh.matrixAutoUpdate = false;
+      // Optional recolor: map each part to a single hue by its luminance, keeping
+      // the model's light/dark structure (used to make the player unmistakably
+      // its own color, distinct from the same-palette enemy drones).
+      let col = part.color;
+      if (recolor) {
+        const lum = 0.299 * col[0] + 0.587 * col[1] + 0.114 * col[2];
+        col = [
+          Math.min(1, lum * recolor[0] * 1.5 + 0.04),
+          Math.min(1, lum * recolor[1] * 1.5 + 0.04),
+          Math.min(1, lum * recolor[2] * 1.5 + 0.04),
+        ];
+      }
+      mesh.__mat = {
+        color: new Color(col[0], col[1], col[2]),
+        emissive: new Color(part.emissive[0], part.emissive[1], part.emissive[2]),
+        metal: part.metallic,
+        rough: part.roughness,
+      };
+      mesh.__rim = rim;
+      mesh.onBeforeRender(() => {
+        const u = this.pbr.uniforms;
+        const m = mesh.__mat!;
+        (u.uColor.value as Color).copy(m.color);
+        (u.uEmissive.value as Color).copy(m.emissive);
+        u.uMetal.value = m.metal;
+        u.uRough.value = m.rough;
+        (u.uRim.value as Color).copy(mesh.__rim!.color);
+        u.uRimAmt.value = mesh.__rim!.amt;
+      });
+      mesh.setParent(centerer);
+    }
+    return { pivot, rim };
+  }
+
+  private ensureEnemies(n: number): void {
+    if (!this.enemyTemplate) return;
+    while (this.enemies.length < n) {
+      const inst = this.buildInstance(this.enemyTemplate, hexToRgb(this.skin.chaser));
+      inst.pivot.visible = false;
+      // subtle colored aura per drone (small + faint so the model detail shows)
+      const halo = new Mesh(this.gl, {
+        geometry: new Sphere(this.gl, { radius: 0.5, widthSegments: 14, heightSegments: 10 }),
+        program: this.emissiveProg('#ffffff', 0.06),
+      });
+      (halo as PartMesh).__rim = inst.rim;
+      halo.onBeforeRender(() => {
+        (halo.program.uniforms.uColor.value as Color).copy(inst.rim.color);
+      });
+      halo.setParent(inst.pivot);
+      this.enemies.push(inst);
+    }
+  }
+
+  // --- programs / primitives -------------------------------------------------
   private emissiveProg(hex: string, alpha: number): Program {
     const key = `${hex}@${alpha}`;
     let p = this.emissive.get(key);
@@ -173,131 +396,66 @@ export class Renderer3D implements Viewport {
         depthWrite: false,
         cullFace: false,
       });
-      p.setBlendFunc(this.gl.SRC_ALPHA, this.gl.ONE); // additive glow
+      p.setBlendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
       this.emissive.set(key, p);
     }
     return p;
   }
 
-  // --- geometry --------------------------------------------------------------
+  private buildBackdrop(): void {
+    const sky = new Mesh(this.gl, {
+      geometry: new Sphere(this.gl, { radius: 220, widthSegments: 32, heightSegments: 24 }),
+      program: new Program(this.gl, {
+        vertex: VERT_BG,
+        fragment: FRAG_BG,
+        uniforms: {
+          uTop: { value: new Color(...hexToRgb(this.skin.background)) },
+          uBottom: { value: new Color(...hexToRgb(shade(this.skin.background, 1.4))) },
+        },
+        cullFace: false,
+        depthWrite: false,
+      }),
+    });
+    sky.setParent(this.scene);
+  }
+
   private buildGround(): void {
     const disc = new Cylinder(this.gl, {
       radiusTop: ARENA_R,
       radiusBottom: ARENA_R,
       height: 0.2,
-      radialSegments: 80,
+      radialSegments: 90,
     });
-    const floor = new Mesh(this.gl, { geometry: disc, program: this.litProg(this.skin.arena) });
+    const floor = new Mesh(this.gl, {
+      geometry: disc,
+      program: new Program(this.gl, {
+        vertex: VERT,
+        fragment: FRAG_GROUND,
+        uniforms: {
+          uInner: { value: new Color(...hexToRgb(shade(this.skin.arena, 0.55))) },
+          uOuter: { value: new Color(...hexToRgb(this.skin.arena)) },
+        },
+      }),
+    });
     floor.position.set(0, -0.12, 0);
     floor.setParent(this.scene);
 
-    // Boundary rim + two inner rings as depth cues (emissive, flat on the plane).
     for (const [r, a] of [
-      [ARENA_R, 0.7],
-      [ARENA_R * 0.66, 0.18],
-      [ARENA_R * 0.33, 0.14],
+      [ARENA_R, 0.8],
+      [ARENA_R * 0.66, 0.22],
+      [ARENA_R * 0.33, 0.16],
     ] as const) {
       const ring = new Torus(this.gl, {
         radius: r,
-        tube: r > ARENA_R - 0.01 ? 0.12 : 0.05,
+        tube: r > ARENA_R - 0.01 ? 0.13 : 0.05,
         radialSegments: 8,
-        tubularSegments: 120,
+        tubularSegments: 130,
       });
       const m = new Mesh(this.gl, { geometry: ring, program: this.emissiveProg(this.skin.grid, a) });
-      m.rotation.x = Math.PI / 2; // lay the ring flat in XZ
+      m.rotation.x = Math.PI / 2;
       m.position.set(0, 0.01, 0);
       m.setParent(this.scene);
     }
-  }
-
-  /** Grow the enemy node pool to at least `n` (default play stays under the
-   *  initial pool; only an extreme config triggers a one-time growth). */
-  private ensureEnemies(n: number): void {
-    while (this.enemies.length < n) this.enemies.push(this.buildEnemy());
-  }
-
-  private buildEnemy(): EnemyNode {
-    const group = new Transform();
-    group.visible = false;
-    group.setParent(this.scene);
-
-    const hub = new Box(this.gl, { width: 0.46, height: 0.2, depth: 0.46 });
-    const body = new Mesh(this.gl, { geometry: hub, program: this.litProg(this.skin.chaser) });
-    body.setParent(group);
-
-    const armGeo = new Box(this.gl, { width: 0.62, height: 0.07, depth: 0.12 });
-    const rotorGeo = new Cylinder(this.gl, {
-      radiusTop: 0.2,
-      radiusBottom: 0.2,
-      height: 0.04,
-      radialSegments: 14,
-    });
-    const arms: Mesh[] = [];
-    const rotors: Transform[] = [];
-    for (let k = 0; k < 4; k += 1) {
-      const yaw = (k * Math.PI) / 2 + Math.PI / 4;
-      const arm = new Mesh(this.gl, { geometry: armGeo, program: this.litProg(this.skin.chaser) });
-      arm.rotation.y = yaw;
-      arm.setParent(group);
-      arms.push(arm);
-      // rotor sits at the boom tip and spins about Y
-      const tip = new Transform();
-      tip.position.set(Math.cos(yaw) * 0.32, 0.06, Math.sin(yaw) * 0.32);
-      tip.setParent(group);
-      const rotor = new Mesh(this.gl, {
-        geometry: rotorGeo,
-        program: this.litProg(this.skin.chaser),
-      });
-      rotor.setParent(tip);
-      rotors.push(tip);
-    }
-
-    const halo = new Mesh(this.gl, {
-      geometry: new Sphere(this.gl, { radius: 0.72, widthSegments: 16, heightSegments: 12 }),
-      program: this.emissiveProg(this.skin.chaser, 0.16),
-    });
-    halo.setParent(group);
-
-    return { group, body, arms, rotors, halo };
-  }
-
-  private buildPlayer(): Transform {
-    const group = new Transform();
-    const lit = this.litProg(this.skin.player);
-
-    // Arrow fuselage (nose toward -Z), two swept wings, a thruster pod.
-    const fuse = new Mesh(this.gl, {
-      geometry: new Box(this.gl, { width: 0.28, height: 0.16, depth: 0.8 }),
-      program: lit,
-    });
-    fuse.setParent(group);
-    const nose = new Mesh(this.gl, {
-      geometry: new Cylinder(this.gl, {
-        radiusTop: 0.0,
-        radiusBottom: 0.16,
-        height: 0.4,
-        radialSegments: 4,
-      }),
-      program: lit,
-    });
-    nose.rotation.x = -Math.PI / 2; // point the cone along -Z
-    nose.position.set(0, 0, -0.5);
-    nose.setParent(group);
-    for (const s of [-1, 1]) {
-      const wing = new Mesh(this.gl, {
-        geometry: new Box(this.gl, { width: 0.5, height: 0.06, depth: 0.34 }),
-        program: lit,
-      });
-      wing.position.set(s * 0.36, 0, 0.12);
-      wing.rotation.y = s * 0.5;
-      wing.setParent(group);
-    }
-    const halo = new Mesh(this.gl, {
-      geometry: new Sphere(this.gl, { radius: 0.8, widthSegments: 16, heightSegments: 12 }),
-      program: this.emissiveProg(this.skin.player, 0.18),
-    });
-    halo.setParent(group);
-    return group;
   }
 
   private buildBolt(): BoltNode {
@@ -305,7 +463,7 @@ export class Renderer3D implements Viewport {
     group.visible = false;
     group.setParent(this.scene);
     const mesh = new Mesh(this.gl, {
-      geometry: new Box(this.gl, { width: 0.12, height: 0.12, depth: 0.9 }),
+      geometry: new Box(this.gl, { width: 0.14, height: 0.14, depth: 1.0 }),
       program: this.emissiveProg(this.skin.accent, 0.95),
     });
     mesh.setParent(group);
@@ -315,12 +473,7 @@ export class Renderer3D implements Viewport {
   private buildReticle(): Transform {
     const group = new Transform();
     const ring = new Mesh(this.gl, {
-      geometry: new Torus(this.gl, {
-        radius: 0.55,
-        tube: 0.08,
-        radialSegments: 8,
-        tubularSegments: 36,
-      }),
+      geometry: new Torus(this.gl, { radius: 0.55, tube: 0.08, radialSegments: 8, tubularSegments: 36 }),
       program: this.emissiveProg(this.skin.accent, 0.7),
     });
     ring.rotation.x = Math.PI / 2;
@@ -332,7 +485,6 @@ export class Renderer3D implements Viewport {
     const group = new Transform();
     group.visible = false;
     group.setParent(this.scene);
-    // each burst owns its program (per-node alpha + color fade)
     const own = new Program(this.gl, {
       vertex: VERT,
       fragment: FRAG_EMISSIVE,
@@ -357,8 +509,6 @@ export class Renderer3D implements Viewport {
   }
 
   // --- Viewport: screen -> arena-plane world coordinates ---------------------
-  // Unproject the cursor to a near + far world point, then intersect the ray with
-  // the y=0 plane. Exact for any camera tilt.
   toWorld(clientX: number, clientY: number): { x: number; z: number } {
     const rect = this.gl.canvas.getBoundingClientRect();
     const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
@@ -369,9 +519,7 @@ export class Renderer3D implements Viewport {
     this.camera.unproject(far);
     const dy = far.y - near.y;
     const t = Math.abs(dy) > 1e-6 ? -near.y / dy : 0;
-    const x = near.x + (far.x - near.x) * t;
-    const z = near.z + (far.z - near.z) * t;
-    return { x, z };
+    return { x: near.x + (far.x - near.x) * t, z: near.z + (far.z - near.z) * t };
   }
 
   resize(): void {
@@ -380,57 +528,50 @@ export class Renderer3D implements Viewport {
     this.renderer.setSize(w, h);
     const aspect = w / h;
     this.camera.perspective({ aspect });
-
-    // Frame the arena bounding radius for either aspect (portrait pulls back).
     const halfFov = (FOV * Math.PI) / 180 / 2;
-    const fitR = ARENA_R * FIT;
-    let dist = fitR / Math.sin(halfFov);
+    let dist = (ARENA_R * FIT) / Math.sin(halfFov);
     if (aspect < 1) dist /= aspect;
     this.camera.position.set(0, dist * Math.sin(ELEV), dist * Math.cos(ELEV));
     this.camera.lookAt([0, 0, 0]);
-    this.camera.updateMatrixWorld(); // refresh worldMatrix for unproject
+    this.camera.updateMatrixWorld();
   }
 
-  /** Render a frame. `aim` is the live cursor target (world), for the reticle. */
   render(s: LiveState, aim: { x: number; z: number }, timeMs: number): void {
     const dt = this.prevTime ? Math.min(0.05, (timeMs - this.prevTime) / 1000) : 0;
     this.prevTime = timeMs;
-    this.spin += dt * 22; // rotor spin (render-only)
+    this.spin += dt;
 
-    // Player
-    this.player.position.set(s.px, 0, s.pz);
-    this.player.rotation.y = yaw(s.fx, s.fz);
-
-    // Reticle on the steer point
-    this.reticle.position.set(aim.x, 0.06, aim.z);
-    this.reticle.rotation.y += dt * 1.5;
-
-    // Enemies. Grow the pool on demand so an extreme (non-default) config that
-    // spawns more concurrent drones than the initial pool never silently caps the
-    // render - the sim already simulates them all.
-    this.ensureEnemies(s.enemies.length);
-    for (let i = 0; i < this.enemies.length; i += 1) {
-      const node = this.enemies[i]!;
-      const e = s.enemies[i];
-      if (!e) {
-        if (node.group.visible) node.group.visible = false;
-        continue;
+    if (this.player) {
+      this.player.pivot.position.set(s.px, 0, s.pz);
+      this.player.pivot.rotation.y = yaw(s.fx, s.fz);
+      this.player.pivot.visible = true;
+      this.player.rim.amt = 0.7 + 0.3 * Math.sin(timeMs * 0.006);
+      if (this.playerThruster) {
+        const p = 0.6 + 0.4 * Math.sin(timeMs * 0.02);
+        this.playerThruster.scale.set(p, p, p * 1.6);
       }
-      node.group.visible = true;
-      node.group.position.set(e.x, 0, e.z);
-      node.group.rotation.y = yaw(s.px - e.x, s.pz - e.z); // face the player
-      const hex = enemyColor(this.skin, e.kind);
-      const lit = this.litProg(hex);
-      node.body.program = lit;
-      for (const arm of node.arms) arm.program = lit;
-      for (const tip of node.rotors) {
-        tip.rotation.y = this.spin * (e.kind === KIND_WEAVER ? -1.3 : 1);
-        (tip.children[0] as Mesh).program = lit;
-      }
-      node.halo.program = this.emissiveProg(hex, 0.16);
     }
 
-    // Bolts
+    this.reticle.position.set(aim.x, 0.06, aim.z);
+    this.reticle.rotation.y += dt * 1.5;
+    this.reticle.visible = s.phase === 0;
+
+    this.ensureEnemies(s.enemies.length);
+    for (let i = 0; i < this.enemies.length; i += 1) {
+      const inst = this.enemies[i]!;
+      const e = s.enemies[i];
+      if (!e) {
+        if (inst.pivot.visible) inst.pivot.visible = false;
+        continue;
+      }
+      inst.pivot.visible = true;
+      inst.pivot.position.set(e.x, 0, e.z);
+      inst.pivot.rotation.y = yaw(s.px - e.x, s.pz - e.z) + Math.sin(this.spin * 2 + i) * 0.08;
+      const [r, g, b] = hexToRgb(enemyColor(this.skin, e.kind));
+      inst.rim.color.set(r, g, b);
+      inst.rim.amt = e.kind === KIND_WEAVER ? 0.9 : e.kind === KIND_SPLITTER ? 0.8 : 0.65;
+    }
+
     for (let i = 0; i < BOLT_POOL; i += 1) {
       const node = this.bolts[i]!;
       const b = s.bolts[i];
@@ -443,7 +584,6 @@ export class Renderer3D implements Viewport {
       node.group.rotation.y = yaw(b.dx, b.dz);
     }
 
-    // Spawn bursts for this window's deaths
     for (const d of s.deaths) this.spawnBurst(d.x, d.z, enemyColor(this.skin, d.kind));
     this.updateBursts(dt);
 
@@ -453,8 +593,7 @@ export class Renderer3D implements Viewport {
   private spawnBurst(x: number, z: number, hex: string): void {
     const b = this.bursts.find((q) => !q.active);
     if (!b) return;
-    const [r, g, bl] = hexToRgb(hex);
-    (b.prog.uniforms.uColor.value as Color).set(r, g, bl);
+    (b.prog.uniforms.uColor.value as Color).set(...hexToRgb(hex));
     b.prog.uniforms.uAlpha.value = 1;
     b.group.position.set(x, 0.2, z);
     b.group.scale.set(0.4, 0.4, 0.4);
@@ -473,9 +612,9 @@ export class Renderer3D implements Viewport {
         b.group.visible = false;
         continue;
       }
-      const s = 0.4 + t * 2.2;
-      b.group.scale.set(s, s, s);
-      b.prog.uniforms.uAlpha.value = (1 - t) * 0.8;
+      const sc = 0.4 + t * 2.4;
+      b.group.scale.set(sc, sc, sc);
+      b.prog.uniforms.uAlpha.value = (1 - t) * 0.85;
     }
   }
 
@@ -490,4 +629,14 @@ export class Renderer3D implements Viewport {
 function yaw(dx: number, dz: number): number {
   if (dx * dx + dz * dz < 1e-8) return 0;
   return Math.atan2(-dx, -dz);
+}
+
+/** Darken (>1) or lighten (<1) a hex color by a factor, for gradients. */
+function shade(hex: string, factor: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  const f = (v: number): string =>
+    Math.round(Math.max(0, Math.min(255, (v / factor) * 255)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${f(r)}${f(g)}${f(b)}`;
 }

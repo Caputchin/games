@@ -20,6 +20,7 @@ interface LiveExports {
     s3: number,
     cfgPtr: number,
     cfgLen: number,
+    endless: number,
   ): number;
   live_step(ptr: number, qx: number, qz: number, fire: number): void;
   live_state(ptr: number): number;
@@ -68,16 +69,32 @@ export interface LiveState {
 /** A live play session over the wasm sim. Create once, `step` each fixed tick,
  *  `state` each frame to render, `trace` once the round ends. */
 export class LiveSim {
+  // Inflate + compile the module once; instantiate per round so Try Again / Play
+  // Again restart instantly (no re-inflate of the 560 KB wasm each time).
+  private static modulePromise: Promise<WebAssembly.Module> | null = null;
+
   private constructor(
     private readonly ex: LiveExports,
     private readonly ptr: number,
   ) {}
 
-  static async create(seed: Seed, configInts: Int32Array): Promise<LiveSim> {
-    const bytes = await inflateWasm(liveWasmB64);
-    // inflateWasm's return type widens to ArrayBufferLike (the fflate fallback);
-    // the runtime value is always a fresh ArrayBuffer-backed view.
-    const module = await WebAssembly.compile(bytes as BufferSource);
+  private static compiled(): Promise<WebAssembly.Module> {
+    if (!LiveSim.modulePromise) {
+      LiveSim.modulePromise = inflateWasm(liveWasmB64).then((bytes) =>
+        // inflateWasm widens to ArrayBufferLike (the fflate fallback); the runtime
+        // value is always a fresh ArrayBuffer-backed view.
+        WebAssembly.compile(bytes as BufferSource),
+      );
+    }
+    return LiveSim.modulePromise;
+  }
+
+  static async create(
+    seed: Seed,
+    configInts: Int32Array,
+    endless = false,
+  ): Promise<LiveSim> {
+    const module = await LiveSim.compiled();
     const instance = await WebAssembly.instantiate(module, {});
     const ex = instance.exports as unknown as LiveExports;
 
@@ -98,6 +115,7 @@ export class LiveSim {
       seed[3] >>> 0,
       cfgPtr,
       configInts.length,
+      endless ? 1 : 0,
     );
     return new LiveSim(ex, ptr);
   }

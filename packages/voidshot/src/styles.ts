@@ -26,7 +26,11 @@ html,body{height:100%;margin:0;}
 .vs-btn{pointer-events:auto;border:1px solid ${accent};background:rgba(8,12,28,.72);color:#fff;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:600;cursor:pointer;min-width:48px;min-height:48px;}
 .vs-btn:active{transform:scale(.95);}
 .vs-btn:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.vs-action{pointer-events:auto;margin-top:14px;border:2px solid ${accent};background:rgba(8,12,28,.85);color:#fff;border-radius:14px;padding:13px 26px;font-size:16px;font-weight:700;letter-spacing:.02em;cursor:pointer;box-shadow:0 0 16px ${accent}66;min-height:48px;}
+.vs-action:hover{background:${accent}22;}
+.vs-action:active{transform:scale(.96);}
+.vs-action:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 .vs-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
-@media (prefers-reduced-motion: reduce){.vs-pip{box-shadow:none;}.vs-btn:active{transform:none;}}
+@media (prefers-reduced-motion: reduce){.vs-pip{box-shadow:none;}.vs-btn:active{transform:none;}.vs-action:active{transform:none;}}
 `;
 }

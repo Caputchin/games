@@ -7,6 +7,7 @@
 // read. The sim has no wall-clock; it only advances when we step it, so "read
 // time" never enters the simulation and replay is unaffected.
 
+import { randomSeed } from '@caputchin/game-sdk';
 import type { Bridge, ResolvedLocale, ResolvedSkin, Seed } from '@caputchin/game-sdk';
 import { DT_MS, PHASE_PLAYING, PHASE_WON } from './constants.js';
 import { configToInts, soundEnabled } from './config.js';
@@ -60,6 +61,8 @@ export function startGame(opts: GameOpts): { dispose(): void } {
   hud.showStart();
   announcer.say(strings.t('ariaGame'));
 
+  const captchaSeed = seed; // the server-issued seed; Try Again replays the SAME one
+  let mode: 'captcha' | 'endless' = 'captcha';
   let sim: LiveSim | null = null;
   let started = false;
   let finished = false;
@@ -86,13 +89,40 @@ export function startGame(opts: GameOpts): { dispose(): void } {
   const ro = new ResizeObserver(() => renderer.resize());
   ro.observe(container);
 
-  LiveSim.create(seed, cfgInts)
-    .then((s) => {
-      sim = s;
-      const st = s.state();
-      renderer.render(st, { x: aimX, z: aimZ }, 0);
-      hud.update(st);
+  // (Re)create the sim for a round. `endless` = post-verification play (no win, no
+  // trace). `autoStart` skips the tap-to-launch gate for button-driven restarts
+  // (the captcha trace still begins at sim tick 0, so replay is unaffected).
+  function mount(useSeed: Seed, endless: boolean, autoStart: boolean): void {
+    mode = endless ? 'endless' : 'captcha';
+    const old = sim;
+    sim = null;
+    old?.free();
+    started = autoStart;
+    finished = false;
+    acc = 0;
+    last = 0;
+    prevWave = 0;
+    prevScore = 0;
+    prevShield = shieldHits;
+    if (autoStart) hud.hideOverlay();
+    else hud.showStart();
+    if (endless) announcer.say(strings.t('endlessStart'));
+    LiveSim.create(useSeed, cfgInts, endless)
+      .then((s) => {
+        sim = s;
+      })
+      .catch((e: unknown) => {
+        bridge.error({ code: 'wasm-init', message: String(e) });
+      });
+  }
+
+  // Parse the inlined 3D models once, then start the render loop and the first
+  // (captcha) round. The loop renders nothing until the sim resolves (guarded).
+  renderer
+    .loadModels()
+    .then(() => {
       raf = requestAnimationFrame(loop);
+      mount(captchaSeed, false, false);
     })
     .catch((e: unknown) => {
       bridge.error({ code: 'wasm-init', message: String(e) });
@@ -165,15 +195,44 @@ export function startGame(opts: GameOpts): { dispose(): void } {
 
   function finish(st: LiveState): void {
     finished = true;
+
+    // Endless (post-verification) play: no captcha submission, just a score + a
+    // replay-for-fun button. Endless never reports Won, so reaching here is a loss.
+    if (mode === 'endless') {
+      sfx.lose();
+      announcer.say(`${strings.t('endlessOver')} ${strings.t('finalScore', { n: st.score })}`);
+      hud.showResult({
+        title: strings.t('endlessOver'),
+        sub: strings.t('finalScore', { n: st.score }),
+        button: strings.t('playAgain'),
+        onAction: () => mount(randomSeed(), true, true),
+      });
+      return;
+    }
+
     const passed = st.phase === PHASE_WON;
-    hud.showResult(passed);
-    announcer.say(strings.t(passed ? 'announceWin' : 'announceLose'));
-    if (passed) sfx.win();
-    else sfx.lose();
-    // Only a winning trace is submitted: a losing trace would just replay to
-    // passed:false. The widget reissues a fresh seed for the next attempt.
-    if (sim && passed) {
-      bridge.pass({ trace: toBase64(sim.trace()) });
+    if (passed) {
+      // Submit the winning trace for server-authoritative verification, then offer
+      // endless play to anyone who wants to keep going.
+      if (sim) bridge.pass({ trace: toBase64(sim.trace()) });
+      sfx.win();
+      announcer.say(strings.t('announceWin'));
+      hud.showResult({
+        title: strings.t('win'),
+        sub: strings.t('endlessStart'),
+        button: strings.t('keepPlaying'),
+        onAction: () => mount(randomSeed(), true, true),
+      });
+    } else {
+      // A losing trace would just replay to passed:false; offer a retry of the SAME
+      // server seed (the only seed whose trace the server will validate).
+      sfx.lose();
+      announcer.say(strings.t('announceLose'));
+      hud.showResult({
+        title: strings.t('lose'),
+        button: strings.t('tryAgain'),
+        onAction: () => mount(captchaSeed, false, true),
+      });
     }
   }
 

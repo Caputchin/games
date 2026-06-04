@@ -40,7 +40,7 @@ pub fn replay(seed: [u32; 4], config: &[i32], trace: &[u8]) -> (bool, i32, i32) 
     } else {
         SimConfig::from_ints(config)
     };
-    let mut sim = Sim::new(seed, cfg);
+    let mut sim = Sim::new(seed, cfg, false); // replay is always the finite captcha
     let cap = sim.tick_cap();
     let n = codec::count(trace);
     let mut idx = 0usize;
@@ -91,18 +91,22 @@ pub struct LiveSim {
     trace: Vec<u8>,
     prev: Option<(i16, i16, u8)>,
     state_buf: Vec<i32>,
+    /// Endless play records no trace (it is never submitted), so the input buffer
+    /// can't grow unbounded over a long session.
+    endless: bool,
 }
 
 /// State buffer header length (ints before the per-enemy triples).
 const STATE_HEADER: usize = 12;
 
 impl LiveSim {
-    pub fn new(seed: [u32; 4], cfg: SimConfig) -> Self {
+    pub fn new(seed: [u32; 4], cfg: SimConfig, endless: bool) -> Self {
         LiveSim {
-            sim: Sim::new(seed, cfg),
+            sim: Sim::new(seed, cfg, endless),
             trace: Vec::new(),
             prev: None,
             state_buf: Vec::new(),
+            endless,
         }
     }
 
@@ -111,7 +115,9 @@ impl LiveSim {
     pub fn step(&mut self, qx: i16, qz: i16, fire: bool) {
         let flags = if fire { codec::FLAG_FIRE } else { 0 };
         let cur = (qx, qz, flags);
-        if self.prev != Some(cur) {
+        // Only the captcha round records a trace (the thing the server replays);
+        // endless play submits nothing, so skip recording to bound memory.
+        if !self.endless && self.prev != Some(cur) {
             let tick = self.sim.status().tick;
             codec::write_record(&mut self.trace, tick, qx, qz, flags);
             self.prev = Some(cur);
@@ -129,7 +135,8 @@ impl LiveSim {
 }
 
 /// Create a live session. `seed` is the four per-round words; `cfg_ptr`/`cfg_len`
-/// is the i32 config the host wrote via `cap_alloc` (empty -> defaults).
+/// is the i32 config the host wrote via `cap_alloc` (empty -> defaults). `endless`
+/// non-zero starts post-verification endless play (no win, no cap, no trace).
 ///
 /// # Safety
 /// `cfg_ptr` must be null or point to `cfg_len` valid i32s.
@@ -141,13 +148,14 @@ pub unsafe extern "C" fn live_new(
     s3: u32,
     cfg_ptr: *const i32,
     cfg_len: usize,
+    endless: i32,
 ) -> *mut LiveSim {
     let cfg = if cfg_ptr.is_null() || cfg_len == 0 {
         SimConfig::default()
     } else {
         SimConfig::from_ints(unsafe { core::slice::from_raw_parts(cfg_ptr, cfg_len) })
     };
-    Box::into_raw(Box::new(LiveSim::new([s0, s1, s2, s3], cfg)))
+    Box::into_raw(Box::new(LiveSim::new([s0, s1, s2, s3], cfg, endless != 0)))
 }
 
 /// Advance one tick (quantized cursor target + fire bit).

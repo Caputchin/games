@@ -91,6 +91,33 @@
       "name": "Round over title",
       "description": "End-screen headline shown when the shield is depleted."
     },
+    "tryAgain": {
+      "name": "Try-again button",
+      "description": "Button shown after losing the captcha round; restarts the round so the visitor can try the challenge again."
+    },
+    "keepPlaying": {
+      "name": "Keep-playing button",
+      "description": "Button shown after winning; entering it starts the optional endless mode."
+    },
+    "playAgain": {
+      "name": "Play-again button",
+      "description": "Button shown after an endless run ends; starts a fresh endless run."
+    },
+    "endlessOver": {
+      "name": "Endless run-over title",
+      "description": "End-screen headline shown when an endless run ends."
+    },
+    "finalScore": {
+      "name": "Endless final score",
+      "description": "Sub-line on the endless end screen reporting the final score. {n} is the score.",
+      "tokens": [
+        "n"
+      ]
+    },
+    "endlessStart": {
+      "name": "Endless mode hint",
+      "description": "Hint shown when endless mode begins; also the sub-line under the Verified screen, telling the visitor to keep clearing the swarm."
+    },
     "mute": {
       "name": "Mute button",
       "description": "Label/aria-label for the control that mutes game audio."
@@ -125,6 +152,12 @@
       "oclock": "{n} o'clock",
       "win": "Verified",
       "lose": "Shield down",
+      "tryAgain": "Try again",
+      "keepPlaying": "Keep playing",
+      "playAgain": "Play again",
+      "endlessOver": "Run over",
+      "finalScore": "Final score {n}",
+      "endlessStart": "Endless mode. Keep clearing the swarm.",
       "mute": "Mute",
       "unmute": "Unmute",
       "a11yHint": "Tab targets the next drone"
@@ -149,6 +182,12 @@
       "oclock": "{n} 点钟方向",
       "win": "已通过",
       "lose": "护盾耗尽",
+      "tryAgain": "再试一次",
+      "keepPlaying": "继续玩",
+      "playAgain": "再玩一次",
+      "endlessOver": "挑战结束",
+      "finalScore": "最终得分 {n}",
+      "endlessStart": "无尽模式。继续清除机群。",
       "mute": "静音",
       "unmute": "取消静音",
       "a11yHint": "按 Tab 锁定下一架无人机"
@@ -173,6 +212,12 @@
       "oclock": "{n} en punto",
       "win": "Verificado",
       "lose": "Escudo agotado",
+      "tryAgain": "Intentar de nuevo",
+      "keepPlaying": "Seguir jugando",
+      "playAgain": "Jugar otra vez",
+      "endlessOver": "Partida terminada",
+      "finalScore": "Puntos finales {n}",
+      "endlessStart": "Modo sin fin. Sigue despejando el enjambre.",
       "mute": "Silenciar",
       "unmute": "Activar sonido",
       "a11yHint": "Tab fija el siguiente dron"
@@ -198,6 +243,12 @@
       "oclock": "الساعة {n}",
       "win": "تم التحقق",
       "lose": "نفد الدرع",
+      "tryAgain": "حاول مجددًا",
+      "keepPlaying": "واصل اللعب",
+      "playAgain": "العب مجددًا",
+      "endlessOver": "انتهى الجري",
+      "finalScore": "النتيجة النهائية {n}",
+      "endlessStart": "الوضع اللانهائي. واصل اكتساح السرب.",
       "mute": "كتم الصوت",
       "unmute": "تشغيل الصوت",
       "a11yHint": "زر Tab يستهدف الطائرة التالية"
@@ -222,6 +273,12 @@
       "oclock": "{n} horas",
       "win": "Verificado",
       "lose": "Escudo esgotado",
+      "tryAgain": "Tentar de novo",
+      "keepPlaying": "Continuar jogando",
+      "playAgain": "Jogar de novo",
+      "endlessOver": "Corrida encerrada",
+      "finalScore": "Pontuação final {n}",
+      "endlessStart": "Modo sem fim. Continue limpando o enxame.",
       "mute": "Silenciar",
       "unmute": "Ativar som",
       "a11yHint": "Tab mira o próximo drone"
@@ -246,6 +303,12 @@
       "oclock": "{n} heures",
       "win": "Vérifié",
       "lose": "Bouclier épuisé",
+      "tryAgain": "Réessayer",
+      "keepPlaying": "Continuer à jouer",
+      "playAgain": "Rejouer",
+      "endlessOver": "Partie terminée",
+      "finalScore": "Score final {n}",
+      "endlessStart": "Mode sans fin. Continuez à balayer l'essaim.",
       "mute": "Couper le son",
       "unmute": "Activer le son",
       "a11yHint": "Tab cible le prochain drone"
@@ -270,6 +333,12 @@
       "oclock": "{n} Uhr",
       "win": "Bestätigt",
       "lose": "Schild erschöpft",
+      "tryAgain": "Erneut versuchen",
+      "keepPlaying": "Weiterspielen",
+      "playAgain": "Nochmal spielen",
+      "endlessOver": "Lauf vorbei",
+      "finalScore": "Endpunktzahl {n}",
+      "endlessStart": "Endlosmodus. Räume weiter den Schwarm.",
       "mute": "Stummschalten",
       "unmute": "Ton an",
       "a11yHint": "Tab visiert die nächste Drohne an"
@@ -294,6 +363,12 @@
       "oclock": "{n} часов",
       "win": "Пройдено",
       "lose": "Щит пробит",
+      "tryAgain": "Ещё раз",
+      "keepPlaying": "Играть дальше",
+      "playAgain": "Сыграть снова",
+      "endlessOver": "Забег окончен",
+      "finalScore": "Итоговый счёт {n}",
+      "endlessStart": "Бесконечный режим. Продолжайте зачищать рой.",
       "mute": "Выключить звук",
       "unmute": "Включить звук",
       "a11yHint": "Tab выбирает следующий дрон"
@@ -318,6 +393,12 @@
       "oclock": "{n}時",
       "win": "認証済み",
       "lose": "シールド消失",
+      "tryAgain": "もう一度",
+      "keepPlaying": "続けて遊ぶ",
+      "playAgain": "もう一度遊ぶ",
+      "endlessOver": "ラン終了",
+      "finalScore": "最終スコア {n}",
+      "endlessStart": "エンドレスモード。群れを掃射し続けよう。",
       "mute": "ミュート",
       "unmute": "ミュート解除",
       "a11yHint": "Tab で次のドローンをロックオン"
@@ -342,6 +423,12 @@
       "oclock": "{n}시 방향",
       "win": "인증됨",
       "lose": "실드 소진",
+      "tryAgain": "다시 도전",
+      "keepPlaying": "계속하기",
+      "playAgain": "다시 플레이",
+      "endlessOver": "런 종료",
+      "finalScore": "최종 점수 {n}",
+      "endlessStart": "엔드리스 모드. 계속 무리를 휩쓰세요.",
       "mute": "음소거",
       "unmute": "음소거 해제",
       "a11yHint": "Tab으로 다음 드론 조준"
@@ -366,6 +453,12 @@
       "oclock": "arah jam {n}",
       "win": "Terverifikasi",
       "lose": "Perisai habis",
+      "tryAgain": "Coba lagi",
+      "keepPlaying": "Terus bermain",
+      "playAgain": "Main lagi",
+      "endlessOver": "Putaran berakhir",
+      "finalScore": "Skor akhir {n}",
+      "endlessStart": "Mode tanpa akhir. Terus bersihkan gerombolan.",
       "mute": "Bisukan",
       "unmute": "Aktifkan suara",
       "a11yHint": "Tab membidik dron berikutnya"

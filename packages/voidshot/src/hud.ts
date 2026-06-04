@@ -18,6 +18,7 @@ export class Hud {
   private readonly center: HTMLElement;
   private readonly banner: HTMLElement;
   private readonly hint: HTMLElement;
+  private readonly actionBtn: HTMLButtonElement;
   private readonly muteBtn: HTMLButtonElement;
   private maxShield = 3;
 
@@ -41,7 +42,9 @@ export class Hud {
     this.center = div('vs-center');
     this.banner = div('vs-banner');
     this.hint = div('vs-hint');
-    this.center.append(this.banner, this.hint);
+    this.actionBtn = button('vs-action', '');
+    this.actionBtn.style.display = 'none';
+    this.center.append(this.banner, this.hint, this.actionBtn);
 
     const btns = div('vs-btns');
     this.muteBtn = button('vs-btn', strings.t('mute'));
@@ -60,16 +63,25 @@ export class Hud {
     this.center.classList.remove('hidden');
     this.banner.textContent = '';
     this.hint.textContent = this.strings.t('start');
+    this.actionBtn.style.display = 'none';
   }
 
   hideOverlay(): void {
     this.center.classList.add('hidden');
   }
 
-  showResult(passed: boolean): void {
+  /** Result overlay with a single action button (try again / keep playing /
+   *  play again). `onAction` is rewired each call. */
+  showResult(opts: { title: string; sub?: string; button: string; onAction: () => void }): void {
     this.center.classList.remove('hidden');
-    this.banner.textContent = this.strings.t(passed ? 'win' : 'lose');
-    this.hint.textContent = '';
+    this.banner.textContent = opts.title;
+    this.hint.textContent = opts.sub ?? '';
+    this.actionBtn.textContent = opts.button;
+    this.actionBtn.style.display = '';
+    this.actionBtn.onclick = (e) => {
+      e.preventDefault();
+      opts.onAction();
+    };
   }
 
   update(s: LiveState): void {

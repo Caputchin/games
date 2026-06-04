@@ -18,7 +18,7 @@ fn enemies_snapshot_survives_kills() {
     // Reading the render snapshot must never index a killed enemy's removed body
     // (the live driver calls this every frame). Fire while stepping so bolts kill
     // and split enemies, then confirm the snapshots stay sound.
-    let mut sim = Sim::new([3, 5, 7, 9], SimConfig::default());
+    let mut sim = Sim::new([3, 5, 7, 9], SimConfig::default(), false);
     for t in 0..900 {
         if sim.status().phase != Phase::Playing {
             break;
@@ -58,7 +58,7 @@ fn empty_trace_loses() {
 fn passive_input_loses() {
     // Sitting at center, never firing, never steering: the shield depletes (and
     // the time cap would force a loss anyway). Auto-win must be impossible.
-    let mut sim = Sim::new([2, 4, 6, 8], SimConfig::default());
+    let mut sim = Sim::new([2, 4, 6, 8], SimConfig::default(), false);
     for _ in 0..sim.tick_cap() {
         if sim.status().phase != Phase::Playing {
             break;
@@ -77,7 +77,7 @@ fn aimed_fire_destroys_drones_and_wins() {
     // The flip side of the anti-auto-win gate: real aiming MUST work. A script that
     // flies at the nearest drone while firing destroys the swarm and clears the
     // waves - proof the bolts hit and the captcha is solvable by genuine play.
-    let mut sim = Sim::new([9, 8, 7, 6], SimConfig::default());
+    let mut sim = Sim::new([9, 8, 7, 6], SimConfig::default(), false);
     let mut first_kill_tick: Option<u32> = None;
     for _ in 0..sim.tick_cap() {
         if sim.status().phase != Phase::Playing {
@@ -109,9 +109,38 @@ fn aimed_fire_destroys_drones_and_wins() {
 }
 
 #[test]
+fn endless_never_wins() {
+    // Endless (post-verification) play never reports Won - it ends only by shield
+    // depletion (the time-cap loss is gated out in `step`; see the `!self.endless`
+    // guard). Run well past the finite cap with aimed play and confirm no win.
+    let cfg = SimConfig::default();
+    let cap = cfg.time_limit_ticks;
+    let mut sim = Sim::new([1, 1, 1, 1], cfg, true);
+    let mut ticks = 0u32;
+    while ticks < cap + 900 {
+        if sim.status().phase != Phase::Playing {
+            break;
+        }
+        let (px, pz) = sim.player_pos();
+        let near = sim
+            .enemies()
+            .into_iter()
+            .map(|(x, z, _)| (x, z, (x - px) * (x - px) + (z - pz) * (z - pz)))
+            .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
+        let inp = match near {
+            Some((x, z, _)) => Input { tx: x, tz: z, fire: true },
+            None => Input { tx: px, tz: pz, fire: true },
+        };
+        sim.step(inp);
+        ticks += 1;
+    }
+    assert_ne!(sim.status().phase, Phase::Won, "endless mode must never win");
+}
+
+#[test]
 fn live_equals_replay() {
     let seed = [7, 11, 13, 17];
-    let mut ls = LiveSim::new(seed, SimConfig::default());
+    let mut ls = LiveSim::new(seed, SimConfig::default(), false);
 
     // Scripted "live" play: sweep the cursor target around the arena while firing,
     // so the recorded trace exercises bolts, kills, splits, and contacts.
