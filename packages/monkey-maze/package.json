@@ -1,0 +1,52 @@
+{
+  "name": "@caputchin/game-monkey-maze",
+  "version": "0.1.0",
+  "description": "Chomp bananas through the jungle maze while the critters hunt you. A melonJS-engine Caputchin first-party game.",
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "maze",
+    "monkey",
+    "jungle",
+    "arcade",
+    "melonjs",
+    "game"
+  ],
+  "homepage": "https://github.com/Caputchin/caputchin-games#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caputchin/caputchin-games",
+    "directory": "packages/monkey-maze"
+  },
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "caputchin.json",
+    ".caputchin",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": [
+    "./dist/monkey-maze.js"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@caputchin/game-sdk": "^3.1.0",
+    "@caputchin/preset-melonjs": "^0.2.0",
+    "@types/node": "^20.0.0",
+    "happy-dom": "^15.0.0",
+    "melonjs": "^19.6.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

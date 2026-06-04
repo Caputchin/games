@@ -1,0 +1,35 @@
+{
+  "schema": {
+    "clear_percent": {
+      "type": "range",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "name": "Dots to clear (%)",
+      "description": "Percent of the maze's dots the runner must eat to pass. 50 = half the board, 100 = clear it completely. Lower is easier."
+    },
+    "ghosts": {
+      "type": "range",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "name": "Chasers",
+      "description": "How many chasers hunt the runner. Fewer chasers make the maze easier."
+    }
+  },
+  "presets": {
+    "Default": {
+      "_default": true,
+      "clear_percent": 50,
+      "ghosts": 4
+    },
+    "Quick": {
+      "clear_percent": 30,
+      "ghosts": 3
+    },
+    "Challenge": {
+      "clear_percent": 100,
+      "ghosts": 4
+    }
+  }
+}

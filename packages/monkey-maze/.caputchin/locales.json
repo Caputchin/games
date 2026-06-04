@@ -1,0 +1,335 @@
+{
+  "schema": {
+    "ariaGame": {
+      "name": "Game region label",
+      "description": "Screen-reader label for the whole play area."
+    },
+    "ariaUp": {
+      "name": "Up control label",
+      "description": "Accessible label for the move-up control."
+    },
+    "ariaDown": {
+      "name": "Down control label",
+      "description": "Accessible label for the move-down control."
+    },
+    "ariaLeft": {
+      "name": "Left control label",
+      "description": "Accessible label for the move-left control."
+    },
+    "ariaRight": {
+      "name": "Right control label",
+      "description": "Accessible label for the move-right control."
+    },
+    "start": {
+      "name": "Play button",
+      "description": "Label on the button that starts a round."
+    },
+    "score": {
+      "name": "Score label",
+      "description": "Label preceding the live score in the HUD."
+    },
+    "goal": {
+      "name": "Goal label",
+      "description": "Label preceding the goal score needed to pass."
+    },
+    "dotsLeft": {
+      "name": "Dots-left label",
+      "description": "Label preceding the count of bananas still on the board."
+    },
+    "verified": {
+      "name": "Verified badge",
+      "description": "Short badge shown once the player reaches the goal score and the check is satisfied."
+    },
+    "caught": {
+      "name": "Caught message",
+      "description": "End-screen message when a chaser catches the runner before the goal."
+    },
+    "cleared": {
+      "name": "Cleared message",
+      "description": "End-screen message when every dot is eaten."
+    },
+    "retry": {
+      "name": "Retry button",
+      "description": "Label on the button that restarts the round."
+    },
+    "announceStart": {
+      "name": "Start announcement",
+      "description": "Live-region announcement when the round begins."
+    },
+    "announcePower": {
+      "name": "Power-dot announcement",
+      "description": "Live-region announcement when a power coconut is eaten and chasers turn vulnerable."
+    },
+    "announceVerified": {
+      "name": "Verified announcement",
+      "description": "Live-region announcement when the player has eaten enough of the maze's dots to pass."
+    },
+    "announceCaught": {
+      "name": "Caught announcement",
+      "description": "Live-region announcement when a chaser catches the runner."
+    },
+    "announceCleared": {
+      "name": "Cleared announcement",
+      "description": "Live-region announcement when the maze is fully cleared."
+    },
+    "objective": {
+      "name": "Objective",
+      "description": "Start-screen line stating the win objective; {goal} is the number of dots to eat (keep the {goal} placeholder)."
+    }
+  },
+  "presets": {
+    "en": {
+      "_lang": "en",
+      "_default": true,
+      "ariaGame": "Monkey Maze game",
+      "ariaUp": "Move up",
+      "ariaDown": "Move down",
+      "ariaLeft": "Move left",
+      "ariaRight": "Move right",
+      "start": "Play",
+      "score": "Score",
+      "goal": "Goal",
+      "dotsLeft": "Bananas left",
+      "verified": "Verified",
+      "caught": "Caught! Try again",
+      "cleared": "Maze cleared!",
+      "retry": "Play again",
+      "announceStart": "Game started. Grab the bananas and avoid the chasers.",
+      "announcePower": "Power coconut! Chasers are vulnerable.",
+      "announceVerified": "Verified. You cleared enough of the maze.",
+      "announceCaught": "A chaser caught you. Try again.",
+      "announceCleared": "Maze cleared. Well done.",
+      "objective": "Grab {goal} bananas to win. Dodge the chasers!"
+    },
+    "zh-Hans": {
+      "_lang": "zh-Hans",
+      "_default": true,
+      "ariaGame": "Monkey Maze 迷宫游戏",
+      "ariaUp": "向上移动",
+      "ariaDown": "向下移动",
+      "ariaLeft": "向左移动",
+      "ariaRight": "向右移动",
+      "start": "开始",
+      "score": "得分",
+      "goal": "目标",
+      "dotsLeft": "剩余香蕉",
+      "verified": "已验证",
+      "caught": "被抓住了！再试一次",
+      "cleared": "迷宫通关！",
+      "retry": "再玩一次",
+      "announceStart": "游戏开始。吃掉所有香蕉，躲开追逐者。",
+      "announcePower": "能量椰子。追逐者现在可以吃掉。",
+      "announceVerified": "验证通过。你已吃掉足够多的豆子。",
+      "announceCaught": "追逐者抓住了你。再试一次。",
+      "announceCleared": "迷宫通关。干得漂亮。",
+      "objective": "吃掉 {goal} 根香蕉就赢，小心躲开追逐者！"
+    },
+    "es": {
+      "_lang": "es",
+      "_default": true,
+      "ariaGame": "Juego de laberinto Monkey Maze",
+      "ariaUp": "Mover arriba",
+      "ariaDown": "Mover abajo",
+      "ariaLeft": "Mover a la izquierda",
+      "ariaRight": "Mover a la derecha",
+      "start": "Jugar",
+      "score": "Puntos",
+      "goal": "Meta",
+      "dotsLeft": "Plátanos restantes",
+      "verified": "Verificado",
+      "caught": "¡Te atraparon! Inténtalo otra vez",
+      "cleared": "¡Laberinto superado!",
+      "retry": "Jugar de nuevo",
+      "announceStart": "Juego iniciado. Come los plátanos y esquiva a los perseguidores.",
+      "announcePower": "Coco de poder. Los perseguidores son vulnerables.",
+      "announceVerified": "Verificado. Comiste suficientes puntos del laberinto.",
+      "announceCaught": "Un perseguidor te atrapó. Inténtalo otra vez.",
+      "announceCleared": "Laberinto superado. Bien hecho.",
+      "objective": "Come {goal} plátanos para ganar. ¡Esquiva a los perseguidores!"
+    },
+    "ar": {
+      "_lang": "ar",
+      "_default": true,
+      "ariaGame": "لعبة متاهة Monkey Maze",
+      "ariaUp": "تحرك للأعلى",
+      "ariaDown": "تحرك للأسفل",
+      "ariaLeft": "تحرك لليسار",
+      "ariaRight": "تحرك لليمين",
+      "start": "ابدأ",
+      "score": "النقاط",
+      "goal": "الهدف",
+      "dotsLeft": "الموز المتبقي",
+      "verified": "تم التحقق",
+      "caught": "أمسكوا بك! حاول مرة أخرى",
+      "cleared": "اجتزت المتاهة!",
+      "retry": "العب مرة أخرى",
+      "announceStart": "بدأت اللعبة. التهم الموز وتجنّب المطاردين.",
+      "announcePower": "جوزة هند خارقة. يمكنك الآن التهام المطاردين.",
+      "announceVerified": "تم التحقق. التهمت ما يكفي من نقاط المتاهة.",
+      "announceCaught": "أمسك بك أحد المطاردين. حاول مرة أخرى.",
+      "announceCleared": "اجتزت المتاهة. أحسنت.",
+      "objective": "التهم {goal} موزة لتفوز، وتجنّب المطاردين!"
+    },
+    "pt": {
+      "_lang": "pt",
+      "_default": true,
+      "ariaGame": "Jogo de labirinto Monkey Maze",
+      "ariaUp": "Mover para cima",
+      "ariaDown": "Mover para baixo",
+      "ariaLeft": "Mover para a esquerda",
+      "ariaRight": "Mover para a direita",
+      "start": "Jogar",
+      "score": "Pontos",
+      "goal": "Meta",
+      "dotsLeft": "Bananas restantes",
+      "verified": "Verificado",
+      "caught": "Te pegaram! Tente de novo",
+      "cleared": "Labirinto concluído!",
+      "retry": "Jogar de novo",
+      "announceStart": "Jogo iniciado. Coma as bananas e fuja dos perseguidores.",
+      "announcePower": "Coco de poder. Os perseguidores estão vulneráveis.",
+      "announceVerified": "Verificado. Você comeu pontos suficientes do labirinto.",
+      "announceCaught": "Um perseguidor te pegou. Tente de novo.",
+      "announceCleared": "Labirinto concluído. Muito bem.",
+      "objective": "Coma {goal} bananas para vencer. Fuja dos perseguidores!"
+    },
+    "fr": {
+      "_lang": "fr",
+      "_default": true,
+      "ariaGame": "Jeu de labyrinthe Monkey Maze",
+      "ariaUp": "Aller vers le haut",
+      "ariaDown": "Aller vers le bas",
+      "ariaLeft": "Aller à gauche",
+      "ariaRight": "Aller à droite",
+      "start": "Jouer",
+      "score": "Score",
+      "goal": "Objectif",
+      "dotsLeft": "Bananes restantes",
+      "verified": "Vérifié",
+      "caught": "Attrapé ! Réessayez",
+      "cleared": "Labyrinthe terminé !",
+      "retry": "Rejouer",
+      "announceStart": "Partie lancée. Mangez les bananes et évitez les poursuivants.",
+      "announcePower": "Noix de coco de pouvoir. Les poursuivants sont vulnérables.",
+      "announceVerified": "Vérifié. Vous avez mangé assez de points du labyrinthe.",
+      "announceCaught": "Un poursuivant vous a attrapé. Réessayez.",
+      "announceCleared": "Labyrinthe terminé. Bien joué.",
+      "objective": "Mangez {goal} bananes pour gagner. Évitez les poursuivants !"
+    },
+    "de": {
+      "_lang": "de",
+      "_default": true,
+      "ariaGame": "Monkey Maze Labyrinthspiel",
+      "ariaUp": "Nach oben bewegen",
+      "ariaDown": "Nach unten bewegen",
+      "ariaLeft": "Nach links bewegen",
+      "ariaRight": "Nach rechts bewegen",
+      "start": "Spielen",
+      "score": "Punkte",
+      "goal": "Ziel",
+      "dotsLeft": "Verbleibende Bananen",
+      "verified": "Verifiziert",
+      "caught": "Erwischt! Versuch es nochmal",
+      "cleared": "Labyrinth geschafft!",
+      "retry": "Nochmal spielen",
+      "announceStart": "Spiel gestartet. Sammle die Bananen und weiche den Verfolgern aus.",
+      "announcePower": "Kraftkokosnuss. Die Verfolger sind angreifbar.",
+      "announceVerified": "Verifiziert. Du hast genug Punkte im Labyrinth gesammelt.",
+      "announceCaught": "Ein Verfolger hat dich erwischt. Versuch es nochmal.",
+      "announceCleared": "Labyrinth geschafft. Gut gemacht.",
+      "objective": "Sammle {goal} Bananen zum Gewinnen. Weiche den Verfolgern aus!"
+    },
+    "ru": {
+      "_lang": "ru",
+      "_default": true,
+      "ariaGame": "Игра-лабиринт Monkey Maze",
+      "ariaUp": "Вверх",
+      "ariaDown": "Вниз",
+      "ariaLeft": "Влево",
+      "ariaRight": "Вправо",
+      "start": "Играть",
+      "score": "Очки",
+      "goal": "Цель",
+      "dotsLeft": "Осталось бананов",
+      "verified": "Проверено",
+      "caught": "Поймали! Попробуйте снова",
+      "cleared": "Лабиринт пройден!",
+      "retry": "Играть снова",
+      "announceStart": "Игра началась. Собирайте бананы и уворачивайтесь от преследователей.",
+      "announcePower": "Силовой кокос. Преследователей теперь можно съесть.",
+      "announceVerified": "Проверено. Вы собрали достаточно точек в лабиринте.",
+      "announceCaught": "Преследователь вас поймал. Попробуйте снова.",
+      "announceCleared": "Лабиринт пройден. Отличная работа.",
+      "objective": "Соберите {goal} бананов, чтобы победить. Уворачивайтесь от преследователей!"
+    },
+    "ja": {
+      "_lang": "ja",
+      "_default": true,
+      "ariaGame": "Monkey Maze 迷路ゲーム",
+      "ariaUp": "上へ移動",
+      "ariaDown": "下へ移動",
+      "ariaLeft": "左へ移動",
+      "ariaRight": "右へ移動",
+      "start": "プレイ",
+      "score": "スコア",
+      "goal": "目標",
+      "dotsLeft": "残りのバナナ",
+      "verified": "認証完了",
+      "caught": "つかまった！もう一度",
+      "cleared": "迷路クリア！",
+      "retry": "もう一度遊ぶ",
+      "announceStart": "ゲーム開始。バナナを集めて追っ手をかわしましょう。",
+      "announcePower": "パワーココナッツ。追っ手を食べられます。",
+      "announceVerified": "認証完了。迷路のドットを十分に食べました。",
+      "announceCaught": "追っ手につかまりました。もう一度どうぞ。",
+      "announceCleared": "迷路クリア。お見事です。",
+      "objective": "バナナを {goal} 本食べればクリア。追っ手をかわしましょう！"
+    },
+    "ko": {
+      "_lang": "ko",
+      "_default": true,
+      "ariaGame": "Monkey Maze 미로 게임",
+      "ariaUp": "위로 이동",
+      "ariaDown": "아래로 이동",
+      "ariaLeft": "왼쪽으로 이동",
+      "ariaRight": "오른쪽으로 이동",
+      "start": "플레이",
+      "score": "점수",
+      "goal": "목표",
+      "dotsLeft": "남은 바나나",
+      "verified": "인증됨",
+      "caught": "잡혔어요! 다시 도전",
+      "cleared": "미로 통과!",
+      "retry": "다시 하기",
+      "announceStart": "게임 시작. 바나나를 모으고 추격자를 피하세요.",
+      "announcePower": "파워 코코넛. 추격자를 먹을 수 있어요.",
+      "announceVerified": "인증되었습니다. 미로의 점을 충분히 먹었어요.",
+      "announceCaught": "추격자에게 잡혔어요. 다시 도전하세요.",
+      "announceCleared": "미로를 통과했어요. 잘하셨어요.",
+      "objective": "바나나를 {goal}개 먹으면 이겨요. 추격자를 피하세요!"
+    },
+    "id": {
+      "_lang": "id",
+      "_default": true,
+      "ariaGame": "Game labirin Monkey Maze",
+      "ariaUp": "Gerak ke atas",
+      "ariaDown": "Gerak ke bawah",
+      "ariaLeft": "Gerak ke kiri",
+      "ariaRight": "Gerak ke kanan",
+      "start": "Main",
+      "score": "Skor",
+      "goal": "Target",
+      "dotsLeft": "Pisang tersisa",
+      "verified": "Terverifikasi",
+      "caught": "Tertangkap! Coba lagi",
+      "cleared": "Labirin tuntas!",
+      "retry": "Main lagi",
+      "announceStart": "Permainan dimulai. Makan semua pisang dan hindari para pengejar.",
+      "announcePower": "Kelapa kekuatan. Para pengejar bisa dimakan.",
+      "announceVerified": "Terverifikasi. Kamu makan cukup banyak titik di labirin.",
+      "announceCaught": "Seorang pengejar menangkapmu. Coba lagi.",
+      "announceCleared": "Labirin tuntas. Kerja bagus.",
+      "objective": "Makan {goal} pisang untuk menang. Hindari para pengejar!"
+    }
+  }
+}

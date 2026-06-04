@@ -1,0 +1,33 @@
+{
+  "terms_accepted": true,
+  "license": "MIT",
+  "marketplace": {
+    "name": "Monkey Maze",
+    "description": "Chomp every banana through the jungle maze while the critters hunt you. Grab a power-coconut to turn the tables.",
+    "preview": "preview.png",
+    "categories": [
+      "Arcade",
+      "Maze"
+    ],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": true,
+      "screenReader": true,
+      "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-monkey-maze",
+  "entry": "dist/monkey-maze.js",
+  "run": {
+    "entry": "dist/run.js"
+  },
+  "preferred": {
+    "width": 420,
+    "height": 480
+  }
+}

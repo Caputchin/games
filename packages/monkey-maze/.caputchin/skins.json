@@ -1,0 +1,156 @@
+{
+  "schema": {
+    "bg": {
+      "type": "color",
+      "name": "Background",
+      "description": "Maze background, full-bleed behind the board."
+    },
+    "wall": {
+      "type": "color",
+      "name": "Maze walls",
+      "description": "Color of the maze wall tiles."
+    },
+    "pellet": {
+      "type": "color",
+      "name": "Dots",
+      "description": "Color of the dots the runner eats."
+    },
+    "power": {
+      "type": "color",
+      "name": "Power dots",
+      "description": "Color of the larger power dots."
+    },
+    "art_runner": {
+      "type": "image",
+      "name": "Runner sprite",
+      "description": "Override the runner (capuchin) sprite. Omit to keep the default monkey."
+    },
+    "art_chaser_1": {
+      "type": "image",
+      "name": "Chaser 1 sprite",
+      "description": "Override the first chaser sprite. Omit to keep the default frog."
+    },
+    "art_chaser_2": {
+      "type": "image",
+      "name": "Chaser 2 sprite",
+      "description": "Override the second chaser sprite. Omit to keep the default parrot."
+    },
+    "art_chaser_3": {
+      "type": "image",
+      "name": "Chaser 3 sprite",
+      "description": "Override the third chaser sprite. Omit to keep the default snake."
+    },
+    "art_chaser_4": {
+      "type": "image",
+      "name": "Chaser 4 sprite",
+      "description": "Override the fourth chaser sprite. Omit to keep the default sloth."
+    },
+    "art_banana": {
+      "type": "image",
+      "name": "Dot sprite",
+      "description": "Override the collectible dot sprite. Omit to keep the procedural banana."
+    },
+    "art_coconut": {
+      "type": "image",
+      "name": "Power dot sprite",
+      "description": "Override the power-dot sprite. Omit to keep the procedural coconut."
+    },
+    "art_wall": {
+      "type": "image",
+      "name": "Wall tile sprite",
+      "description": "Override the maze wall tile. Omit to keep the procedural leafy hedge."
+    },
+    "audio_default": {
+      "type": "list",
+      "values": ["on", "muted"],
+      "name": "Sound default",
+      "description": "Whether sound effects start on or muted (the player can still toggle). Defaults to on."
+    },
+    "sfx_start": {
+      "type": "audio",
+      "name": "Start sound",
+      "description": "Override the round-start sound effect. Omit to keep the default."
+    },
+    "sfx_eat": {
+      "type": "audio",
+      "name": "Eat sound",
+      "description": "Override the eat-a-banana sound effect. Omit to keep the default."
+    },
+    "sfx_power": {
+      "type": "audio",
+      "name": "Power sound",
+      "description": "Override the eat-a-coconut (power) sound effect. Omit to keep the default."
+    },
+    "sfx_eaten": {
+      "type": "audio",
+      "name": "Chaser-eaten sound",
+      "description": "Override the eat-a-chaser sound effect. Omit to keep the default."
+    },
+    "sfx_caught": {
+      "type": "audio",
+      "name": "Caught sound",
+      "description": "Override the caught sound effect. Omit to keep the default."
+    },
+    "sfx_win": {
+      "type": "audio",
+      "name": "Win sound",
+      "description": "Override the win sound effect. Omit to keep the default."
+    },
+    "fg": {
+      "type": "color",
+      "name": "Foreground",
+      "description": "HUD text and on-screen control glyphs."
+    },
+    "button_bg": {
+      "type": "color",
+      "name": "Primary button bg",
+      "description": "Background of the Start / Play again button."
+    },
+    "button_text": {
+      "type": "color",
+      "name": "Primary button text",
+      "description": "Text on the primary button."
+    },
+    "focus_ring": {
+      "type": "color",
+      "name": "Focus ring",
+      "description": "Keyboard focus outline on buttons and controls."
+    }
+  },
+  "presets": {
+    "Canopy": {
+      "_theme": "any",
+      "_default": true,
+      "bg": "#1d5c37",
+      "wall": "#54c873",
+      "pellet": "#ffe24d",
+      "power": "#ff9c2e",
+      "fg": "#f0fff4",
+      "button_bg": "#ffe24d",
+      "button_text": "#143012",
+      "focus_ring": "#fff0a8"
+    },
+    "Twilight": {
+      "_theme": "any",
+      "bg": "#242a14",
+      "wall": "#86a23e",
+      "pellet": "#ffd86b",
+      "power": "#ff7a47",
+      "fg": "#fbf4dc",
+      "button_bg": "#ff9d4d",
+      "button_text": "#241a08",
+      "focus_ring": "#ffd86b"
+    },
+    "Deep Jungle": {
+      "_theme": "any",
+      "bg": "#060f0b",
+      "wall": "#1a4a32",
+      "pellet": "#bfe85f",
+      "power": "#d4842e",
+      "fg": "#e6ffe6",
+      "button_bg": "#9bd96a",
+      "button_text": "#06210f",
+      "focus_ring": "#bfe85f"
+    }
+  }
+}
