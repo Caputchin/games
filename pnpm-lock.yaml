@@ -12,14 +12,47 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/blockfall:
+    devDependencies:
+      '@caputchin/game-sdk':
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/preset-kaplay':
+        specifier: ^0.4.0
+        version: 0.4.0(@caputchin/game-sdk@3.1.0)(kaplay@3001.0.19)
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      happy-dom:
+        specifier: ^15.0.0
+        version: 15.11.7
+      kaplay:
+        specifier: 3001.0.19
+        version: 3001.0.19
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.14)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
+
   packages/dino-runner:
     devDependencies:
-      '@caputchin/engine-runtime':
+      '@caputchin/determinism':
         specifier: ^0.2.0
         version: 0.2.0
+      '@caputchin/engine-kit':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@caputchin/game-sdk':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
@@ -38,12 +71,18 @@ importers:
 
   packages/fruit-slash:
     devDependencies:
-      '@caputchin/engine-runtime':
+      '@caputchin/determinism':
         specifier: ^0.2.0
         version: 0.2.0
+      '@caputchin/engine-kit':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@caputchin/game-sdk':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
@@ -62,12 +101,18 @@ importers:
 
   packages/leaf-memory:
     devDependencies:
-      '@caputchin/engine-runtime':
+      '@caputchin/determinism':
         specifier: ^0.2.0
         version: 0.2.0
+      '@caputchin/engine-kit':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@caputchin/game-sdk':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
@@ -84,20 +129,77 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
 
-  packages/phobos:
+  packages/monkey-maze:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/preset-melonjs':
+        specifier: ^0.2.0
+        version: 0.2.0(melonjs@19.6.0)
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      happy-dom:
+        specifier: ^15.0.0
+        version: 15.11.7
+      melonjs:
+        specifier: ^19.6.0
+        version: 19.6.0
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.14)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
+
+  packages/paddle-rally:
+    devDependencies:
+      '@caputchin/game-sdk':
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/preset-phaser':
+        specifier: ^0.2.0
+        version: 0.2.0(phaser@4.1.0)
       '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@caputchin/replay-selfcheck':
         specifier: ^0.2.0
         version: 0.2.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.3
+      phaser:
+        specifier: ^4.1.0
+        version: 4.1.0
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.14)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
+
+  packages/phobos:
+    devDependencies:
+      '@caputchin/game-sdk':
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@caputchin/replay-wasm':
+        specifier: ^0.2.0
+        version: 0.2.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
       happy-dom:
         specifier: ^15.0.0
         version: 15.11.7
@@ -114,11 +216,11 @@ importers:
   packages/wall-smash:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0
+        version: 3.1.0
       '@caputchin/replay-contract':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.3.0
+        version: 0.3.0
       '@caputchin/replay-wasm':
         specifier: ^0.2.0
         version: 0.2.0
@@ -140,12 +242,18 @@ importers:
 
   packages/whack-a-monkey:
     devDependencies:
-      '@caputchin/engine-runtime':
+      '@caputchin/determinism':
         specifier: ^0.2.0
         version: 0.2.0
+      '@caputchin/engine-kit':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@caputchin/game-sdk':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@caputchin/replay-contract':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.41
@@ -164,15 +272,40 @@ importers:
 
 packages:
 
-  '@caputchin/engine-runtime@0.2.0':
-    resolution: {integrity: sha512-SJdQjt558wo6hJvgOmZZmbMhdSSoEdxRsZSv9YfUHzRk66hMZy0iS4LUG/QwZWsDJVt1Pw9axN893bEaiepUjg==}
+  '@caputchin/determinism@0.2.0':
+    resolution: {integrity: sha512-85HXyRyiLIBxUrn9du4NZffpq3FpHh/xjcoNuu4alS9k28P/GAfu+ywxErzUi3vXUvykFiMFWLc7STpQ2pOw6A==}
+
+  '@caputchin/engine-kit@0.4.0':
+    resolution: {integrity: sha512-8KlpukUOGvBWmt1C/17XKA1Adtw5M/U9OI/4073SWFCcZoI8ssBu6wKLl79U00gk0fHpXLAgViULK0vVVewe4g==}
     hasBin: true
 
-  '@caputchin/game-sdk@3.0.0':
-    resolution: {integrity: sha512-weupaQuzlufT5UweTA+aJC1pzZIFyK7//lMzqyGImDr4CTVeSKzyZJD8SMq1AlSu+ocmrSagLQQi54LMfw5kMw==}
+  '@caputchin/game-sdk@3.1.0':
+    resolution: {integrity: sha512-h/GDGFUc3bQmLlfY4WpST4rq+Nd6rShIa8/f8XBdybRawHUWwK4vPZBsD0potP1tdKOFqiZp1hpulPx67MF/AQ==}
+
+  '@caputchin/preset-kaplay@0.4.0':
+    resolution: {integrity: sha512-Q4FWkOjmkfcIqxRLESrM1tY2R82N2ErmDlS1yvIxF18B18a7NhuavcROVmbnUKWVIDesTRnZ3f+kOefuZDXXvQ==}
+    peerDependencies:
+      '@caputchin/game-sdk': ^3.0.0
+      kaplay: 3001.0.19
+
+  '@caputchin/preset-melonjs@0.2.0':
+    resolution: {integrity: sha512-jNhrECtdMPGVtUwk1IRmcCFBr4vnM113fr98IDVShUMbDK3NvVHyUWoC8TvUhAslm99HPThfzZj+vH402YR2Uw==}
+    peerDependencies:
+      melonjs: ^19
+
+  '@caputchin/preset-phaser@0.2.0':
+    resolution: {integrity: sha512-xtonxCoCSu4mIoQYmeVX1kz018hkyWjZ2v5g5qT+n9nRLFKn3++DYqOVewVaLUGC/ol20FQxRTKBZKReWaycPg==}
+    peerDependencies:
+      phaser: ^4.1.0
 
   '@caputchin/replay-contract@0.2.0':
     resolution: {integrity: sha512-/bQhRmEwxeb6nyqC0ZGBVjEhLjRJWOUIvR2yC0rCRJj+aY+kfLQmSe8pI3f4Unmb4pv2Y8HK+mwuDOoCbN5//Q==}
+
+  '@caputchin/replay-contract@0.3.0':
+    resolution: {integrity: sha512-Oy1fMGW0ktIm5+HkUebONlI+rOIXfe7KtWfHp8BgQ5FmmvLFjKBJenms/Y2qVNMaYMg2WZYRBkxPxVqBX4W3Pg==}
+
+  '@caputchin/replay-selfcheck@0.2.0':
+    resolution: {integrity: sha512-m4Nu4YN+WxvEImgrLehWpUHBlhXrsfUL2IRvQEnC7a2Xnw6ZNj/P4zRV4qYlSQeox7xi/VuGWAJUg2esNi3TOw==}
 
   '@caputchin/replay-wasm@0.2.0':
     resolution: {integrity: sha512-SGY4XGKwQEjua3+/k886KXC7Gu7m6DlUXQ8CxWAjw7uPGH19GbtGMoq9Gc2jhBn9PXF/Q08qej1oY4RCg3WAgQ==}
@@ -705,6 +838,9 @@ packages:
     resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
     engines: {node: ^14.18.0 || >=16.10.0}
 
+  core-js@3.49.0:
+    resolution: {integrity: sha512-es1U2+YTtzpwkxVLwAFdSpaIMyQaq0PBgm3YD1W3Qpsn1NAmO3KSgZfu+oGSWVu6NvLHoHCV/aYcsE5wiB7ALg==}
+
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -738,6 +874,9 @@ packages:
   estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
 
+  eventemitter3@5.0.4:
+    resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
+
   expect-type@1.3.0:
     resolution: {integrity: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==}
     engines: {node: '>=12.0.0'}
@@ -766,9 +905,16 @@ packages:
     resolution: {integrity: sha512-KyrFvnl+J9US63TEzwoiJOQzZBJY7KgBushJA8X61DMbNsH+2ONkDuLDnCnwUiPTF42tLoEmrPyoqbenVA5zrg==}
     engines: {node: '>=18.0.0'}
 
+  howler@2.2.4:
+    resolution: {integrity: sha512-iARIBPgcQrwtEr+tALF+rapJ8qSc+Set2GJQl7xT1MQzWaVkFebdJhR3alVlSiUf5U7nAANKuj3aWpwerocD5w==}
+
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
+
+  kaplay@3001.0.19:
+    resolution: {integrity: sha512-T8GdXGXvgv/vbYVA1lcHzuDNVhp3juOJJE8OZs0vR5MdGNElBvANEeTSnqAAhJpSXtNxpeNy29pqkok3RnXKtg==}
+    engines: {node: '>=20.0.0'}
 
   lilconfig@3.1.3:
     resolution: {integrity: sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==}
@@ -786,6 +932,10 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  melonjs@19.6.0:
+    resolution: {integrity: sha512-3mkOApq69uwklJCyFIlHIynHtHhNxv2vFc+iQbEC8EStU9Si9OezwpFzykEkHl31Zuf/1tSmn6lzP9oGWrxWog==}
+    engines: {node: '>=24.0.0'}
 
   mlly@1.8.2:
     resolution: {integrity: sha512-d+ObxMQFmbt10sretNDytwt85VrbkhhUA/JBGm1MPaWJ65Cl4wOgLaB1NYvJSZ0Ef03MMEU/0xpPMXUIQ29UfA==}
@@ -814,6 +964,9 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
+
+  phaser@4.1.0:
+    resolution: {integrity: sha512-ZXv5Bhyg2BqJGAAxNI2xvmzGXW9q+TwUG1RLri5ZDBYGGtcma6aWUO/eJ7EbozeqRd5fKdpo4ycNMQt+Bi5iYg==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -1028,15 +1181,45 @@ packages:
 
 snapshots:
 
-  '@caputchin/engine-runtime@0.2.0':
-    dependencies:
-      '@caputchin/replay-contract': 0.2.0
+  '@caputchin/determinism@0.2.0': {}
 
-  '@caputchin/game-sdk@3.0.0':
+  '@caputchin/engine-kit@0.4.0':
     dependencies:
-      '@caputchin/replay-contract': 0.2.0
+      '@caputchin/replay-contract': 0.3.0
+      '@caputchin/replay-selfcheck': 0.2.0
+
+  '@caputchin/game-sdk@3.1.0':
+    dependencies:
+      '@caputchin/replay-contract': 0.3.0
+
+  '@caputchin/preset-kaplay@0.4.0(@caputchin/game-sdk@3.1.0)(kaplay@3001.0.19)':
+    dependencies:
+      '@caputchin/determinism': 0.2.0
+      '@caputchin/game-sdk': 3.1.0
+      '@caputchin/replay-contract': 0.3.0
+      kaplay: 3001.0.19
+
+  '@caputchin/preset-melonjs@0.2.0(melonjs@19.6.0)':
+    dependencies:
+      '@caputchin/determinism': 0.2.0
+      '@caputchin/engine-kit': 0.4.0
+      '@caputchin/replay-contract': 0.3.0
+      melonjs: 19.6.0
+
+  '@caputchin/preset-phaser@0.2.0(phaser@4.1.0)':
+    dependencies:
+      '@caputchin/determinism': 0.2.0
+      '@caputchin/replay-contract': 0.3.0
+      phaser: 4.1.0
 
   '@caputchin/replay-contract@0.2.0': {}
+
+  '@caputchin/replay-contract@0.3.0': {}
+
+  '@caputchin/replay-selfcheck@0.2.0':
+    dependencies:
+      '@caputchin/determinism': 0.2.0
+      '@caputchin/replay-contract': 0.3.0
 
   '@caputchin/replay-wasm@0.2.0':
     dependencies:
@@ -1360,6 +1543,8 @@ snapshots:
 
   consola@3.4.2: {}
 
+  core-js@3.49.0: {}
+
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
@@ -1429,6 +1614,8 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.9
 
+  eventemitter3@5.0.4: {}
+
   expect-type@1.3.0: {}
 
   fdir@6.5.0(picomatch@4.0.4):
@@ -1452,7 +1639,11 @@ snapshots:
       webidl-conversions: 7.0.0
       whatwg-mimetype: 3.0.0
 
+  howler@2.2.4: {}
+
   joycon@3.1.1: {}
+
+  kaplay@3001.0.19: {}
 
   lilconfig@3.1.3: {}
 
@@ -1465,6 +1656,11 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  melonjs@19.6.0:
+    dependencies:
+      core-js: 3.49.0
+      howler: 2.2.4
 
   mlly@1.8.2:
     dependencies:
@@ -1490,6 +1686,10 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
+
+  phaser@4.1.0:
+    dependencies:
+      eventemitter3: 5.0.4
 
   picocolors@1.1.1: {}
 
