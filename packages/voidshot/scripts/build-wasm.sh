@@ -29,7 +29,7 @@ RAW="target/$T/$PROFILE/voidshot.wasm"
 
 OUT=build/voidshot.wasm
 if [ "${VS_FAST:-0}" != "1" ] && command -v "$WASMOPT" >/dev/null 2>&1; then
-  "$WASMOPT" -Oz "$RAW" -o "$OUT"
+  "$WASMOPT" -Oz --all-features "$RAW" -o "$OUT"
 else
   [ "${VS_FAST:-0}" = "1" ] || echo "[voidshot] wasm-opt not found; shipping unoptimized wasm"
   cp "$RAW" "$OUT"
