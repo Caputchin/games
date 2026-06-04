@@ -3,10 +3,10 @@
   "packages/dino-runner": "0.4.2",
   "packages/fruit-slash": "0.3.2",
   "packages/whack-a-monkey": "0.3.2",
-  "packages/phobos": "0.2.3",
-  "packages/wall-smash": "0.2.2",
-  "packages/monkey-maze": "0.2.0",
+  "packages/phobos": "0.2.4",
+  "packages/wall-smash": "0.2.3",
+  "packages/monkey-maze": "0.2.1",
   "packages/paddle-rally": "0.2.0",
   "packages/blockfall": "0.2.0",
-  "packages/voidshot": "0.1.0"
+  "packages/voidshot": "0.2.0"
 }

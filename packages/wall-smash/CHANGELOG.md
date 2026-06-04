@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Caputchin/games/compare/wall-smash-v0.2.2...wall-smash-v0.2.3) (2026-06-04)
+
+
+### Bug Fixes
+
+* **deps:** bump games to latest SDK (preset-melonjs 0.2.1, replay-wasm 0.3.0) ([d302367](https://github.com/Caputchin/games/commit/d30236730e6fcff58e66ec325fc9321d98f71da7))
+
 ## [0.2.2](https://github.com/Caputchin/games/compare/wall-smash-v0.2.1...wall-smash-v0.2.2) (2026-06-04)
 
 

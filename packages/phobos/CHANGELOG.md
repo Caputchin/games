@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.4](https://github.com/Caputchin/games/compare/phobos-v0.2.3...phobos-v0.2.4) (2026-06-04)
+
+
+### Bug Fixes
+
+* **deps:** bump games to latest SDK (preset-melonjs 0.2.1, replay-wasm 0.3.0) ([d302367](https://github.com/Caputchin/games/commit/d30236730e6fcff58e66ec325fc9321d98f71da7))
+* **phobos:** freeze+seal the headless clock so the Emscripten boot passes the replay self-check ([029e641](https://github.com/Caputchin/games/commit/029e641c1345053ad585269cf73d28b5119fa601))
+
 ## [0.2.3](https://github.com/Caputchin/games/compare/phobos-v0.2.2...phobos-v0.2.3) (2026-06-04)
 
 
