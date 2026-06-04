@@ -97,7 +97,7 @@ pub struct LiveSim {
 }
 
 /// State buffer header length (ints before the per-entity sections).
-const STATE_HEADER: usize = 13;
+const STATE_HEADER: usize = 17;
 
 impl LiveSim {
     pub fn new(seed: [u32; 4], cfg: SimConfig, endless: bool) -> Self {
@@ -173,11 +173,14 @@ pub unsafe extern "C" fn live_step(ls: *mut LiveSim, qx: i32, qz: i32, fire: i32
 ///   [0] phase (0 playing, 1 won, 2 lost)  [1] score  [2] shield  [3] tick
 ///   [4] wave  [5] player_x_milli  [6] player_z_milli
 ///   [7] facing_x_milli  [8] facing_z_milli  (unit vector * 1000)
-///   [9] enemy_count  [10] bolt_count  [11] asteroid_count  [12] death_count
-///   then enemy_count triples:   kind, x_milli, z_milli
-///   then bolt_count quads:      x_milli, z_milli, dirx_milli, dirz_milli
+///   [9] weapon (0 normal,1 laser,2 split,3 rockets)  [10] weapon_ticks_left
+///   [11] invuln_ticks_left
+///   [12] enemy_count [13] bolt_count [14] asteroid_count [15] powerup_count [16] death_count
+///   then enemy_count triples:    kind, x_milli, z_milli
+///   then bolt_count quints:      x_milli, z_milli, dirx_milli, dirz_milli, is_rocket
 ///   then asteroid_count triples: x_milli, z_milli, y_milli (height above plane)
-///   then death_count triples:   kind, x_milli, z_milli  (this window's blasts, VFX)
+///   then powerup_count triples:  kind, x_milli, z_milli
+///   then death_count triples:    kind, x_milli, z_milli  (this window's blasts/pickups, VFX)
 /// Valid until the next `live_step`/`live_state` call.
 ///
 /// # Safety
@@ -188,15 +191,24 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     let st = ls.sim.status();
     let (px, pz) = ls.sim.player_pos();
     let (fx, fz) = ls.sim.player_facing();
+    let weapon = ls.sim.weapon();
+    let weapon_left = ls.sim.weapon_ticks_left();
+    let invuln_left = ls.sim.invuln_ticks_left();
     let enemies = ls.sim.enemies();
     let bolts = ls.sim.bolts();
     let asteroids = ls.sim.asteroids();
+    let powerups = ls.sim.powerups();
     let deaths = ls.sim.drain_deaths();
 
     let buf = &mut ls.state_buf;
     buf.clear();
     buf.reserve(
-        STATE_HEADER + enemies.len() * 3 + bolts.len() * 4 + asteroids.len() * 3 + deaths.len() * 3,
+        STATE_HEADER
+            + enemies.len() * 3
+            + bolts.len() * 5
+            + asteroids.len() * 3
+            + powerups.len() * 3
+            + deaths.len() * 3,
     );
     buf.push(match st.phase {
         Phase::Playing => 0,
@@ -211,25 +223,35 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     buf.push(milli(pz));
     buf.push(milli(fx));
     buf.push(milli(fz));
+    buf.push(weapon);
+    buf.push(weapon_left);
+    buf.push(invuln_left);
     buf.push(enemies.len() as i32);
     buf.push(bolts.len() as i32);
     buf.push(asteroids.len() as i32);
+    buf.push(powerups.len() as i32);
     buf.push(deaths.len() as i32);
     for (x, z, kind) in enemies {
         buf.push(kind as i32);
         buf.push(milli(x));
         buf.push(milli(z));
     }
-    for (x, z, dx, dz) in bolts {
+    for (x, z, dx, dz, rocket) in bolts {
         buf.push(milli(x));
         buf.push(milli(z));
         buf.push(milli(dx));
         buf.push(milli(dz));
+        buf.push(if rocket { 1 } else { 0 });
     }
     for (x, z, y) in asteroids {
         buf.push(milli(x));
         buf.push(milli(z));
         buf.push(milli(y));
+    }
+    for (kind, x, z) in powerups {
+        buf.push(kind as i32);
+        buf.push(milli(x));
+        buf.push(milli(z));
     }
     for (x, z, kind) in deaths {
         buf.push(kind as i32);

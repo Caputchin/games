@@ -43,6 +43,12 @@ const ENEMY_TARGET_R = 1.25;
 const ASTEROID_HIGH_Y = 13; // spawn height, mirrors sim.rs ASTEROID_HIGH_Y
 const ASTEROID_BLAST_R = 2.7; // warning-ring radius, mirrors sim.rs ASTEROID_BLAST_R
 const ASTEROID_KIND = 3; // deaths kind code for the impact blast (mirrors sim.rs)
+const POWERUP_KIND = 4; // deaths kind code for the pickup sparkle (mirrors sim.rs)
+const ROCKET_KIND = 5; // deaths kind code for the rocket blast (mirrors sim.rs)
+const LASER_RANGE = 20; // beam length, mirrors sim.rs LASER_RANGE
+const WEAPON_LASER = 1; // weapon code (mirrors sim.rs Weapon::Laser)
+// Powerup colors by kind: laser, split, rockets, heal, invuln.
+const POWERUP_COLORS = ['#36f0ff', '#9d7bff', '#ff8a3c', '#5dff8a', '#ffd23d'];
 
 const VERT = /* glsl */ `
   attribute vec3 position;
@@ -180,12 +186,18 @@ interface Template {
 interface BoltNode {
   group: Transform;
   mesh: Mesh;
+  rocket: boolean;
 }
 
 interface AsteroidNode {
   group: Transform;
   rock: Transform;
   ring: { alpha: number };
+}
+
+interface PowerupNode {
+  group: Transform;
+  color: Color; // set per frame from the powerup's kind
 }
 
 interface Burst {
@@ -210,8 +222,11 @@ export class Renderer3D implements Viewport {
   private enemyTemplate: Template | null = null;
   private readonly bolts: BoltNode[] = [];
   private readonly asteroids: AsteroidNode[] = [];
+  private readonly powerups: PowerupNode[] = [];
   private readonly bursts: Burst[] = [];
   private readonly reticle: Transform;
+  private beam: Mesh | null = null; // laser beam, shown while the laser weapon is up
+  private invulnBubble: Mesh | null = null; // shield bubble while invulnerable
   private loaded = false;
 
   private spin = 0;
@@ -291,6 +306,23 @@ export class Renderer3D implements Viewport {
     });
     this.playerThruster.position.set(0, 0, 0.7);
     this.playerThruster.setParent(this.player.pivot);
+
+    // Laser beam: a forward bar (the model faces -Z), shown while the laser is up.
+    this.beam = new Mesh(this.gl, {
+      geometry: new Box(this.gl, { width: 0.5, height: 0.35, depth: LASER_RANGE }),
+      program: this.emissiveProg(this.skin.player, 0.55),
+    });
+    this.beam.position.set(0, 0.3, -LASER_RANGE / 2);
+    this.beam.visible = false;
+    this.beam.setParent(this.player.pivot);
+
+    // Invulnerability bubble around the gunship.
+    this.invulnBubble = new Mesh(this.gl, {
+      geometry: new Sphere(this.gl, { radius: 1.7, widthSegments: 18, heightSegments: 14 }),
+      program: this.emissiveProg('#9fe8ff', 0.12),
+    });
+    this.invulnBubble.visible = false;
+    this.invulnBubble.setParent(this.player.pivot);
 
     this.ensureEnemies(8);
     this.loaded = true;
@@ -533,7 +565,41 @@ export class Renderer3D implements Viewport {
       program: this.emissiveProg(this.skin.accent, 0.95),
     });
     mesh.setParent(group);
-    return { group, mesh };
+    const node: BoltNode = { group, mesh, rocket: false };
+    const accent = new Color(...hexToRgb(this.skin.accent));
+    const rocketCol = new Color(...hexToRgb('#ff8a3c'));
+    mesh.onBeforeRender(() => {
+      (mesh.program.uniforms.uColor.value as Color).copy(node.rocket ? rocketCol : accent);
+    });
+    return node;
+  }
+
+  private buildPowerup(): PowerupNode {
+    const group = new Transform();
+    group.visible = false;
+    group.setParent(this.scene);
+    const color = new Color(1, 1, 1);
+    const ring = new Mesh(this.gl, {
+      geometry: new Torus(this.gl, { radius: 0.5, tube: 0.11, radialSegments: 10, tubularSegments: 28 }),
+      program: this.emissiveProg('#ffffff', 0.9),
+    });
+    ring.onBeforeRender(() => {
+      (ring.program.uniforms.uColor.value as Color).copy(color);
+    });
+    ring.setParent(group);
+    const core = new Mesh(this.gl, {
+      geometry: new Sphere(this.gl, { radius: 0.24, widthSegments: 12, heightSegments: 9 }),
+      program: this.emissiveProg('#ffffff', 0.95),
+    });
+    core.onBeforeRender(() => {
+      (core.program.uniforms.uColor.value as Color).copy(color);
+    });
+    core.setParent(group);
+    return { group, color };
+  }
+
+  private ensurePowerups(n: number): void {
+    while (this.powerups.length < n) this.powerups.push(this.buildPowerup());
   }
 
   private buildReticle(): Transform {
@@ -648,6 +714,40 @@ export class Renderer3D implements Viewport {
       node.group.visible = true;
       node.group.position.set(b.x, 0.05, b.z);
       node.group.rotation.y = yaw(b.dx, b.dz);
+      node.rocket = b.rocket;
+      const bs = b.rocket ? 1.8 : 1;
+      node.mesh.scale.set(bs, bs, b.rocket ? 1.5 : 1);
+    }
+
+    // Powerups: bobbing, spinning, color-coded by kind.
+    this.ensurePowerups(s.powerups.length);
+    for (let i = 0; i < this.powerups.length; i += 1) {
+      const node = this.powerups[i]!;
+      const p = s.powerups[i];
+      if (!p) {
+        if (node.group.visible) node.group.visible = false;
+        continue;
+      }
+      node.group.visible = true;
+      node.group.position.set(p.x, 0.7 + Math.sin(timeMs * 0.004 + i) * 0.18, p.z);
+      node.group.rotation.y += dt * 2.2;
+      node.color.set(...hexToRgb(POWERUP_COLORS[p.kind] ?? '#ffffff'));
+    }
+
+    // Laser beam + invuln bubble track the active weapon / shield state.
+    if (this.beam) {
+      this.beam.visible = s.weapon === WEAPON_LASER;
+      if (this.beam.visible) {
+        const w = 0.8 + 0.4 * Math.sin(timeMs * 0.03);
+        this.beam.scale.set(w, w, 1);
+      }
+    }
+    if (this.invulnBubble) {
+      this.invulnBubble.visible = s.invulnTicksLeft > 0;
+      if (this.invulnBubble.visible) {
+        const p = 1 + 0.06 * Math.sin(timeMs * 0.01);
+        this.invulnBubble.scale.set(p, p, p);
+      }
     }
 
     // Asteroids: tumbling rock descending + a warning ring that intensifies as it nears.
@@ -670,6 +770,8 @@ export class Renderer3D implements Viewport {
 
     for (const d of s.deaths) {
       if (d.kind === ASTEROID_KIND) this.spawnBurst(d.x, d.z, '#ff7a2a', 3.6);
+      else if (d.kind === ROCKET_KIND) this.spawnBurst(d.x, d.z, '#ff8a3c', 3.0);
+      else if (d.kind === POWERUP_KIND) this.spawnBurst(d.x, d.z, '#ffffff', 1.6);
       else this.spawnBurst(d.x, d.z, enemyColor(this.skin, d.kind));
     }
     this.updateBursts(dt);

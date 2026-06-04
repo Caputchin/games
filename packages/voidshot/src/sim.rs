@@ -47,6 +47,20 @@ const ASTEROID_HIGH_Y: f32 = 13.0; // spawn height (telegraph window ~1s)
 const ASTEROID_BLAST_R: f32 = 2.7; // impact radius - dodge the marked zone
 const ASTEROID_KIND: u8 = 3; // deaths-buffer kind code for the impact blast VFX
 
+const POWERUP_INTERVAL: u32 = 750; // ~12.5s base between powerup spawns (rare)
+const POWERUP_JITTER: u32 = 360; // + seeded 0..6s
+const POWERUP_COLLECT_R: f32 = 1.4; // fly within this of a powerup to grab it
+const POWERUP_TYPES: u32 = 5; // laser / split / rockets / heal / invuln
+const POWERUP_KIND: u8 = 4; // deaths-buffer kind code for the pickup sparkle
+const WEAPON_DURATION: u32 = 600; // 10s of an upgraded weapon
+const INVULN_DURATION: u32 = 360; // 6s of invulnerability
+const SPLIT_ANGLE: f32 = 0.22; // radians between the 3 split-fire lines
+const ROCKET_COOLDOWN: u32 = 14; // rockets fire slower than bolts
+const ROCKET_AOE_R: f32 = 2.6; // rocket explosion radius
+const ROCKET_KIND: u8 = 5; // deaths-buffer kind for the rocket blast VFX
+const LASER_RANGE: f32 = 20.0; // continuous-beam reach
+const LASER_HALF_WIDTH: f32 = 0.7; // beam half-width for the corridor hit test
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Phase {
     Playing,
@@ -59,6 +73,15 @@ pub enum Kind {
     Chaser = 0,
     Weaver = 1,
     Splitter = 2,
+}
+
+/// The player's current weapon, set by powerups for a limited time.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Weapon {
+    Normal = 0,
+    Laser = 1,  // continuous forward beam
+    Split = 2,  // three-way fire
+    Rockets = 3, // slower, explodes with AoE
 }
 
 #[derive(Clone, Copy, Default)]
@@ -95,6 +118,17 @@ struct Bolt {
     dx: f32,
     dz: f32,
     dist: f32,
+    /// Rocket bolts explode on hit, destroying enemies within an AoE radius.
+    rocket: bool,
+}
+
+/// A collectible powerup sitting on the arena. `kind`: 0 laser, 1 split, 2 rockets,
+/// 3 heal (+1 shield), 4 invulnerability. Flying within range collects it.
+#[derive(Clone, Copy)]
+struct Powerup {
+    x: f32,
+    z: f32,
+    kind: u8,
 }
 
 /// A falling asteroid: fixed (x, z) impact point, descending `y`. On reaching the
@@ -126,6 +160,12 @@ pub struct Sim {
     bolts: Vec<Bolt>,
     asteroids: Vec<Asteroid>,
     next_asteroid: u32,
+    powerups: Vec<Powerup>,
+    next_powerup: u32,
+    weapon: Weapon,
+    weapon_until: u32, // tick at which the upgraded weapon reverts to Normal
+    invuln_until: u32, // tick until which the player takes no damage
+    max_shield: i32, // heal cap (the configured starting shield)
     /// Death positions this draw window (x, z, kind), drained by the renderer for
     /// explosion VFX. Bounded by total kills per round (render-only).
     deaths: Vec<(f32, f32, u8)>,
@@ -182,6 +222,12 @@ impl Sim {
             bolts: Vec::new(),
             asteroids: Vec::new(),
             next_asteroid: ASTEROID_INTERVAL, // first drop ~5.5s in
+            powerups: Vec::new(),
+            next_powerup: POWERUP_INTERVAL,
+            weapon: Weapon::Normal,
+            weapon_until: 0,
+            invuln_until: 0,
+            max_shield: shield,
             deaths: Vec::new(),
             fx: 0.0,
             fz: -1.0, // initial nose points "north" (away from the camera)
@@ -233,14 +279,42 @@ impl Sim {
             .collect()
     }
 
-    /// (x, z, dx, dz) for each live bolt, for the renderer.
-    pub fn bolts(&self) -> Vec<(f32, f32, f32, f32)> {
-        self.bolts.iter().map(|b| (b.x, b.z, b.dx, b.dz)).collect()
+    /// (x, z, dx, dz, is_rocket) for each live bolt, for the renderer.
+    pub fn bolts(&self) -> Vec<(f32, f32, f32, f32, bool)> {
+        self.bolts.iter().map(|b| (b.x, b.z, b.dx, b.dz, b.rocket)).collect()
     }
 
     /// (x, z, height) for each falling asteroid, for the renderer (shadow + rock).
     pub fn asteroids(&self) -> Vec<(f32, f32, f32)> {
         self.asteroids.iter().map(|a| (a.x, a.z, a.y)).collect()
+    }
+
+    /// (kind, x, z) for each uncollected powerup, for the renderer.
+    pub fn powerups(&self) -> Vec<(u8, f32, f32)> {
+        self.powerups.iter().map(|p| (p.kind, p.x, p.z)).collect()
+    }
+
+    /// Active weapon code (0 normal, 1 laser, 2 split, 3 rockets) for HUD + render.
+    pub fn weapon(&self) -> i32 {
+        self.weapon as i32
+    }
+
+    /// Ticks left on the upgraded weapon (0 if Normal), for the HUD countdown.
+    pub fn weapon_ticks_left(&self) -> i32 {
+        if self.weapon != Weapon::Normal && self.weapon_until > self.tick {
+            (self.weapon_until - self.tick) as i32
+        } else {
+            0
+        }
+    }
+
+    /// Ticks left of invulnerability (0 if none), for the HUD + shield-bubble VFX.
+    pub fn invuln_ticks_left(&self) -> i32 {
+        if self.invuln_until > self.tick {
+            (self.invuln_until - self.tick) as i32
+        } else {
+            0
+        }
     }
 
     /// Take and clear this window's death events (render-only explosion VFX).
@@ -257,6 +331,10 @@ impl Sim {
             return;
         }
 
+        if self.weapon != Weapon::Normal && self.tick >= self.weapon_until {
+            self.weapon = Weapon::Normal; // upgraded weapon expired
+        }
+
         self.maybe_spawn_wave();
         self.move_player(input);
         self.enemy_ai();
@@ -266,6 +344,8 @@ impl Sim {
         self.step_bolts();
         self.spawn_asteroids();
         self.step_asteroids();
+        self.spawn_powerups();
+        self.collect_powerups();
         self.contact();
         self.check_end();
 
@@ -422,16 +502,44 @@ impl Sim {
         }
     }
 
-    /// Emit a forward bolt along the facing direction on the fire cooldown.
+    /// Fire along the facing, by the active weapon. Laser is a continuous beam (no
+    /// cooldown); the others emit bolts on a cooldown.
     fn fire(&mut self, input: Input) {
-        if !input.fire || self.fire_cd > 0 {
-            return;
-        }
         let fl = (self.fx * self.fx + self.fz * self.fz).sqrt();
         if fl < 1e-5 {
             return;
         }
         let (dx, dz) = (self.fx / fl, self.fz / fl);
+
+        if self.weapon == Weapon::Laser {
+            if input.fire {
+                self.laser_beam(dx, dz);
+            }
+            return;
+        }
+        if !input.fire || self.fire_cd > 0 {
+            return;
+        }
+        match self.weapon {
+            Weapon::Split => {
+                for a in [-SPLIT_ANGLE, 0.0, SPLIT_ANGLE] {
+                    let (c, s) = (a.cos(), a.sin());
+                    self.spawn_bolt(dx * c - dz * s, dx * s + dz * c, false);
+                }
+                self.fire_cd = FIRE_COOLDOWN;
+            }
+            Weapon::Rockets => {
+                self.spawn_bolt(dx, dz, true);
+                self.fire_cd = ROCKET_COOLDOWN;
+            }
+            _ => {
+                self.spawn_bolt(dx, dz, false);
+                self.fire_cd = FIRE_COOLDOWN;
+            }
+        }
+    }
+
+    fn spawn_bolt(&mut self, dx: f32, dz: f32, rocket: bool) {
         let (px, pz) = self.player_pos();
         self.bolts.push(Bolt {
             x: px + dx * PLAYER_R,
@@ -439,8 +547,32 @@ impl Sim {
             dx,
             dz,
             dist: 0.0,
+            rocket,
         });
-        self.fire_cd = FIRE_COOLDOWN;
+    }
+
+    /// Continuous beam: destroy every enemy in a thin forward corridor this tick.
+    fn laser_beam(&mut self, dx: f32, dz: f32) {
+        let (px, pz) = self.player_pos();
+        let caught: Vec<usize> = (0..self.enemies.len())
+            .filter(|&k| {
+                let e = &self.enemies[k];
+                if !e.alive {
+                    return false;
+                }
+                let t = self.bodies[e.handle].translation();
+                let rx = t.x - px;
+                let rz = t.z - pz;
+                let fwd = rx * dx + rz * dz;
+                if fwd < 0.0 || fwd > LASER_RANGE {
+                    return false;
+                }
+                (rx * -dz + rz * dx).abs() < LASER_HALF_WIDTH + ENEMY_R
+            })
+            .collect();
+        for k in caught {
+            self.destroy_enemy(k);
+        }
     }
 
     /// Advance bolts, resolve bolt->drone hits, and expire spent bolts. Iteration
@@ -471,8 +603,30 @@ impl Sim {
             }
 
             if let Some(ei) = hit {
+                let was_rocket = self.bolts[i].rocket;
                 self.bolts.swap_remove(i);
-                self.destroy_enemy(ei);
+                if was_rocket {
+                    // AoE: destroy every enemy within the blast of the impact point
+                    let aoe2 = ROCKET_AOE_R * ROCKET_AOE_R;
+                    let caught: Vec<usize> = (0..self.enemies.len())
+                        .filter(|&k| {
+                            let e = &self.enemies[k];
+                            if !e.alive {
+                                return false;
+                            }
+                            let t = self.bodies[e.handle].translation();
+                            let dx = t.x - bx;
+                            let dz = t.z - bz;
+                            dx * dx + dz * dz < aoe2
+                        })
+                        .collect();
+                    for k in caught {
+                        self.destroy_enemy(k);
+                    }
+                    self.deaths.push((bx, bz, ROCKET_KIND));
+                } else {
+                    self.destroy_enemy(ei);
+                }
                 continue; // a not-yet-stepped bolt is now at index i
             }
             if bdist > BOLT_RANGE
@@ -571,7 +725,7 @@ impl Sim {
                 self.destroy_enemy(k);
             }
 
-            if self.hit_cd == 0 {
+            if self.hit_cd == 0 && self.tick >= self.invuln_until {
                 let (px, pz) = self.player_pos();
                 if (px - ax) * (px - ax) + (pz - az) * (pz - az) < r2 {
                     self.shield -= 1;
@@ -583,8 +737,60 @@ impl Sim {
         }
     }
 
+    /// Spawn a powerup of a seeded type on a rare seeded cadence.
+    fn spawn_powerups(&mut self) {
+        if self.tick < self.next_powerup {
+            return;
+        }
+        let angle = self.rng.range(0.0, std::f32::consts::TAU);
+        let r = self.rng.range(0.0, RIM_R - 2.0);
+        let kind = self.rng.below(POWERUP_TYPES) as u8;
+        self.powerups.push(Powerup {
+            x: r * angle.cos(),
+            z: r * angle.sin(),
+            kind,
+        });
+        self.next_powerup = self.tick + POWERUP_INTERVAL + self.rng.below(POWERUP_JITTER);
+    }
+
+    /// Collect any powerup the player is flying over; apply its effect.
+    fn collect_powerups(&mut self) {
+        let (px, pz) = self.player_pos();
+        let r2 = POWERUP_COLLECT_R * POWERUP_COLLECT_R;
+        let mut i = 0;
+        while i < self.powerups.len() {
+            let p = self.powerups[i];
+            if (p.x - px) * (p.x - px) + (p.z - pz) * (p.z - pz) < r2 {
+                self.apply_powerup(p.kind);
+                self.deaths.push((p.x, p.z, POWERUP_KIND)); // pickup sparkle VFX
+                self.powerups.swap_remove(i);
+                continue;
+            }
+            i += 1;
+        }
+    }
+
+    fn apply_powerup(&mut self, kind: u8) {
+        match kind {
+            0 => {
+                self.weapon = Weapon::Laser;
+                self.weapon_until = self.tick + WEAPON_DURATION;
+            }
+            1 => {
+                self.weapon = Weapon::Split;
+                self.weapon_until = self.tick + WEAPON_DURATION;
+            }
+            2 => {
+                self.weapon = Weapon::Rockets;
+                self.weapon_until = self.tick + WEAPON_DURATION;
+            }
+            3 => self.shield = (self.shield + 1).min(self.max_shield), // heal
+            _ => self.invuln_until = self.tick + INVULN_DURATION,       // invulnerable
+        }
+    }
+
     fn contact(&mut self) {
-        if self.hit_cd > 0 {
+        if self.hit_cd > 0 || self.tick < self.invuln_until {
             return;
         }
         let (px, pz) = self.player_pos();

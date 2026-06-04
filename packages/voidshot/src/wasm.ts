@@ -40,6 +40,14 @@ export interface Bolt {
   z: number;
   dx: number;
   dz: number;
+  rocket: boolean;
+}
+
+export interface Powerup {
+  /** 0 laser, 1 split, 2 rockets, 3 heal, 4 invuln. */
+  kind: number;
+  x: number;
+  z: number;
 }
 
 export interface Asteroid {
@@ -67,10 +75,17 @@ export interface LiveState {
   /** Player facing unit vector (the bolt stream direction). */
   fx: number;
   fz: number;
+  /** Active weapon: 0 normal, 1 laser, 2 split, 3 rockets. */
+  weapon: number;
+  /** Ticks left on the upgraded weapon (0 = normal). */
+  weaponTicksLeft: number;
+  /** Ticks left of invulnerability (0 = none). */
+  invulnTicksLeft: number;
   enemies: Enemy[];
   bolts: Bolt[];
   asteroids: Asteroid[];
-  /** Drones + asteroid blasts that resolved this draw window (for explosion VFX). */
+  powerups: Powerup[];
+  /** Drones / blasts / pickups that resolved this draw window (for VFX). */
   deaths: Death[];
 }
 
@@ -141,11 +156,15 @@ export class LiveSim {
     const base = this.ex.live_state(this.ptr);
     const dv = new DataView(this.ex.memory.buffer);
     const i = (k: number): number => dv.getInt32(base + k * 4, true);
-    const enemyCount = i(9);
-    const boltCount = i(10);
-    const asteroidCount = i(11);
-    const deathCount = i(12);
-    let off = 13;
+    const weapon = i(9);
+    const weaponTicksLeft = i(10);
+    const invulnTicksLeft = i(11);
+    const enemyCount = i(12);
+    const boltCount = i(13);
+    const asteroidCount = i(14);
+    const powerupCount = i(15);
+    const deathCount = i(16);
+    let off = 17;
 
     const enemies: Enemy[] = [];
     for (let k = 0; k < enemyCount; k += 1) {
@@ -159,12 +178,18 @@ export class LiveSim {
         z: i(off + 1) / 1000,
         dx: i(off + 2) / 1000,
         dz: i(off + 3) / 1000,
+        rocket: i(off + 4) !== 0,
       });
-      off += 4;
+      off += 5;
     }
     const asteroids: Asteroid[] = [];
     for (let k = 0; k < asteroidCount; k += 1) {
       asteroids.push({ x: i(off) / 1000, z: i(off + 1) / 1000, y: i(off + 2) / 1000 });
+      off += 3;
+    }
+    const powerups: Powerup[] = [];
+    for (let k = 0; k < powerupCount; k += 1) {
+      powerups.push({ kind: i(off), x: i(off + 1) / 1000, z: i(off + 2) / 1000 });
       off += 3;
     }
     const deaths: Death[] = [];
@@ -183,9 +208,13 @@ export class LiveSim {
       pz: i(6) / 1000,
       fx: i(7) / 1000,
       fz: i(8) / 1000,
+      weapon,
+      weaponTicksLeft,
+      invulnTicksLeft,
       enemies,
       bolts,
       asteroids,
+      powerups,
       deaths,
     };
   }

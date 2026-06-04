@@ -118,6 +118,33 @@
       "name": "Endless mode hint",
       "description": "Hint shown when endless mode begins; also the sub-line under the Verified screen, telling the visitor to keep clearing the swarm."
     },
+    "powerLaser": {
+      "name": "Powerup: Laser",
+      "description": "Name of the laser powerup, a continuous forward beam weapon; also fills {name} in announcePower."
+    },
+    "powerSplit": {
+      "name": "Powerup: Split fire",
+      "description": "Name of the split-fire powerup, which fires three spread shots; also fills {name} in announcePower."
+    },
+    "powerRockets": {
+      "name": "Powerup: Rockets",
+      "description": "Name of the rockets powerup, shots that explode in an area of effect; also fills {name} in announcePower."
+    },
+    "powerHeal": {
+      "name": "Powerup: Shield up",
+      "description": "Name of the heal powerup, which restores one shield point; also fills {name} in announcePower."
+    },
+    "powerInvuln": {
+      "name": "Powerup: Invulnerable",
+      "description": "Name of the invulnerability powerup, granting temporary immunity; also fills {name} in announcePower."
+    },
+    "announcePower": {
+      "name": "Announcer: powerup collected",
+      "description": "Live-region message read when a powerup is collected. {name} is filled with one of the localized powerup names above.",
+      "tokens": [
+        "name"
+      ]
+    },
     "mute": {
       "name": "Mute button",
       "description": "Label/aria-label for the control that mutes game audio."
@@ -158,6 +185,12 @@
       "endlessOver": "Run over",
       "finalScore": "Final score {n}",
       "endlessStart": "Endless mode. Keep clearing the swarm.",
+      "powerLaser": "Laser",
+      "powerSplit": "Split fire",
+      "powerRockets": "Rockets",
+      "powerHeal": "Shield up",
+      "powerInvuln": "Invulnerable",
+      "announcePower": "{name} powerup",
       "mute": "Mute",
       "unmute": "Unmute",
       "a11yHint": "Tab targets the next drone"
@@ -188,6 +221,12 @@
       "endlessOver": "挑战结束",
       "finalScore": "最终得分 {n}",
       "endlessStart": "无尽模式。继续清除机群。",
+      "powerLaser": "激光",
+      "powerSplit": "散射",
+      "powerRockets": "火箭弹",
+      "powerHeal": "护盾恢复",
+      "powerInvuln": "无敌",
+      "announcePower": "获得{name}强化",
       "mute": "静音",
       "unmute": "取消静音",
       "a11yHint": "按 Tab 锁定下一架无人机"
@@ -218,6 +257,12 @@
       "endlessOver": "Partida terminada",
       "finalScore": "Puntos finales {n}",
       "endlessStart": "Modo sin fin. Sigue despejando el enjambre.",
+      "powerLaser": "Láser",
+      "powerSplit": "Disparo triple",
+      "powerRockets": "Cohetes",
+      "powerHeal": "Escudo restaurado",
+      "powerInvuln": "Invulnerable",
+      "announcePower": "Potenciador {name}",
       "mute": "Silenciar",
       "unmute": "Activar sonido",
       "a11yHint": "Tab fija el siguiente dron"
@@ -249,6 +294,12 @@
       "endlessOver": "انتهى الجري",
       "finalScore": "النتيجة النهائية {n}",
       "endlessStart": "الوضع اللانهائي. واصل اكتساح السرب.",
+      "powerLaser": "ليزر",
+      "powerSplit": "إطلاق ثلاثي",
+      "powerRockets": "صواريخ",
+      "powerHeal": "استعادة الدرع",
+      "powerInvuln": "منيع",
+      "announcePower": "تعزيز {name}",
       "mute": "كتم الصوت",
       "unmute": "تشغيل الصوت",
       "a11yHint": "زر Tab يستهدف الطائرة التالية"
@@ -279,6 +330,12 @@
       "endlessOver": "Corrida encerrada",
       "finalScore": "Pontuação final {n}",
       "endlessStart": "Modo sem fim. Continue limpando o enxame.",
+      "powerLaser": "Laser",
+      "powerSplit": "Tiro triplo",
+      "powerRockets": "Foguetes",
+      "powerHeal": "Escudo restaurado",
+      "powerInvuln": "Invulnerável",
+      "announcePower": "Bônus {name}",
       "mute": "Silenciar",
       "unmute": "Ativar som",
       "a11yHint": "Tab mira o próximo drone"
@@ -309,6 +366,12 @@
       "endlessOver": "Partie terminée",
       "finalScore": "Score final {n}",
       "endlessStart": "Mode sans fin. Continuez à balayer l'essaim.",
+      "powerLaser": "Laser",
+      "powerSplit": "Tir triple",
+      "powerRockets": "Roquettes",
+      "powerHeal": "Bouclier rechargé",
+      "powerInvuln": "Invincible",
+      "announcePower": "Bonus {name}",
       "mute": "Couper le son",
       "unmute": "Activer le son",
       "a11yHint": "Tab cible le prochain drone"
@@ -339,6 +402,12 @@
       "endlessOver": "Lauf vorbei",
       "finalScore": "Endpunktzahl {n}",
       "endlessStart": "Endlosmodus. Räume weiter den Schwarm.",
+      "powerLaser": "Laser",
+      "powerSplit": "Dreifachschuss",
+      "powerRockets": "Raketen",
+      "powerHeal": "Schild aufgeladen",
+      "powerInvuln": "Unverwundbar",
+      "announcePower": "{name}-Bonus",
       "mute": "Stummschalten",
       "unmute": "Ton an",
       "a11yHint": "Tab visiert die nächste Drohne an"
@@ -369,6 +438,12 @@
       "endlessOver": "Забег окончен",
       "finalScore": "Итоговый счёт {n}",
       "endlessStart": "Бесконечный режим. Продолжайте зачищать рой.",
+      "powerLaser": "Лазер",
+      "powerSplit": "Тройной выстрел",
+      "powerRockets": "Ракеты",
+      "powerHeal": "Щит восстановлен",
+      "powerInvuln": "Неуязвимость",
+      "announcePower": "Бонус: {name}",
       "mute": "Выключить звук",
       "unmute": "Включить звук",
       "a11yHint": "Tab выбирает следующий дрон"
@@ -399,6 +474,12 @@
       "endlessOver": "ラン終了",
       "finalScore": "最終スコア {n}",
       "endlessStart": "エンドレスモード。群れを掃射し続けよう。",
+      "powerLaser": "レーザー",
+      "powerSplit": "三方向ショット",
+      "powerRockets": "ロケット",
+      "powerHeal": "シールド回復",
+      "powerInvuln": "無敵",
+      "announcePower": "{name}を獲得",
       "mute": "ミュート",
       "unmute": "ミュート解除",
       "a11yHint": "Tab で次のドローンをロックオン"
@@ -429,6 +510,12 @@
       "endlessOver": "런 종료",
       "finalScore": "최종 점수 {n}",
       "endlessStart": "엔드리스 모드. 계속 무리를 휩쓰세요.",
+      "powerLaser": "레이저",
+      "powerSplit": "3방향 사격",
+      "powerRockets": "로켓",
+      "powerHeal": "실드 회복",
+      "powerInvuln": "무적",
+      "announcePower": "{name} 획득",
       "mute": "음소거",
       "unmute": "음소거 해제",
       "a11yHint": "Tab으로 다음 드론 조준"
@@ -459,6 +546,12 @@
       "endlessOver": "Putaran berakhir",
       "finalScore": "Skor akhir {n}",
       "endlessStart": "Mode tanpa akhir. Terus bersihkan gerombolan.",
+      "powerLaser": "Laser",
+      "powerSplit": "Tembakan menyebar",
+      "powerRockets": "Roket",
+      "powerHeal": "Perisai pulih",
+      "powerInvuln": "Kebal",
+      "announcePower": "Bonus {name}",
       "mute": "Bisukan",
       "unmute": "Aktifkan suara",
       "a11yHint": "Tab membidik dron berikutnya"

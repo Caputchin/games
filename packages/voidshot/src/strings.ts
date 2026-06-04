@@ -29,6 +29,12 @@ export const EN: Record<string, string> = {
   endlessOver: 'Run over',
   finalScore: 'Final score {n}',
   endlessStart: 'Endless mode. Keep clearing the swarm.',
+  powerLaser: 'Laser',
+  powerSplit: 'Split fire',
+  powerRockets: 'Rockets',
+  powerHeal: 'Shield up',
+  powerInvuln: 'Invulnerable',
+  announcePower: '{name} powerup',
   mute: 'Mute',
   unmute: 'Unmute',
   a11yHint: 'Tab targets the next drone',
@@ -67,6 +73,12 @@ export function kindName(strings: Strings, kind: number): string {
   if (kind === 1) return strings.t('kindWeaver');
   if (kind === 2) return strings.t('kindSplitter');
   return strings.t('kindChaser');
+}
+
+/** Localized name for a powerup kind (0 laser, 1 split, 2 rockets, 3 heal, 4 invuln). */
+export function powerName(strings: Strings, kind: number): string {
+  const keys = ['powerLaser', 'powerSplit', 'powerRockets', 'powerHeal', 'powerInvuln'];
+  return strings.t(keys[kind] ?? 'powerLaser');
 }
 
 /** A localized 12-hour clock bearing for a world direction (12 = away from camera). */

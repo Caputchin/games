@@ -17,7 +17,7 @@ import { Input } from './input.js';
 import { Hud } from './hud.js';
 import { Announcer } from './a11y.js';
 import { Sfx } from './audio.js';
-import { buildStrings, clockBearing, kindName } from './strings.js';
+import { buildStrings, clockBearing, kindName, powerName } from './strings.js';
 import { resolveSkin } from './skin.js';
 import { styleSheet } from './styles.js';
 
@@ -72,6 +72,8 @@ export function startGame(opts: GameOpts): { dispose(): void } {
   let prevWave = 0;
   let prevScore = 0;
   let prevShield = shieldHits;
+  let prevWeapon = 0;
+  let prevInvuln = false;
   let aimX = 0;
   let aimZ = 0;
 
@@ -104,6 +106,8 @@ export function startGame(opts: GameOpts): { dispose(): void } {
     prevWave = 0;
     prevScore = 0;
     prevShield = shieldHits;
+    prevWeapon = 0;
+    prevInvuln = false;
     if (autoStart) hud.hideOverlay();
     else hud.showStart();
     if (endless) announcer.say(strings.t('endlessStart'));
@@ -176,7 +180,25 @@ export function startGame(opts: GameOpts): { dispose(): void } {
       prevShield = st.shield;
       sfx.hit();
       announcer.say(strings.t('announceShield', { n: Math.max(0, st.shield) }));
+    } else if (st.shield > prevShield) {
+      prevShield = st.shield;
+      sfx.wave();
+      announcer.say(strings.t('announcePower', { name: powerName(strings, 3) })); // heal
     }
+    // Powerup pickups (weapon change / invuln gained) - announce for accessibility.
+    if (st.weapon !== prevWeapon) {
+      if (st.weapon !== 0) {
+        sfx.wave();
+        announcer.say(strings.t('announcePower', { name: powerName(strings, st.weapon - 1) }));
+      }
+      prevWeapon = st.weapon;
+    }
+    const invOn = st.invulnTicksLeft > 0;
+    if (invOn && !prevInvuln) {
+      sfx.wave();
+      announcer.say(strings.t('announcePower', { name: powerName(strings, 4) })); // invuln
+    }
+    prevInvuln = invOn;
     // Accessible target announcements (only changes in the Tab target-cycle mode).
     if (input.consumeFocusChanged()) {
       const f = input.currentFocus();

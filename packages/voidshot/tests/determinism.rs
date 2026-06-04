@@ -145,6 +145,40 @@ fn asteroids_drop_and_are_deterministic() {
 }
 
 #[test]
+fn powerups_spawn_deterministically() {
+    // Powerups spawn rarely on a seeded cadence (~12.5s); aim in endless so the ship
+    // survives to see one. Run-to-run identical (no input dependence on the spawn).
+    let run = || {
+        let mut sim = Sim::new([2, 7, 1, 9], SimConfig::default(), true);
+        let mut saw = false;
+        for _ in 0..900 {
+            if sim.status().phase != Phase::Playing {
+                break;
+            }
+            let (px, pz) = sim.player_pos();
+            let near = sim
+                .enemies()
+                .into_iter()
+                .map(|(x, z, _)| (x, z, (x - px) * (x - px) + (z - pz) * (z - pz)))
+                .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
+            let inp = match near {
+                Some((x, z, _)) => Input { tx: x, tz: z, fire: true },
+                None => Input { tx: px, tz: pz, fire: true },
+            };
+            sim.step(inp);
+            if !sim.powerups().is_empty() {
+                saw = true;
+            }
+        }
+        (saw, sim.status().score)
+    };
+    let a = run();
+    let b = run();
+    assert!(a.0, "a powerup should spawn within ~15s");
+    assert_eq!(a, b, "seeded powerup spawns must be run-to-run identical");
+}
+
+#[test]
 fn endless_never_wins() {
     // Endless (post-verification) play never reports Won - it ends only by shield
     // depletion (the time-cap loss is gated out in `step`; see the `!self.endless`
