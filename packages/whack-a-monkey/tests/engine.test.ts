@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-kit';
+import { replay, encodeTrace, decodeTrace, reactionFloorTicks } from '@caputchin/engine-kit';
 import type { Seed } from '@caputchin/replay-contract';
 import { engine } from '../src/sim/engine.js';
 import { play } from './sim-driver.js';
@@ -60,17 +60,52 @@ describe('idle / empty play', () => {
   });
 });
 
+describe('reaction-time gate', () => {
+  it('a frame-perfect bot (zero reaction delay) scores nothing and fails', () => {
+    // Taps every monkey the instant it is up -> every tap is superhuman ->
+    // the gate refuses to count any of them.
+    const bot = play(SEED, CFG, { tapMargin: 2, maxTicks: MAX, reactionDelay: 0 });
+    expect(bot.recorded.length).toBeGreaterThan(0); // it DID act
+    expect(bot.score).toBe(0); // ...but nothing counted
+    const out = replay(engine, { seed: SEED, config: CFG, actions: bot.recorded, maxTicks: MAX });
+    expect(out.score).toBe(0);
+    expect(out.passed).toBe(false);
+  });
+
+  it('a human-paced player (reaction above the floor) scores and passes', () => {
+    const human = play(SEED, CFG, {
+      tapMargin: 2,
+      maxTicks: MAX,
+      reactionDelay: reactionFloorTicks() + 2,
+    });
+    expect(human.score).toBeGreaterThan(0);
+    const out = replay(engine, { seed: SEED, config: CFG, actions: human.recorded, maxTicks: MAX });
+    expect(out.passed).toBe(true);
+  });
+});
+
 describe('fx render cues (F1 - step pushes, driver clears before next tick)', () => {
   it('tapping an up monkey emits a whack cue visible on the same tick', () => {
-    // Run until a monkey is up, then apply the tap action + tick manually.
+    // Run until a monkey is up, wait past the reaction floor (so the tap
+    // scores), then apply the tap action + tick manually.
     let state = engine.init({ seed: SEED, config: CFG });
     let holeIndex = -1;
     for (let t = 0; t < MAX; t++) {
       state = engine.tick(state);
       const up = state.moles.find((m) => m.kind === 'monkey' && m.phase === 'up');
-      if (up) { holeIndex = up.holeIndex; break; }
+      if (up) {
+        // Advance past the reaction floor before tapping so the gate passes.
+        const target = up.appearTick + reactionFloorTicks() + 2;
+        while (state.tick < target && !engine.isOver(state)) {
+          state = engine.tick(state);
+        }
+        // Re-find the mole - it may still be up or may have retracted.
+        const still = state.moles.find((m) => m.holeIndex === up.holeIndex && m.phase === 'up');
+        if (still) { holeIndex = still.holeIndex; break; }
+        // Mole retracted - keep searching.
+      }
     }
-    expect(holeIndex).toBeGreaterThanOrEqual(0); // found a monkey
+    expect(holeIndex).toBeGreaterThanOrEqual(0); // found a monkey in time
     // Simulate driver: clear fx, apply step, then check view
     state.fx = [];
     state = engine.step(state, { holeIndex });

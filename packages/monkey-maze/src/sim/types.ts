@@ -71,5 +71,31 @@ export interface SimState {
   status: 'playing' | 'won' | 'caught';
 }
 
-/** Render projection (the live renderer reads it; never replayed). */
-export type SimView = SimState;
+/** Render projection the live renderer consumes. Exposes only the on-screen
+ *  entities and game status. Internal AI scheduler fields (phase, phaseTimer,
+ *  ghostsEatenThisFright, wantDir, held, pendingTap, gotoTarget, totalDots,
+ *  passDots, tick) are omitted so the view does not leak solver-useful latent
+ *  state. `frightTimer` is retained as a render hint: the renderer uses it to
+ *  flash frightened ghosts in the final stretch (a player-visible cue). */
+export interface SimView {
+  /** Maze dimensions - needed by the renderer to compute cell positions. */
+  cols: number;
+  rows: number;
+  /** Flat wall grid so the renderer can draw the maze layout. */
+  walls: readonly boolean[];
+  /** Remaining pellet grid (0 none, 1 pellet, 2 power). Already mutated in
+   *  state; the renderer draws only cells where pellets[i] !== 0. */
+  pellets: readonly number[];
+  pelletsLeft: number;
+  /** Runner pixel position and facing direction. */
+  runner: MoverView;
+  /** On-screen ghost entities (position, direction, mode, kind). Mode drives
+   *  the frightened/eaten visual; kind selects the sprite color. */
+  ghosts: readonly GhostView[];
+  /** Ticks remaining in the frightened phase. Render hint for the flash
+   *  animation; omits phase-schedule internals (phase, phaseTimer). */
+  frightTimer: number;
+  score: number;
+  passed: boolean;
+  status: 'playing' | 'won' | 'caught';
+}

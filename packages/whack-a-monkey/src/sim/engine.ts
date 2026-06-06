@@ -15,7 +15,7 @@
 // in that tick window. The server replays the exact same ticks. Variable real
 // dt is a live-driver concern only - the sim never sees it.
 
-import { defineEngine } from '@caputchin/engine-kit';
+import { defineEngine, isHumanReaction, reactionFloorTicks } from '@caputchin/engine-kit';
 import { rng, rngFromState } from '@caputchin/determinism';
 import {
   STEP_S,
@@ -56,6 +56,11 @@ type RawConfig = Record<string, unknown>;
  *  actions, so it never nears this; replay keeps only the most recent cues
  *  (it ignores them entirely). */
 const FX_CAP = 32;
+
+/** Reaction-time floor in logical ticks: a monkey tap landing fewer than this
+ *  many ticks after the mole rose to 'up' is superhuman (a frame-perfect bot)
+ *  and does not score. Kit default, conservatively below human reaction. */
+const REACTION_TICKS = reactionFloorTicks();
 
 function pushFx(state: SimState, fx: SimFx): void {
   state.fx.push(fx);
@@ -181,6 +186,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
       holeCooldowns: Array.from({ length: HOLE_COUNT }, () => 0),
       lastHole: -1,
       verified: 0,
+      tick: 0,
       fx: [],
     };
   },
@@ -201,12 +207,18 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
       const fresh = timingFraction(mole);
       const f = fresh < 0 ? 0 : fresh > 1 ? 1 : fresh;
       const award = BASE_SCORE + Math.round(TIMING_BONUS_MAX * f);
-      state.goodHits += 1;
-      state.score += award;
-      state.hitsInLevel += 1;
-      pushFx(state, { kind: 'whack', holeIndex, delta: award });
-      if (!state.verified && state.goodHits >= state.cfg.passHits) {
-        state.verified = 1;
+      // Reaction-time gate: a tap landing too soon after the mole rose is
+      // superhuman (a frame-perfect offline solver). The mole is consumed but
+      // does NOT score, so such a round never reaches passHits. A real
+      // player's reaction is far above the floor, so live play is unaffected.
+      if (isHumanReaction(mole.appearTick, state.tick, REACTION_TICKS)) {
+        state.goodHits += 1;
+        state.score += award;
+        state.hitsInLevel += 1;
+        pushFx(state, { kind: 'whack', holeIndex, delta: award });
+        if (!state.verified && state.goodHits >= state.cfg.passHits) {
+          state.verified = 1;
+        }
       }
       // Level-up check.
       const ladder = buildLadder(state.cfg);
@@ -232,6 +244,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   },
 
   tick(state) {
+    state.tick += 1;
     // Advance the clock. (fx is cleared by the DRIVER before applying actions;
     // the server replay never reads fx so we leave it as-is there.)
     state.timeLeft = Math.max(0, state.timeLeft - STEP_S);
@@ -293,6 +306,9 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
         scaleY: 0,
         scaleVel: EMERGE_INIT_VEL,
         hit: false,
+        // Stamp the tick this mole rose to 'up' (actionable). Read at tap
+        // time by the reaction-time gate.
+        appearTick: state.tick,
       });
       state.holeCooldowns[holeIndex] = HOLE_COOLDOWN_FACTOR * state.interval;
       state.lastHole = holeIndex;

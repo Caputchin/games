@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-kit';
+import { replay, encodeTrace, decodeTrace, reactionFloorTicks } from '@caputchin/engine-kit';
 import type { Seed } from '@caputchin/replay-contract';
 import { engine } from '../src/sim/engine.js';
 import { play } from './sim-driver.js';
@@ -59,5 +59,29 @@ describe('idle / empty play', () => {
     expect(out.score).toBe(0);
     expect(out.truncated).toBe(false); // fruit escape, lives drain, round ends
     expect(out.passed).toBe(false);
+  });
+});
+
+describe('reaction-time gate', () => {
+  it('a frame-perfect bot (zero reaction delay) scores nothing and fails', () => {
+    // Slices every good fruit the instant it is sliceable -> every slice is
+    // superhuman -> the gate refuses to count any of them.
+    const bot = play(SEED, CFG, { sliceMargin: 2, maxTicks: MAX, reactionDelay: 0 });
+    expect(bot.recorded.length).toBeGreaterThan(0); // it DID act
+    expect(bot.score).toBe(0); // ...but nothing counted
+    const out = replay(engine, { seed: SEED, config: CFG, actions: bot.recorded, maxTicks: MAX });
+    expect(out.score).toBe(0);
+    expect(out.passed).toBe(false);
+  });
+
+  it('a human-paced player (reaction above the floor) scores and passes', () => {
+    const human = play(SEED, CFG, {
+      sliceMargin: 2,
+      maxTicks: MAX,
+      reactionDelay: reactionFloorTicks() + 2,
+    });
+    expect(human.score).toBeGreaterThan(0);
+    const out = replay(engine, { seed: SEED, config: CFG, actions: human.recorded, maxTicks: MAX });
+    expect(out.passed).toBe(true);
   });
 });

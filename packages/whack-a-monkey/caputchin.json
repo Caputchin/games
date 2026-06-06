@@ -30,5 +30,6 @@
     "width": 800,
     "height": 450,
     "layout": "modal"
-  }
+  },
+  "minSolveMs": 2500
 }

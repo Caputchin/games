@@ -45,6 +45,10 @@ export interface SimMole {
   scaleVel: number;
   /** True once tapped. */
   hit: boolean;
+  /** Logical tick the mole's phase became 'up' (actionable). Drives the
+   *  reaction-time gate: a tap landing fewer than the human-reaction floor of
+   *  ticks after this is superhuman and does not score. */
+  appearTick: number;
 }
 
 /** The full sim state threaded through the reducer. */
@@ -76,6 +80,9 @@ export interface SimState {
   lastHole: number;
   /** Latched once goodHits >= passHits. */
   verified: 0 | 1;
+  /** Logical ticks elapsed. Stamped onto each spawn and read at tap time for
+   *  the reaction-time gate. */
+  tick: number;
   /** Render cues for the live driver (ignored by replay). */
   fx: SimFx[];
 }

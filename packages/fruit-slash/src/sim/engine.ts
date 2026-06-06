@@ -10,7 +10,7 @@
 // State is threaded linearly by the kit, so the reducer mutates in place and
 // returns the same reference (no aliasing, faster than cloning each tick).
 
-import { defineEngine } from '@caputchin/engine-kit';
+import { defineEngine, isHumanReaction, reactionFloorTicks } from '@caputchin/engine-kit';
 import { rng, rngFromState, capMath } from '@caputchin/determinism';
 import { integrate, isOffBottom } from './launch.js';
 import { swipeHitsCircle } from './geometry.js';
@@ -37,6 +37,11 @@ type RawConfig = Record<string, unknown>;
  *  this; replay keeps only the most recent cues (it ignores them entirely). */
 const FX_CAP = 64;
 
+/** Reaction-time floor in logical ticks: a good-fruit slice landing fewer than
+ *  this many ticks after the fruit launched is superhuman (a frame-perfect bot)
+ *  and does not score. Kit default, conservatively below human reaction. */
+const REACTION_TICKS = reactionFloorTicks();
+
 function pushFx(state: SimState, fx: Fx): void {
   state.fx.push(fx);
   if (state.fx.length > FX_CAP) state.fx.shift();
@@ -54,10 +59,16 @@ function sliceSegment(state: SimState, ax: number, ay: number, bx: number, by: n
     if (!swipeHitsCircle(path, { x: t.x, y: t.y, r })) continue;
     t.sliced = 1;
     if (t.kind === GOOD) {
-      state.sliced += 1;
-      pushFx(state, { kind: 'slice', x: t.x, y: t.y, hue: t.hue });
-      if (evaluate({ sliced: state.sliced, lives: state.lives, passScore: state.cfg.passScore }) === 'pass') {
-        state.verified = 1;
+      // Reaction-time gate: a slice landing too soon after the fruit launched is
+      // superhuman (a frame-perfect offline solver). The fruit is consumed but
+      // does NOT score, so such a round never reaches passScore. A real player's
+      // reaction is far above the floor, so live play is unaffected.
+      if (isHumanReaction(t.spawnTick, state.tick, REACTION_TICKS)) {
+        state.sliced += 1;
+        pushFx(state, { kind: 'slice', x: t.x, y: t.y, hue: t.hue });
+        if (evaluate({ sliced: state.sliced, lives: state.lives, passScore: state.cfg.passScore }) === 'pass') {
+          state.verified = 1;
+        }
       }
     } else {
       state.lives = Math.max(0, state.lives - 1);
@@ -85,6 +96,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
       sliced: 0,
       lives: cfg.lives,
       elapsed: 0,
+      tick: 0,
       pointerDown: 0,
       lastX: 0,
       lastY: 0,
@@ -118,6 +130,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   },
 
   tick(state) {
+    state.tick += 1;
     // Cull targets sliced last tick (the renderer has drawn their splatter).
     if (state.targets.some((t) => t.sliced)) {
       state.targets = state.targets.filter((t) => !t.sliced);
@@ -140,7 +153,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
       state.spawnTimer -= state.interval;
       state.interval = pickInterval(next, diff.spawnRate);
       if (state.targets.length < MAX_CONCURRENT) {
-        state.targets.push(spawnOne(next, bounds, diff.hazardChance, state.nextId++));
+        state.targets.push(spawnOne(next, bounds, diff.hazardChance, state.nextId++, state.tick));
       }
     }
 

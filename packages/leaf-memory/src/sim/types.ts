@@ -19,6 +19,18 @@ export interface CardState {
   matched: boolean;
 }
 
+/** A card as the renderer sees it. The leaf `kind` is exposed ONLY for a card
+ *  that is face-up right now (matched, or one of the two live picks); a face-down
+ *  card reports `kind: null`. This is the whole point of the game (the player must
+ *  remember), so the hidden answers must not ride to the client. view() never
+ *  feeds replay, so withholding them does not touch the verdict or determinism. */
+export interface ViewCard {
+  /** Leaf kind if the card is currently face-up, else null. */
+  kind: LeafKind | null;
+  /** True once this card has been part of a successful match. */
+  matched: boolean;
+}
+
 /** The full simulation state threaded through every tick and step. */
 export interface SimState {
   /** PRNG state - seeded once in init, advanced whenever randomness is needed
@@ -64,7 +76,7 @@ export interface SimAction {
 /** Read-only view the renderer consumes. Decouples renderer from PRNG state
  *  and other engine internals. */
 export interface SimView {
-  cards: readonly CardState[];
+  cards: readonly ViewCard[];
   firstPick: number;
   secondPick: number;
   flipBackTicks: number;

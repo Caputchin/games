@@ -522,7 +522,24 @@ const spec: MelonGameSpec<SimState, SimAction, RawConfig, SimView> = {
   },
 
   view(state): SimView {
-    return state;
+    // Project only on-screen entities and render hints. Internal AI/scheduler
+    // fields (phase, phaseTimer, ghostsEatenThisFright, wantDir, held,
+    // pendingTap, gotoTarget, totalDots, passDots, tick) are intentionally
+    // omitted so the view does not expose latent solver-useful state.
+    // `frightTimer` is retained as a render hint for the flash animation.
+    return {
+      cols: state.cols,
+      rows: state.rows,
+      walls: state.walls,
+      pellets: state.pellets,
+      pelletsLeft: state.pelletsLeft,
+      runner: state.runner,
+      ghosts: state.ghosts,
+      frightTimer: state.frightTimer,
+      score: state.score,
+      passed: state.passed,
+      status: state.status,
+    };
   },
 };
 

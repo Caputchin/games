@@ -212,7 +212,7 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
   let justVerified = false;
   let lastFright = 0;
   // Previous-tick values for one-shot SFX edge detection (live render only).
-  let prevPellets = state.pelletsLeft;
+  let prevPellets = viewState.pelletsLeft;
   let prevGhostsEaten = state.ghostsEatenThisFright;
   // Actions queued since the last tick (drained in order each tick, mirroring the
   // replay harness's per-tick bucket). heldDirs is the stack of currently-down
@@ -297,11 +297,13 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
     if (atePower) announcer.say(strings.t('announcePower'));
     // SFX: a banana/coconut was eaten this tick if the count dropped (power if the
     // fright timer just (re)armed); a chaser was eaten if the chain count rose.
+    // ghostsEatenThisFright + pelletsLeft are read from state (not view) because
+    // they are AI-internal counters not exposed in the projected SimView.
     if (viewState.pelletsLeft < prevPellets) sfx.play(atePower ? 'power' : 'eat');
-    if (viewState.ghostsEatenThisFright > prevGhostsEaten) sfx.play('eaten');
+    if (state.ghostsEatenThisFright > prevGhostsEaten) sfx.play('eaten');
     lastFright = viewState.frightTimer;
     prevPellets = viewState.pelletsLeft;
-    prevGhostsEaten = viewState.ghostsEatenThisFright;
+    prevGhostsEaten = state.ghostsEatenThisFright;
 
     if (!verified && state.passed) {
       verified = true;
@@ -318,7 +320,7 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
     pending.length = 0;
     heldDirs.length = 0;
     prevPellets = viewState.pelletsLeft;
-    prevGhostsEaten = viewState.ghostsEatenThisFright;
+    prevGhostsEaten = state.ghostsEatenThisFright;
     overlay.dataset['shown'] = 'false';
     overlay.replaceChildren();
     announcer.say(strings.t('announceStart'));
@@ -397,9 +399,11 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
   }
 
   function renderHud(): void {
-    const eaten = viewState.totalDots - viewState.pelletsLeft;
+    // totalDots and passDots are AI-internal scheduling fields not exposed in
+    // the projected SimView; read them from state (live-driver-owned).
+    const eaten = state.totalDots - viewState.pelletsLeft;
     hud.score.textContent = `${strings.t('score')}: ${viewState.score}`;
-    hud.goal.textContent = `${strings.t('goal')}: ${eaten}/${viewState.passDots}`;
+    hud.goal.textContent = `${strings.t('goal')}: ${eaten}/${state.passDots}`;
     hud.dots.textContent = `${strings.t('dotsLeft')}: ${viewState.pelletsLeft}`;
     hud.badge.dataset['shown'] = verified ? 'true' : 'false';
     hud.badge.textContent = `✓ ${strings.t('verified')}`;
@@ -430,7 +434,7 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
   renderHud();
   // The start card states the OBJECTIVE (with the live goal count); the button
   // is the action ("Play"). No more duplicated "how to start" text.
-  showOverlay(strings.t('objective', { goal: viewState.passDots }));
+  showOverlay(strings.t('objective', { goal: state.passDots }));
   rafHandle = view.requestAnimationFrame(frame);
 
   // ---- helpers ----

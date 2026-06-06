@@ -45,6 +45,11 @@ export interface SimObstacle {
   speedOffset: number;
   frame: number;
   animTimer: number;
+  /** Logical tick the obstacle spawned at the right edge (entered play).
+   *  Drives the reaction-time gate: a jump_press landing fewer than the
+   *  human-reaction floor of ticks after this is superhuman and does not
+   *  start the jump. */
+  spawnTick: number;
 }
 
 /** Discrete input actions. Jump and duck are the two possible

@@ -29,5 +29,6 @@
   "preferred": {
     "width": 420,
     "height": 480
-  }
+  },
+  "minSolveMs": 2500
 }

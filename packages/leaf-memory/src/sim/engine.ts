@@ -151,7 +151,17 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
 
   view(state) {
     return {
-      cards: state.cards,
+      // Reveal a leaf only for a card that is face-up RIGHT NOW (matched, or one
+      // of the two live picks); a face-down card reports kind: null so the hidden
+      // answer never crosses to the client via the view projection. This closes
+      // the cheap view()-reader attack. The leaf identities still live in the sim
+      // state (the live driver reads them to paint the brief peek phase): a fully
+      // client-side deterministic memory game cannot hide them from a determined
+      // heap reader, so this raises the bar, it does not make leaf-memory immune.
+      cards: state.cards.map((c, i) => ({
+        kind: c.matched || i === state.firstPick || i === state.secondPick ? c.kind : null,
+        matched: c.matched,
+      })),
       firstPick: state.firstPick,
       secondPick: state.secondPick,
       flipBackTicks: state.flipBackTicks,

@@ -7,6 +7,7 @@
 import { engine } from '../src/sim/engine.js';
 import { GOOD, type SimAction } from '../src/sim/types.js';
 import type { Seed } from '@caputchin/replay-contract';
+import { reactionFloorTicks } from '@caputchin/engine-kit';
 import type { TickInput } from '@caputchin/engine-kit';
 
 export interface PlayResult {
@@ -23,6 +24,11 @@ export interface PlayOpts {
    *  intent ("a few past the gate") without building a SimConfig. Omit to slice
    *  forever (until maxTicks). */
   sliceMargin?: number;
+  /** Ticks to wait after a fruit launches before slicing it, modeling human
+   *  reaction latency. Defaults safely above the engine's reaction floor so the
+   *  driver plays like a human and its slices score. Set 0 to model a
+   *  frame-perfect bot (whose slices the reaction gate refuses to score). */
+  reactionDelay?: number;
   maxTicks: number;
 }
 
@@ -49,12 +55,17 @@ export function play(
   // Threshold from the engine's own resolved config (it owns the transform now).
   const target =
     opts.sliceMargin === undefined ? Number.POSITIVE_INFINITY : state.cfg.passScore + opts.sliceMargin;
+  // Model human reaction latency: wait this many ticks after a fruit launches
+  // before slicing it. Default is above the engine's reaction floor.
+  const reactionDelay = opts.reactionDelay ?? reactionFloorTicks() + 2;
 
   while (!engine.isOver(state) && tick < opts.maxTicks) {
     const acts: SimAction[] = [];
     if (state.sliced < target) {
       for (const t of state.targets) {
-        if (t.kind === GOOD && !t.sliced) acts.push(...swipeOver(t.x, t.y));
+        if (t.kind === GOOD && !t.sliced && state.tick - t.spawnTick >= reactionDelay) {
+          acts.push(...swipeOver(t.x, t.y));
+        }
       }
     }
     for (const a of acts) {

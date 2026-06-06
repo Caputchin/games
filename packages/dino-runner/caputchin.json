@@ -30,5 +30,6 @@
     "width": 600,
     "height": 150,
     "layout": "inline"
-  }
+  },
+  "minSolveMs": 2000
 }

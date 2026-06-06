@@ -7,6 +7,7 @@
 import { engine } from '../src/sim/engine.js';
 import type { SimAction } from '../src/sim/types.js';
 import type { Seed } from '@caputchin/replay-contract';
+import { reactionFloorTicks } from '@caputchin/engine-kit';
 import type { TickInput } from '@caputchin/engine-kit';
 
 export interface PlayResult {
@@ -22,6 +23,11 @@ export interface PlayOpts {
    *  express intent ("a few past the gate") without building a SimConfig. Omit
    *  to tap forever. */
   tapMargin?: number;
+  /** Ticks to wait after a mole rises before tapping it, modeling human
+   *  reaction latency. Defaults safely above the engine's reaction floor so the
+   *  driver plays like a human and its taps score. Set 0 to model a
+   *  frame-perfect bot (whose taps the reaction gate refuses to score). */
+  reactionDelay?: number;
   maxTicks: number;
 }
 
@@ -39,12 +45,15 @@ export function play(
   // Threshold from the engine's own resolved config (it owns the transform now).
   const target =
     opts.tapMargin === undefined ? Number.POSITIVE_INFINITY : state.cfg.passHits + opts.tapMargin;
+  // Model human reaction latency: wait this many ticks after a mole rises
+  // before tapping it. Default is above the engine's reaction floor.
+  const reactionDelay = opts.reactionDelay ?? reactionFloorTicks() + 2;
 
   while (!engine.isOver(state) && tick < opts.maxTicks) {
     const acts: SimAction[] = [];
     if (state.goodHits < target) {
       for (const m of state.moles) {
-        if (m.kind === 'monkey' && m.phase === 'up' && !m.hit) {
+        if (m.kind === 'monkey' && m.phase === 'up' && !m.hit && state.tick - m.appearTick >= reactionDelay) {
           acts.push({ holeIndex: m.holeIndex });
         }
       }

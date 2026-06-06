@@ -36,5 +36,6 @@
   "preferred": {
     "width": 440,
     "height": 340
-  }
+  },
+  "minSolveMs": 2000
 }

@@ -34,6 +34,10 @@ export type Kind = typeof GOOD | typeof HAZARD;
  *  one tick after the renderer has drawn its splatter. */
 export interface SimTarget {
   id: number;
+  /** Logical tick the target launched. Drives the reaction-time gate: a slice
+   *  landing fewer than the human-reaction floor of ticks after this is
+   *  superhuman (a frame-perfect bot) and does not score. */
+  spawnTick: number;
   kind: Kind;
   x: number;
   y: number;
@@ -75,6 +79,9 @@ export interface SimState {
   lives: number;
   /** Seconds of play, drives the difficulty ramp. */
   elapsed: number;
+  /** Logical ticks elapsed. Stamped onto each spawn and read at slice time for
+   *  the reaction-time gate. */
+  tick: number;
   /** Pointer-capture continuity for slice segments. */
   pointerDown: 0 | 1;
   lastX: number;

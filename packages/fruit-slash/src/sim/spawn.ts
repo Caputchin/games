@@ -23,11 +23,13 @@ export function spawnOne(
   bounds: LaunchBounds,
   hazardChance: number,
   id: number,
+  spawnTick: number,
 ): SimTarget {
   const kind: Kind = next() < hazardChance ? HAZARD : GOOD;
   const s = deriveLaunch(next, bounds);
   return {
     id,
+    spawnTick,
     kind,
     x: s.x,
     y: s.y,

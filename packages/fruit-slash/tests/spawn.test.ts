@@ -34,20 +34,20 @@ describe('pickInterval', () => {
 
 describe('spawnOne', () => {
   it('produces a bit-identical target for the same draw sequence', () => {
-    const a = spawnOne(makeNext(99), bounds, 0.2, 5);
-    const b = spawnOne(makeNext(99), bounds, 0.2, 5);
+    const a = spawnOne(makeNext(99), bounds, 0.2, 5, 0);
+    const b = spawnOne(makeNext(99), bounds, 0.2, 5, 0);
     expect(a).toEqual(b);
   });
 
   it('honors hazardChance at the extremes', () => {
-    expect(spawnOne(makeNext(1), bounds, 0, 0).kind).toBe(GOOD); // never a bomb
-    expect(spawnOne(makeNext(1), bounds, 1, 0).kind).toBe(HAZARD); // always a bomb
+    expect(spawnOne(makeNext(1), bounds, 0, 0, 0).kind).toBe(GOOD); // never a bomb
+    expect(spawnOne(makeNext(1), bounds, 1, 0, 0).kind).toBe(HAZARD); // always a bomb
   });
 
   it('launches on-screen (apex below the top, horizontal within the sides)', () => {
     const next = makeNext(3);
     for (let i = 0; i < 2000; i++) {
-      const t = spawnOne(next, bounds, 0.18, i);
+      const t = spawnOne(next, bounds, 0.18, i, i);
       const s = { x: t.x, y: t.y, vx: t.vx, vy: t.vy };
       expect(apexY(s, bounds.gravity) - bounds.radius).toBeGreaterThanOrEqual(bounds.apexMarginTop - 1e-6);
       const span = horizontalSpan(s, bounds.gravity);
