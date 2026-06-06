@@ -31,5 +31,5 @@
     "height": 368,
     "layout": "inline"
   },
-  "minSolveMs": 1200
+  "minSolveMs": 1000
 }
