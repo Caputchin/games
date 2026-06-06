@@ -36,9 +36,9 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string | boo
   align-items:center; justify-content:center; text-align:center; padding:16px;
   background:${v(skin, 'bg')}cc; backdrop-filter:blur(2px); }
 .phobos-start[hidden] { display:none; }
-.phobos-start h2 { margin:0; font-size:22px; letter-spacing:0.04em; }
-.phobos-start p { margin:0; max-width:36ch; opacity:0.85; font-size:14px; }
-.phobos-start small { opacity:0.6; font-size:12px; }
+.phobos-start h2 { margin:0; max-width:100%; font-size:22px; letter-spacing:0.04em; }
+.phobos-start p { margin:0; max-width:min(36ch,100%); opacity:0.85; font-size:14px; }
+.phobos-start small { max-width:100%; opacity:0.6; font-size:12px; }
 .phobos-btn { cursor:pointer; border:none; border-radius:4px; padding:8px 22px; font-size:15px;
   background:${v(skin, 'button_bg')}; color:${v(skin, 'button_text')}; }
 .phobos-btn:hover { background:${v(skin, 'button_hover')}; }
@@ -50,8 +50,8 @@ export function mountStyles(root: HTMLElement, skin: Record<string, string | boo
 .phobos-cleared-mark { width:46px; height:46px; border-radius:50%; background:${v(skin, 'badge_bg')};
   color:#fff; font-size:26px; line-height:46px; font-weight:700; }
 .phobos-cleared-mark.died { background:${v(skin, 'button_bg')}; }
-.phobos-cleared-title { margin:0; font-size:20px; letter-spacing:0.03em; }
-.phobos-cleared-body { margin:0; max-width:34ch; opacity:0.85; font-size:14px; }
+.phobos-cleared-title { margin:0; max-width:100%; font-size:20px; letter-spacing:0.03em; }
+.phobos-cleared-body { margin:0; max-width:min(34ch,100%); opacity:0.85; font-size:14px; }
 .phobos-cleared-actions { display:flex; gap:10px; margin-top:4px; flex-wrap:wrap; justify-content:center; }
 .phobos-btn-ghost { cursor:pointer; border:1px solid ${v(skin, 'fg')}55; border-radius:4px;
   padding:8px 18px; font-size:15px; background:transparent; color:${v(skin, 'fg')}; }
