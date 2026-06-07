@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-blockfall",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Stack the falling blocks and clear lines to prove you're human. A KAPLAY-engine captcha. A Caputchin first-party game.",
   "keywords": [
     "caputchin",

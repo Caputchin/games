@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/Caputchin/games/compare/phobos-v0.2.4...phobos-v0.3.0) (2026-06-07)
+
+
+### Features
+
+* **games:** add reaction-time gate, view hardening, and minSolveMs floor ([a816c56](https://github.com/Caputchin/games/commit/a816c56c853024848288c92fb5ae2efae4277832))
+
+
+### Bug Fixes
+
+* **phobos:** wrap start and cleared overlay text so it does not clip on narrow modals ([aded01e](https://github.com/Caputchin/games/commit/aded01e229af8f5dfe6c3b145ac35892c0c13841))
+
 ## [0.2.4](https://github.com/Caputchin/games/compare/phobos-v0.2.3...phobos-v0.2.4) (2026-06-04)
 
 

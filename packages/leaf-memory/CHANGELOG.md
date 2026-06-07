@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/Caputchin/games/compare/leaf-memory-v0.4.1...leaf-memory-v0.5.0) (2026-06-07)
+
+
+### Features
+
+* **games:** add reaction-time gate, view hardening, and minSolveMs floor ([a816c56](https://github.com/Caputchin/games/commit/a816c56c853024848288c92fb5ae2efae4277832))
+
 ## [0.4.1](https://github.com/Caputchin/games/compare/leaf-memory-v0.4.0...leaf-memory-v0.4.1) (2026-06-02)
 
 
