@@ -71,7 +71,12 @@ function sliceSegment(state: SimState, ax: number, ay: number, bx: number, by: n
         }
       }
     } else {
-      state.lives = Math.max(0, state.lives - 1);
+      // Slicing a bomb ends the round instantly (genre standard, and a hard
+      // bot-resistance guard): an indiscriminate "swipe everything" bot hits a
+      // bomb long before it slices passScore good fruit, so it loses. A real
+      // player never slices a bomb, so this never bites a human; the `lives`
+      // buffer still absorbs missed good fruit. Zeroing lives trips isOver.
+      state.lives = 0;
       pushFx(state, { kind: 'bomb', x: t.x, y: t.y, hue: t.hue });
     }
   }

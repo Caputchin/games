@@ -14,7 +14,7 @@
       "max": 6,
       "step": 1,
       "name": "Lives",
-      "description": "Starting lives. A missed fruit or a sliced bomb costs one."
+      "description": "Starting lives. A missed fruit costs one. Slicing a bomb ends the round immediately."
     },
     "spawn_rate": {
       "type": "range",
@@ -38,7 +38,7 @@
       "max": 0.5,
       "step": 0.02,
       "name": "Bomb chance",
-      "description": "Probability a launched object is a bomb instead of fruit."
+      "description": "Probability a launched object is a bomb instead of fruit. Slicing one ends the round, so keep this above zero for bot resistance (0 disables bombs entirely)."
     },
     "sound": {
       "type": "boolean",
@@ -63,7 +63,7 @@
       "lives": 3,
       "spawn_rate": 0.9,
       "gravity": 1400,
-      "hazard_chance": 0.18,
+      "hazard_chance": 0.3,
       "sound": true,
       "show_score": true,
       "show_lives": true
@@ -73,7 +73,7 @@
       "pass_score": 5,
       "lives": 4,
       "spawn_rate": 0.7,
-      "hazard_chance": 0.1
+      "hazard_chance": 0.25
     },
     "hardcore": {
       "_extends": "default",
@@ -81,7 +81,7 @@
       "lives": 2,
       "spawn_rate": 1.4,
       "gravity": 1650,
-      "hazard_chance": 0.3
+      "hazard_chance": 0.35
     },
     "calm": {
       "_extends": "default",

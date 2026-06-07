@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { replay, encodeTrace, decodeTrace, reactionFloorTicks } from '@caputchin/engine-kit';
 import type { Seed } from '@caputchin/replay-contract';
 import { engine } from '../src/sim/engine.js';
+import { GOOD } from '../src/sim/types.js';
 import { play } from './sim-driver.js';
 
 const SEED: Seed = [0xc0ffee, 0x1234, 0x9abcdef0, 0x42];
@@ -83,5 +84,30 @@ describe('reaction-time gate', () => {
     expect(human.score).toBeGreaterThan(0);
     const out = replay(engine, { seed: SEED, config: CFG, actions: human.recorded, maxTicks: MAX });
     expect(out.passed).toBe(true);
+  });
+});
+
+describe('bomb = instant loss (scatter-bot guard)', () => {
+  it('slicing a single bomb ends the round, even with lives to spare', () => {
+    // Run with bombs guaranteed (hazard 1: every launch is a bomb) and start
+    // with a full lives buffer; one bomb slice must zero lives and end it.
+    const cfg = { hazard_chance: 1, lives: 6 };
+    let state = engine.init({ seed: SEED, config: cfg });
+    // Advance until a bomb has cleared the reaction floor (so the slice lands).
+    let bomb: { x: number; y: number; spawnTick: number } | undefined;
+    for (let t = 0; t < MAX; t++) {
+      state = engine.tick(state);
+      bomb = state.targets.find(
+        (b) => b.kind !== GOOD && state.tick - b.spawnTick >= reactionFloorTicks() + 1,
+      );
+      if (bomb) break;
+    }
+    expect(bomb).toBeDefined();
+    // Swipe across the bomb (down beside it, move through, up).
+    state = engine.step(state, { k: 0, x: bomb!.x - 60, y: bomb!.y });
+    state = engine.step(state, { k: 1, x: bomb!.x + 60, y: bomb!.y });
+    state = engine.step(state, { k: 2 });
+    expect(engine.view!(state).lives).toBe(0);
+    expect(engine.isOver(state)).toBe(true);
   });
 });

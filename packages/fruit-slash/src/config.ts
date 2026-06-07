@@ -42,7 +42,7 @@ const FALLBACK = {
   lives: jsonNumber('lives', 3),
   spawnRate: jsonNumber('spawn_rate', 0.9),
   gravity: jsonNumber('gravity', GRAVITY),
-  hazardChance: jsonNumber('hazard_chance', 0.18),
+  hazardChance: jsonNumber('hazard_chance', 0.3),
   sound: jsonBoolean('sound', true),
   showScore: jsonBoolean('show_score', true),
   showLives: jsonBoolean('show_lives', true),

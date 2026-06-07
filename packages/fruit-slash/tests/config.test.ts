@@ -8,7 +8,7 @@ describe('resolveFruitSlashConfig', () => {
     expect(c.lives).toBe(3);
     expect(c.spawnRate).toBeCloseTo(0.9);
     expect(c.gravity).toBe(1400);
-    expect(c.hazardChance).toBeCloseTo(0.18);
+    expect(c.hazardChance).toBeCloseTo(0.3);
     expect(c.sound).toBe(true);
     expect(c.showScore).toBe(true);
     expect(c.showLives).toBe(true);
