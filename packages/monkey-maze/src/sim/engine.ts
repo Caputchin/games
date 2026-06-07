@@ -344,7 +344,6 @@ const spec: MelonGameSpec<SimState, SimAction, RawConfig, SimView> = {
       wantDir: null,
       held: false,
       pendingTap: false,
-      gotoTarget: null,
       ghosts: ghostViews,
       score: 0,
       ghostsEatenThisFright: 0,
@@ -365,17 +364,10 @@ const spec: MelonGameSpec<SimState, SimAction, RawConfig, SimView> = {
         state.wantDir = action.d;
         state.held = true;
         state.pendingTap = true;
-        state.gotoTarget = null;
         break;
       case 'release':
         // Key/button up: stop continuing (a pending one-cell tap still completes).
         state.held = false;
-        break;
-      case 'goto':
-        state.gotoTarget = { cx: action.cx, cy: action.cy };
-        state.wantDir = null;
-        state.held = false;
-        state.pendingTap = false;
         break;
       default:
         break;
@@ -412,20 +404,11 @@ const spec: MelonGameSpec<SimState, SimAction, RawConfig, SimView> = {
     if (atCenter(ctx.runner.body.pos.x - 1, rc.cx) && atCenter(ctx.runner.body.pos.y - 1, rc.cy)) {
       let nextDir: Dir | null = null;
 
-      // 1) click-to-move: walk down the BFS field toward the target, stopping at
-      //    the closest reachable cell (handles a wall / unreachable click).
-      if (state.gotoTarget) {
-        if (rc.cx === state.gotoTarget.cx && rc.cy === state.gotoTarget.cy) {
-          state.gotoTarget = null;
-        } else {
-          const field = bfsField(state.gotoTarget.cx, state.gotoTarget.cy, walls, cols, rows);
-          const d = gotoStep(rc.cx, rc.cy, field, walls, cols, rows);
-          if (d !== null) nextDir = d;
-          else state.gotoTarget = null;
-        }
-      }
-
-      // 2) manual hold/tap (only when not auto-walking to a goto target).
+      // Runner direction comes only from raw directional input (hold/tap). There
+      // is deliberately no in-sim pathfinding: an action that pathfinds to a
+      // clicked cell would do the hard part of a solve for an attacker, on replay,
+      // for free. Click-to-move is preserved in the live driver, which converts a
+      // tap into the same hold/release inputs a key press produces.
       if (nextDir === null && state.wantDir !== null) {
         const wv = DIRS[state.wantDir] as readonly [number, number];
         if (isOpen(walls, cols, rows, rc.cx + wv[0], rc.cy + wv[1])) {
@@ -524,7 +507,7 @@ const spec: MelonGameSpec<SimState, SimAction, RawConfig, SimView> = {
   view(state): SimView {
     // Project only on-screen entities and render hints. Internal AI/scheduler
     // fields (phase, phaseTimer, ghostsEatenThisFright, wantDir, held,
-    // pendingTap, gotoTarget, totalDots, passDots, tick) are intentionally
+    // pendingTap, totalDots, passDots, tick) are intentionally
     // omitted so the view does not expose latent solver-useful state.
     // `frightTimer` is retained as a render hint for the flash animation.
     return {
@@ -545,3 +528,8 @@ const spec: MelonGameSpec<SimState, SimAction, RawConfig, SimView> = {
 
 export const gameSpec = spec;
 export const engine = defineMelonGame<SimState, SimAction, RawConfig, SimView>(spec);
+
+// Grid pathfinding helpers, exported for the LIVE driver's click-to-move (it
+// converts a tap into hold/release inputs client-side, so the sim never
+// pathfinds) and for the red-team adapter. Pure integer grid work, no RNG.
+export { bfsField, gotoStep };

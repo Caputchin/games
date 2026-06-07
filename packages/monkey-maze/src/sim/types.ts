@@ -12,11 +12,11 @@ export type GhostMode = 'scatter' | 'chase' | 'frightened' | 'eaten';
  *              continuing past cell centers while held.
  *  - `release` the held key/button went up: finish the current cell, then stop
  *              (a quick down+up = a one-cell "tap" via the engine's pending-tap).
- *  - `goto`    click/tap a board cell: pathfind there, then stop. */
+ *  Click/tap-to-move is NOT a sim action: the live driver converts a tap into
+ *  these same hold/release inputs client-side, so the sim never pathfinds. */
 export type SimAction =
   | { readonly k: 'hold'; readonly d: Dir }
-  | { readonly k: 'release' }
-  | { readonly k: 'goto'; readonly cx: number; readonly cy: number };
+  | { readonly k: 'release' };
 
 export interface MoverView {
   /** Pixel position (from the physics body). */
@@ -58,8 +58,6 @@ export interface SimState {
   wantDir: Dir | null;
   held: boolean;
   pendingTap: boolean;
-  /** Click-to-move target cell, or null. Takes priority over manual intent. */
-  gotoTarget: { cx: number; cy: number } | null;
   ghosts: GhostView[];
   score: number;
   ghostsEatenThisFright: number;
@@ -73,7 +71,7 @@ export interface SimState {
 
 /** Render projection the live renderer consumes. Exposes only the on-screen
  *  entities and game status. Internal AI scheduler fields (phase, phaseTimer,
- *  ghostsEatenThisFright, wantDir, held, pendingTap, gotoTarget, totalDots,
+ *  ghostsEatenThisFright, wantDir, held, pendingTap, totalDots,
  *  passDots, tick) are omitted so the view does not leak solver-useful latent
  *  state. `frightTimer` is retained as a render hint: the renderer uses it to
  *  flash frightened ghosts in the final stretch (a player-visible cue). */

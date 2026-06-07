@@ -19,7 +19,7 @@ import type { Bridge, GameContext, Seed } from '@caputchin/game-sdk';
 import { randomSeed } from '@caputchin/game-sdk';
 import * as me from 'melonjs';
 import { createMelonDriver, encodeTrace, FIXED_TIMESTEP_MS, type TickInput } from '@caputchin/preset-melonjs';
-import { gameSpec } from './sim/engine.js';
+import { gameSpec, bfsField, gotoStep } from './sim/engine.js';
 import { TILE } from './sim/constants.js';
 import { resolveSimConfig } from './sim/config.js';
 import type { Dir, SimAction, SimState, SimView } from './sim/types.js';
@@ -219,6 +219,14 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
   // direction inputs (keyboard keys + d-pad buttons); its top is the active one.
   const pending: SimAction[] = [];
   const heldDirs: Dir[] = [];
+  // Client-side click-to-move: a tap sets a goto target; advanceOneTick steers the
+  // runner toward it by emitting the same hold/release inputs a key produces, so
+  // the recorded trace carries only raw directional input (the sim never
+  // pathfinds). `gotoField` is the BFS distance field to the target (computed once
+  // per tap); `followDir` is the last direction issued (re-issued only on change).
+  let gotoTarget: { cx: number; cy: number } | null = null;
+  let gotoField: number[] | null = null;
+  let followDir: Dir | null = null;
   let rafHandle = 0;
   let disposed = false;
   let lastMs: number | null = null;
@@ -232,6 +240,10 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
   // A direction key/button went down: head that way (and keep going while held).
   function pressDir(d: Dir): void {
     if (!running) return; // not playing -> ignored; start via the Play button
+    // A manual key cancels any in-progress click-to-move follow.
+    gotoTarget = null;
+    gotoField = null;
+    followDir = null;
     if (heldDirs.includes(d)) return; // ignore auto-repeat / duplicate source
     heldDirs.push(d);
     pending.push({ k: 'hold', d });
@@ -244,11 +256,15 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
     const top = heldDirs[heldDirs.length - 1];
     pending.push(top === undefined ? { k: 'release' } : { k: 'hold', d: top });
   }
-  // Click / tap a board cell: pathfind there (cancels any manual hold).
+  // Click / tap a board cell: follow a client-computed path there (cancels any
+  // manual hold). The BFS field is computed here; advanceOneTick walks it by
+  // emitting hold/release, so the sim sees only directional input.
   function gotoCell(cx: number, cy: number): void {
     if (!running) return; // not playing -> ignored; start via the Play button
     heldDirs.length = 0;
-    pending.push({ k: 'goto', cx, cy });
+    gotoTarget = { cx, cy };
+    gotoField = bfsField(cx, cy, viewState.walls, viewState.cols, viewState.rows);
+    followDir = null;
   }
 
   const KEYMAP: Record<string, Dir> = {
@@ -284,6 +300,25 @@ export function runMonkeyMaze(opts: GameOptions): () => void {
   boardParent.addEventListener('pointerdown', onBoardPointer);
 
   function advanceOneTick(): void {
+    // Click-to-move follower: steer toward the goto target by queuing the same
+    // hold/release inputs a key produces (so they are recorded as raw directional
+    // input). Runs before draining `pending` so its action lands this tick.
+    if (gotoTarget && gotoField) {
+      const cx = Math.round(viewState.runner.x / TILE);
+      const cy = Math.round(viewState.runner.y / TILE);
+      const d = cx === gotoTarget.cx && cy === gotoTarget.cy
+        ? null
+        : gotoStep(cx, cy, gotoField, viewState.walls, viewState.cols, viewState.rows);
+      if (d === null) {
+        if (followDir !== null) pending.push({ k: 'release' });
+        gotoTarget = null;
+        gotoField = null;
+        followDir = null;
+      } else if (d !== followDir) {
+        pending.push({ k: 'hold', d });
+        followDir = d;
+      }
+    }
     while (pending.length > 0) {
       const action = pending.shift() as SimAction;
       state = driver.step(state, action);

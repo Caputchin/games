@@ -12,6 +12,8 @@
 import { describe, it, expect } from 'vitest';
 import { encodeTrace, type TickInput, type Seed } from '@caputchin/preset-melonjs';
 import { run } from '../src/run.js';
+import { engine, bfsField, gotoStep } from '../src/sim/engine.js';
+import { TILE } from '../src/sim/constants.js';
 import type { Dir, SimAction } from '../src/sim/types.js';
 
 const SEED: Seed = [0x1357, 0x2468, 0x9bdf, 0xace0] as unknown as Seed;
@@ -32,6 +34,35 @@ function holdWander(maxTick: number, step = 22): Array<{ tick: number; action: S
   return out;
 }
 
+// Mirror the live driver's click-to-move follower: drive the runner toward each
+// target cell in turn by emitting the same hold/release inputs gotoStep dictates,
+// recording a raw-directional trace. The sim has no pathfinding action, so this is
+// how a click sweep is produced now (client-side path-follow). Deterministic, so
+// the recorded trace replays bit-identically through run().
+function followTrace(targets: ReadonlyArray<{ cx: number; cy: number }>, ghosts: number): Uint8Array | string {
+  let s = engine.init({ seed: SEED, config: { ghosts } });
+  const rec: Array<{ tick: number; action: SimAction }> = [];
+  let tick = 0;
+  for (const tgt of targets) {
+    const field = bfsField(tgt.cx, tgt.cy, s.walls, s.cols, s.rows);
+    let followDir: Dir | null = null;
+    for (let guard = 0; guard < 400 && !engine.isOver(s); guard += 1) {
+      const cx = Math.round(s.runner.x / TILE);
+      const cy = Math.round(s.runner.y / TILE);
+      const d = cx === tgt.cx && cy === tgt.cy ? null : gotoStep(cx, cy, field, s.walls, s.cols, s.rows);
+      if (d === null) {
+        if (followDir !== null) { rec.push({ tick, action: { k: 'release' } }); s = engine.step(s, { k: 'release' }); }
+        break;
+      }
+      if (d !== followDir) { rec.push({ tick, action: { k: 'hold', d } }); s = engine.step(s, { k: 'hold', d }); followDir = d; }
+      s = engine.tick(s);
+      tick += 1;
+    }
+    if (engine.isOver(s)) break;
+  }
+  return trace(rec);
+}
+
 describe('Monkey Maze sim (via the conforming run)', () => {
   it('produces a verdict and scores pellets', () => {
     const v = run(SEED, null, trace(holdWander(360)));
@@ -47,28 +78,15 @@ describe('Monkey Maze sim (via the conforming run)', () => {
     expect(JSON.stringify(a)).toEqual(JSON.stringify(b));
   });
 
-  it('a click-to-move (goto) trace replays identically', () => {
-    const t = trace([{ tick: 0, action: { k: 'goto', cx: 6, cy: 6 } }]);
-    const a = run(SEED, null, t);
-    const b = run(SEED, null, t);
-    expect(JSON.stringify(a)).toEqual(JSON.stringify(b));
-    expect(a.durationMs).toBeGreaterThan(0);
-  });
-
   it('honors the dots-to-clear threshold (a low percent passes more readily)', () => {
-    // Click-to-move sweeps the bottom rows (reliable corridor pathfinding, away
-    // from the top chasers). ghosts:1 removes catch-luck so the assertion is about
-    // the threshold, not survival.
-    const t = trace([
-      { tick: 0, action: { k: 'goto', cx: 1, cy: 11 } },
-      { tick: 220, action: { k: 'goto', cx: 11, cy: 11 } },
-      { tick: 520, action: { k: 'goto', cx: 11, cy: 9 } },
-      { tick: 820, action: { k: 'goto', cx: 1, cy: 9 } },
-    ]);
-    // 10% of the maze is a handful of dots - the sweep clears well past it.
+    // A click-to-move-style sweep of the lower rows (away from the pen chasers),
+    // produced by the same follower the live driver uses. ghosts:1 keeps a single
+    // chaser so the assertion is about the threshold, not survival luck.
+    const t = followTrace([{ cx: 1, cy: 11 }, { cx: 11, cy: 11 }, { cx: 11, cy: 9 }, { cx: 1, cy: 9 }], 1);
+    // A low percent (a handful of dots) is cleared well past it by the sweep.
     const easy = run(SEED, { clear_percent: 10, ghosts: 1 }, t);
     expect(easy.passed).toBe(true);
-    // Clearing the WHOLE board on the same short sweep is not possible.
+    // Clearing the WHOLE board on the same sweep is not possible.
     const hard = run(SEED, { clear_percent: 100, ghosts: 1 }, t);
     expect(hard.passed).toBe(false);
   });
