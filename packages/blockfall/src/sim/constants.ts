@@ -22,6 +22,14 @@ export const FAST_FALL_INTERVAL = 1;
 export const DAS_DELAY = 9; // ticks before horizontal auto-repeat engages
 export const ARR = 2; // ticks between auto-repeat steps
 
+// Clear deadline (50 ticks/s, so ~60s): if the pass lines are not cleared within
+// this many ticks the round is lost. Deliberately generous so it never rejects a
+// real player (a clear-two-lines puzzle takes a few seconds); it is round pacing
+// plus an idle/AFK guard. It is NOT meaningful bot resistance: an offline planner
+// clears in a few dozen ticks, far inside the deadline. Tick-counted, so it stays
+// bit-identical live and on replay.
+export const DEADLINE_TICKS = 3000;
+
 // The spawn box is 4 wide; spawn just above the field.
 export const SPAWN_ROW = 0;
 

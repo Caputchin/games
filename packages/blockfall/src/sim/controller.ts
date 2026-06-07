@@ -13,7 +13,7 @@ import { pieceCells, collides, lockPiece, clearFullRows } from './board.js';
 import { PIECE_COUNT, KICKS } from './pieces.js';
 import { lineScore } from './scoring.js';
 import { generatePuzzle } from './puzzle.js';
-import { SOFT_DROP_INTERVAL, FAST_FALL_INTERVAL, DAS_DELAY, ARR, SPAWN_ROW } from './constants.js';
+import { SOFT_DROP_INTERVAL, FAST_FALL_INTERVAL, DAS_DELAY, ARR, SPAWN_ROW, DEADLINE_TICKS } from './constants.js';
 
 /** One tick of input: held flags for continuous actions, edges for discrete ones. */
 export interface ControllerInput {
@@ -73,6 +73,7 @@ export function createController(
   let score = 0;
   let over = false;
   let passed = false;
+  let ticks = 0;
   const das = {
     left: { timer: 0, charged: false },
     right: { timer: 0, charged: false },
@@ -184,6 +185,14 @@ export function createController(
     state,
     step(input): StepResult {
       if (over) return { cleared: 0, locked: false };
+      // Clear-deadline guard: lose if the pass lines were not cleared in time.
+      // Generous (see DEADLINE_TICKS) so it only ever catches an idle or stuck
+      // round, never an engaged player. Tick-counted, so live equals replay.
+      ticks += 1;
+      if (!passed && ticks >= DEADLINE_TICKS) {
+        over = true;
+        return { cleared: 0, locked: false };
+      }
       if (!active) {
         spawn();
         if (over || !active) return { cleared: 0, locked: false };

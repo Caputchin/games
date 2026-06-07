@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createController, type ControllerInput } from '../src/sim/controller.js';
 import { pieceCells } from '../src/sim/board.js';
+import { DEADLINE_TICKS } from '../src/sim/constants.js';
 import type { Active, Board, SimConfig } from '../src/sim/types.js';
 
 const identity = (a: number[]): number[] => a.slice();
@@ -59,6 +60,15 @@ describe('controller / puzzle', () => {
       const anyFull = board.some((row) => row.every((cell) => cell !== 0));
       expect(anyFull).toBe(false);
     }
+  });
+
+  it('loses if the pass lines are not cleared before the clear-deadline', () => {
+    const c = createController(cfg(), lcg(1), identity);
+    // Do nothing useful: with gentle gravity no line ever clears, so the
+    // clear-deadline must end the round as a loss (never a pass).
+    for (let i = 0; i < DEADLINE_TICKS; i++) c.step(NONE);
+    expect(c.state.passed).toBe(false);
+    expect(c.state.over).toBe(true);
   });
 
   it('is solvable: dropping the dealt O keys into the gaps clears passLines and passes', () => {
