@@ -10,7 +10,7 @@
 // async. State is threaded linearly; mutation-in-place is fine (single thread,
 // no aliasing across ticks).
 
-import { defineEngine, isHumanReaction, reactionFloorTicks } from '@caputchin/engine-kit';
+import { defineEngine } from '@caputchin/engine-kit';
 import { rng, rngFromState } from '@caputchin/determinism';
 import {
   STEP_S,
@@ -45,12 +45,6 @@ import type { SimState, SimAction, SimConfig, SimView, SimRunner, SimObstacle, S
  *  null). The engine never trusts its shape - resolveSimConfig validates and
  *  clamps every field, and resolves null -> the game's defaults. */
 type RawConfig = Record<string, unknown>;
-
-/** Reaction-time floor in logical ticks: a jump_press landing fewer than this
- *  many ticks after the nearest ahead obstacle spawned is superhuman (a
- *  frame-perfect bot acting on spawn) and does not start the jump. Kit
- *  default, conservatively below human reaction. */
-const REACTION_TICKS = reactionFloorTicks();
 
 // ---- Obstacle type catalog -----------------------------------------------
 // (Verbatim from obstacles.ts - same collision box sets.)
@@ -196,9 +190,6 @@ function spawnObstacle(state: SimState): SimObstacle | null {
     speedOffset,
     frame: 0,
     animTimer: 0,
-    // Stamp the tick this obstacle entered play (spawned at the right edge).
-    // Read at jump_press time by the reaction-time gate.
-    spawnTick: state.tick,
   };
 
   state.rng = r.state;
@@ -331,21 +322,19 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
         // First input starts the run.
         state.runner.status = 'running';
       } else if (state.runner.status === 'running' || state.runner.status === 'ducking') {
-        // Reaction-time gate: a jump landing too soon after the nearest ahead
-        // obstacle spawned is superhuman (a frame-perfect offline solver). The
-        // action is consumed but does NOT start the jump, so a bot acting at
-        // obstacle spawn never leaves the ground. A real player reacts to the
-        // obstacle far later (well past the floor), so live play is unaffected.
-        const nearest = state.obstacles.find((o) => o.x + o.width > state.runner.x);
-        const gated = nearest !== undefined && !isHumanReaction(nearest.spawnTick, state.tick, REACTION_TICKS);
-        if (!gated) {
-          // Start a jump.
-          state.runner.status = 'jumping';
-          state.runner.speedDrop = false;
-          state.runner.reachedMinHeight = false;
-          // Faster runs get a touch more lift (mirrors Runner.startJump).
-          state.runner.velocity = -state.cfg.jumpVelocity - state.speed / 10;
-        }
+        // Start a jump. There is deliberately no reaction-time gate here. Dino is
+        // a scrolling runner with no discrete moment when an obstacle first
+        // becomes actionable (a player jumps on proximity, many ticks after the
+        // obstacle enters at the far edge), so a per-action reaction floor cannot
+        // tell a bot from a human (it would fire only on a jump at spawn, which no
+        // real play does). Resistance for a runner comes from server-side
+        // throttling (the wall-clock floor and attempt cap) plus cross-session
+        // anomaly detection, not an in-sim gate.
+        state.runner.status = 'jumping';
+        state.runner.speedDrop = false;
+        state.runner.reachedMinHeight = false;
+        // Faster runs get a touch more lift (mirrors Runner.startJump).
+        state.runner.velocity = -state.cfg.jumpVelocity - state.speed / 10;
       }
     } else if (action.k === 'jump_release') {
       if (state.runner.status === 'jumping' && state.runner.reachedMinHeight) {

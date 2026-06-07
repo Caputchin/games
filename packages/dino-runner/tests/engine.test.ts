@@ -4,7 +4,7 @@
 // unit tests (jump arc, duck, collision origin) against the new sim engine.
 
 import { describe, it, expect } from 'vitest';
-import { replay, encodeTrace, decodeTrace, reactionFloorTicks } from '@caputchin/engine-kit';
+import { replay, encodeTrace, decodeTrace } from '@caputchin/engine-kit';
 import type { Seed } from '@caputchin/replay-contract';
 import { engine, toScore, SIM_GROUND_Y } from '../src/sim/engine.js';
 import { RUNNER_START_X, WORLD_WIDTH } from '../src/sim/constants.js';
@@ -155,83 +155,27 @@ describe('score function', () => {
   });
 });
 
-describe('reaction-time gate', () => {
-  it('jump_press while waiting (start-run) bypasses the reaction gate', () => {
-    // The gate must never block the initial jump_press that starts the run.
+describe('jump + replay', () => {
+  it('jump_press while waiting starts the run (does not jump)', () => {
     let s = engine.init({ seed: SEED, config: CFG });
     s = engine.step(s, { k: 'jump_press' });
     expect(s.runner.status).toBe('running'); // not 'waiting', not 'jumping'
   });
 
-  it('jump_press on the same tick an obstacle spawns is gated (no jump)', () => {
-    // Drive until an obstacle spawns, then fire jump_press immediately on that
-    // same tick. spawnTick == state.tick means gap == 0 < reaction floor, so the
-    // gate suppresses the jump (runner stays 'running').
+  it('jump_press while running starts a jump (no reaction gate on a runner)', () => {
+    // dino is a continuous-skill runner: a jump registers whenever the runner is
+    // grounded, with no spawn-keyed reaction gate (that gate was a no-op for a
+    // scrolling game and was removed). A grounded jump_press takes off.
     let s = engine.init({ seed: SEED, config: CFG });
     s = engine.step(s, { k: 'jump_press' }); // start run
-    // Advance until the first obstacle appears.
-    let spawned = false;
-    for (let t = 0; t < MAX; t++) {
-      const before = s.obstacles.length;
-      s = engine.tick(s);
-      if (s.obstacles.length > before) { spawned = true; break; }
-    }
-    expect(spawned).toBe(true);
-    const obs = s.obstacles[0]!;
-    // tick() increments state.tick then spawns, so spawnTick == state.tick.
-    expect(s.tick - obs.spawnTick).toBeLessThan(reactionFloorTicks());
-    // If runner is not already in the air (it may have just landed), test the gate.
-    if (s.runner.status === 'running') {
-      s = engine.step(s, { k: 'jump_press' });
-      // Gate must have fired: jump suppressed.
-      expect(s.runner.status).toBe('running');
-    }
+    s = engine.tick(s); // advance one tick; runner is grounded + running
+    expect(s.runner.status).toBe('running'); // precondition is load-bearing
+    s = engine.step(s, { k: 'jump_press' });
+    expect(s.runner.status).toBe('jumping');
   });
 
-  it('spawnTick field is set to state.tick at spawn time', () => {
-    // Verify the invariant: every obstacle carries spawnTick == state.tick from
-    // the tick it was added. Drives trust in the gate.
-    let s = engine.init({ seed: SEED, config: CFG });
-    s = engine.step(s, { k: 'jump_press' }); // start run
-    // Collect the first spawn event.
-    for (let t = 0; t < MAX; t++) {
-      const before = s.obstacles.length;
-      s = engine.tick(s);
-      if (s.obstacles.length > before) break;
-    }
-    for (const o of s.obstacles) {
-      // spawnTick <= state.tick (spawned at or before now).
-      expect(o.spawnTick).toBeLessThanOrEqual(s.tick);
-      // spawnTick within this run (non-negative, tick starts at 0).
-      expect(o.spawnTick).toBeGreaterThanOrEqual(0);
-    }
-  });
-
-  it('a human-paced jump (well past reaction floor) is NOT gated', () => {
-    // Advance until an obstacle spawns, then wait REACTION_TICKS more, then jump.
-    let s = engine.init({ seed: SEED, config: CFG });
-    s = engine.step(s, { k: 'jump_press' }); // start run
-    for (let t = 0; t < MAX && s.obstacles.length === 0; t++) s = engine.tick(s);
-    const spawnTick = s.obstacles[0]!.spawnTick;
-    // Advance enough ticks to clear the reaction floor, without crashing.
-    const needed = spawnTick + reactionFloorTicks() + 2;
-    while (s.tick < needed && !engine.isOver(s)) s = engine.tick(s);
-    // Jump from running state - must not be gated.
-    if (s.runner.status === 'running') {
-      s = engine.step(s, { k: 'jump_press' });
-      expect(s.runner.status).toBe('jumping');
-    }
-  });
-
-  it('a human-paced player (reaction above the floor) scores and survives', () => {
-    // Mirror the fruit-slash / whack positive test: a human-latency player
-    // passes the gate, takes off, and accumulates score. A frame-perfect bot
-    // that jumps on spawn would be gated (status stays 'running', hits the
-    // obstacle, crashes at score 0); a human-paced player does not crash and
-    // accrues distance.
+  it('a human-paced player scores, survives, and replays bit-identically', () => {
     const { score } = play(SEED, CFG, { maxTicks: MAX, autoJump: true });
-    // Auto-jump driver waits until obstacle is within 80px - well past the
-    // reaction floor from spawn - so the gate should never fire.
     expect(score).toBeGreaterThan(0);
     // The auto-jump driver is a valid player: replay of its trace must be
     // bit-identical and not truncated.
