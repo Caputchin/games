@@ -21,5 +21,6 @@ export function resolveSimConfig(raw: Record<string, unknown> | null): SimConfig
     baseUptimeMs: cfg.baseUptimeMs,
     baseDecoyChance: cfg.baseDecoyChance,
     seconds: cfg.seconds,
+    lives: cfg.lives,
   };
 }

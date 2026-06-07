@@ -132,3 +132,41 @@ describe('fx render cues (F1 - step pushes, driver clears before next tick)', ()
     expect(v.fx.some((f) => f.kind === 'decoy' && f.holeIndex === holeIndex)).toBe(true);
   });
 });
+
+describe('lives = wrong-tap budget (scatter-bot guard)', () => {
+  // Drive (with decoys guaranteed frequent) until a decoy is up, return its hole.
+  function tickToDecoy(state: ReturnType<typeof engine.init>): { state: typeof state; holeIndex: number } {
+    for (let t = 0; t < MAX; t++) {
+      state = engine.tick(state);
+      const up = state.moles.find((m) => m.kind === 'decoy' && m.phase === 'up');
+      if (up) return { state, holeIndex: up.holeIndex };
+    }
+    return { state, holeIndex: -1 };
+  }
+
+  it('tapping a decoy costs a life and does not burn the clock', () => {
+    const cfg = { base_decoy_chance: 0.5, lives: 3 };
+    const r = tickToDecoy(engine.init({ seed: [1, 2, 3, 4], config: cfg }));
+    expect(r.holeIndex).toBeGreaterThanOrEqual(0);
+    const before = engine.view!(r.state);
+    const after = engine.view!(engine.step(r.state, { holeIndex: r.holeIndex }));
+    expect(after.lives).toBe(before.lives - 1);
+    expect(after.timeLeft).toBe(before.timeLeft); // a wrong tap no longer subtracts time
+  });
+
+  it('running out of lives on decoys ends the round (lose) before passHits', () => {
+    const cfg = { base_decoy_chance: 0.5, lives: 2 };
+    let state = engine.init({ seed: [1, 2, 3, 4], config: cfg });
+    let decoyTaps = 0;
+    while (!engine.isOver(state)) {
+      const r = tickToDecoy(state);
+      if (r.holeIndex < 0) break;
+      state = engine.step(r.state, { holeIndex: r.holeIndex });
+      decoyTaps++;
+    }
+    expect(decoyTaps).toBe(2); // exactly `lives` decoy taps ended it
+    expect(engine.view!(state).lives).toBe(0);
+    expect(engine.isOver(state)).toBe(true);
+    expect(engine.result(state).passed).toBe(false);
+  });
+});

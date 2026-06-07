@@ -21,6 +21,11 @@ export interface SimConfig {
   baseDecoyChance: number;
   /** Round time budget in seconds. */
   seconds: number;
+  /** Wrong (decoy) taps tolerated before the round is lost. A decoy tap costs
+   *  one life; at zero lives the round ends. Bot-resistance: an indiscriminate
+   *  "tap every hole" bot drains lives on decoys long before it reaches passHits;
+   *  a real player never taps a decoy, so this never bites a human. */
+  lives: number;
 }
 
 /** A mole's lifecycle phase in the sim. */
@@ -68,6 +73,8 @@ export interface SimState {
   goodHits: number;
   /** Accumulated points. */
   score: number;
+  /** Lives remaining. A decoy tap costs one; at zero the round ends. */
+  lives: number;
   /** Seconds left on the clock. */
   timeLeft: number;
   /** Current level index (0-based). */
@@ -107,6 +114,7 @@ export interface SimView {
   moles: readonly SimMole[];
   goodHits: number;
   score: number;
+  lives: number;
   timeLeft: number;
   levelIndex: number;
   verified: 0 | 1;

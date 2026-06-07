@@ -14,6 +14,7 @@ const FALLBACK = {
   headerGoal: 'Monkeys',
   headerLevel: 'Level',
   headerScore: 'Score',
+  headerLives: 'Lives',
   startTitle: 'Whack-a-Monkey',
   startBody:
     'Tap the monkeys as they peek out of the bushes. Leave the other jungle animals alone. Tap enough monkeys, and keep your aim clean, to verify you are human.',
@@ -21,8 +22,8 @@ const FALLBACK = {
   controlsHint: 'Tap the monkeys, not the other animals',
   winTitle: 'Verified',
   winBody: 'Nice aim. You scored {score}.',
-  overTitle: "Time's up",
-  overBody: 'Out of time. You scored {score}. Give it another go.',
+  overTitle: 'Round over',
+  overBody: 'You scored {score}. Give it another go.',
   retryButton: 'Try again',
   ariaSound: 'Sound',
   verifiedBadge: 'Verified',

@@ -40,7 +40,6 @@ import {
   RETRACT_ZETA,
   BASE_SCORE,
   TIMING_BONUS_MAX,
-  DECOY_TIME_PENALTY_S,
   DECOY_PENALTY,
 } from './constants.js';
 import { resolveSimConfig } from './config.js';
@@ -180,6 +179,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
       interval,
       goodHits: 0,
       score: 0,
+      lives: cfg.lives,
       timeLeft: cfg.seconds,
       levelIndex: 0,
       hitsInLevel: 0,
@@ -235,9 +235,12 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
         state.rng = r.state;
       }
     } else {
-      // Decoy tap: dock score + burn clock.
+      // Decoy tap: dock score + lose a life. At zero lives the round ends
+      // (isOver). Bot-resistance: an indiscriminate "tap every hole" bot taps
+      // every decoy and burns through its lives long before it reaches passHits;
+      // a real player never taps a decoy, so this never bites a human.
       state.score = Math.max(0, state.score - DECOY_PENALTY);
-      state.timeLeft = Math.max(0, state.timeLeft - DECOY_TIME_PENALTY_S);
+      state.lives = Math.max(0, state.lives - 1);
       pushFx(state, { kind: 'decoy', holeIndex, delta: -DECOY_PENALTY });
     }
     return state;
@@ -248,7 +251,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
     // Advance the clock. (fx is cleared by the DRIVER before applying actions;
     // the server replay never reads fx so we leave it as-is there.)
     state.timeLeft = Math.max(0, state.timeLeft - STEP_S);
-    if (state.timeLeft <= 0) return state; // round over; no more spawning
+    if (state.timeLeft <= 0 || state.lives <= 0) return state; // round over; no more spawning
 
     const r = rngFromState(state.rng);
     const next = (): number => r.next();
@@ -319,7 +322,8 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
   },
 
   isOver(state) {
-    return state.timeLeft <= 0;
+    // Round ends on the clock OR on running out of lives (too many decoy taps).
+    return state.timeLeft <= 0 || state.lives <= 0;
   },
 
   result(state) {
@@ -333,6 +337,7 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
       moles: state.moles,
       goodHits: state.goodHits,
       score: state.score,
+      lives: state.lives,
       timeLeft: state.timeLeft,
       levelIndex: state.levelIndex,
       verified: state.verified,

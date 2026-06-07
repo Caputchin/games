@@ -21,8 +21,12 @@ export interface WhackConfig {
   baseDecoyChance: number;
   /** Round time budget in seconds: the clock the player races to hit the goal. */
   seconds: number;
+  /** Wrong (decoy) taps tolerated before the round is lost. */
+  lives: number;
   sound: boolean;
   showScore: boolean;
+  /** Show the remaining-lives indicator in the header. */
+  showLives: boolean;
 }
 
 const DEFAULT_PRESET = (configurationsJson.presets?.default ?? {}) as Record<string, unknown>;
@@ -39,10 +43,12 @@ function jsonBoolean(key: string, hardcoded: boolean): boolean {
 const FALLBACK = {
   passHits: jsonNumber('pass_hits', 10),
   baseUptimeMs: jsonNumber('base_uptime_ms', 800),
-  baseDecoyChance: jsonNumber('base_decoy_chance', 0.1),
+  baseDecoyChance: jsonNumber('base_decoy_chance', 0.3),
   seconds: jsonNumber('seconds', 25),
+  lives: jsonNumber('lives', 3),
   sound: jsonBoolean('sound', true),
   showScore: jsonBoolean('show_score', true),
+  showLives: jsonBoolean('show_lives', true),
 };
 
 function readNumber(cfg: Record<string, unknown> | null, key: string): number | null {
@@ -65,8 +71,10 @@ export function resolveWhackConfig(
     baseUptimeMs: clamp(readNumber(cfg, 'base_uptime_ms') ?? FALLBACK.baseUptimeMs, 350, 2000),
     baseDecoyChance: clamp(readNumber(cfg, 'base_decoy_chance') ?? FALLBACK.baseDecoyChance, 0, 0.5),
     seconds: Math.max(5, Math.min(90, Math.round(readNumber(cfg, 'seconds') ?? FALLBACK.seconds))),
+    lives: Math.max(1, Math.min(6, Math.round(readNumber(cfg, 'lives') ?? FALLBACK.lives))),
     sound: readBoolean(cfg, 'sound') ?? FALLBACK.sound,
     showScore: readBoolean(cfg, 'show_score') ?? FALLBACK.showScore,
+    showLives: readBoolean(cfg, 'show_lives') ?? FALLBACK.showLives,
   };
 }
 

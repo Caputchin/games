@@ -79,6 +79,15 @@ html, body, #cpt-root {
 .wm-hud-left { display: inline-flex; gap: clamp(6px, 2.2cqw, 18px); align-items: center; }
 .wm-hud-right { display: inline-flex; gap: clamp(5px, 1.5cqw, 12px); align-items: center; }
 .wm-hud-time[data-low="true"] { color: #FFD23F; }
+.wm-hud-lives-wrap { display: inline-flex; align-items: center; }
+.wm-hud-lives { display: inline-flex; gap: clamp(4px, 0.8cqw, 6px); align-items: center; }
+.wm-pip {
+  width: clamp(9px, 1.6cqw, 13px);
+  height: clamp(9px, 1.6cqw, 13px);
+  border-radius: 50%;
+  background: currentColor;
+}
+.wm-pip[data-spent="true"] { opacity: 0.22; }
 .wm-badge {
   font-weight: 700;
   font-size: clamp(10px, 1.75cqw, 14px);

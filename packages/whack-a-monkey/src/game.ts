@@ -579,6 +579,15 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
       hud.level.innerHTML = `<span class="label">${strings.t('headerLevel')}</span>${simState.levelIndex + 1}`;
       hud.score.innerHTML = `<span class="label">${strings.t('headerScore')}</span>${simState.score}`;
     }
+    hud.livesWrap.dataset['hidden'] = pres.showLives ? 'false' : 'true';
+    if (pres.showLives) {
+      hud.lives.replaceChildren();
+      for (let i = 0; i < pres.lives; i++) {
+        const pip = el('span', 'wm-pip');
+        pip.dataset['spent'] = i >= simState.lives ? 'true' : 'false';
+        hud.lives.appendChild(pip);
+      }
+    }
     updateTime();
     hud.badge.dataset['hidden'] = verifiedFired ? 'false' : 'true';
     hud.badge.textContent = `✓ ${strings.t('verifiedBadge')}`;
@@ -593,7 +602,7 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     node.className = className;
     return node;
   }
-  function buildHud(): { root: HTMLElement; time: HTMLElement; goal: HTMLElement; level: HTMLElement; score: HTMLElement; badge: HTMLElement } {
+  function buildHud(): { root: HTMLElement; time: HTMLElement; goal: HTMLElement; level: HTMLElement; score: HTMLElement; badge: HTMLElement; lives: HTMLElement; livesWrap: HTMLElement } {
     const rootEl = el('div', 'wm-hud');
     const left = el('span', 'wm-hud-left');
     const time = el('span', 'wm-hud-time');
@@ -602,11 +611,16 @@ export function runWhackAMonkey(opts: GameOptions): () => void {
     left.append(time, goal, level);
     const right = el('span', 'wm-hud-right');
     const score = el('span', 'wm-hud-score');
+    const livesWrap = el('span', 'wm-hud-lives-wrap');
+    const livesLabel = el('span', 'label');
+    livesLabel.textContent = strings.t('headerLives');
+    const lives = el('span', 'wm-hud-lives');
+    livesWrap.append(livesLabel, lives);
     const badge = el('span', 'wm-badge');
     badge.dataset['hidden'] = 'true';
-    right.append(score, badge);
+    right.append(score, livesWrap, badge);
     rootEl.append(left, right);
-    return { root: rootEl, time, goal, level, score, badge };
+    return { root: rootEl, time, goal, level, score, badge, lives, livesWrap };
   }
   function buildSoundButton(): HTMLButtonElement {
     const btn = doc.createElement('button');

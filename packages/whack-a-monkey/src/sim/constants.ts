@@ -54,13 +54,15 @@ export const LEVEL_COUNT = 3;
 export const RATE_PER_LEVEL = 0.18;
 export const UPTIME_SHRINK_PER_LVL = 0.12;
 export const DECOY_ADD_PER_LVL = 0.04;
-export const DECOY_CAP = 0.35;
+export const DECOY_CAP = 0.45;
 export const MIN_UPTIME_FLOOR_MS = 350;
 
 // ── Scoring ──────────────────────────────────────────────
 export const BASE_SCORE = 100;
 export const TIMING_BONUS_MAX = 50;
-export const DECOY_TIME_PENALTY_S = 2;
+// Cosmetic score dock on a wrong (decoy) tap. The load-bearing wrong-tap cost is
+// a lost life (see SimConfig.lives + the engine decoy branch); score is display
+// only (the pass gate reads goodHits, not score).
 export const DECOY_PENALTY = 100;
 
 /** The four decoy species. Order is stable for seeded RNG. */
