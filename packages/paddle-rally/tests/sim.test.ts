@@ -73,6 +73,22 @@ describe('PaddleRallySim (Arcade physics)', () => {
     expect(wins).toEqual([]);
   });
 
+  // The flick-score gate: a held/idle paddle imparts only the decayed floor, so
+  // even a shot that slips past the rival on a miss does not convert. Stronger
+  // than "never wins": a held/idle bot never scores a SINGLE point.
+  it('a held/idle bot never scores a point (flick-score gate), across difficulty 5..10', async () => {
+    const scored: string[] = [];
+    for (const [label, intent] of [['idle', idle], ['up', holdUp], ['down', holdDown]] as const) {
+      for (const cpu_difficulty of DIFFICULTIES) {
+        for (const seed of SEEDS) {
+          const rec = await recordRun({ seed, config: { target: 3, cpu_difficulty }, intent, maxTicks: 6000 });
+          if (rec.score > 0) scored.push(`${label} d${cpu_difficulty} seed ${seed.join('.')} -> ${rec.score}`);
+        }
+      }
+    }
+    expect(scored).toEqual([]);
+  });
+
   // EMPIRICAL guarantee: a random/erratic bot is filtered to a small bound (~3% at
   // the easier difficulties, ~0 by 10), NOT to zero. Property check over generated
   // seeds x the difficulty band; the bypass is explicitly a probabilistic ceiling

@@ -45,6 +45,12 @@ const BALL_SPEED = 6; // FIXED ball speed (tick-units); see resolve() for why it
 const FLICK_FLOOR = 0.35; // shot-power factor for a long-held steady direction (bot-like)
 const FLICK_PEAK = 1.5; // shot-power factor right after a flick / direction change (skilled)
 const FLICK_DECAY = 45; // ticks of unbroken same-direction motion to decay PEAK -> FLOOR
+// A scored point requires the scoring shot to carry at least a faint flick. A
+// paddle held dead-steady (the idle/held-bot signature, motion decayed to the
+// floor over FLICK_DECAY ticks) cannot convert even a shot that slips past the
+// rival on a miss. Any motion freshness clears this, so a real player never loses
+// a point; it only denies an idle bot its rare lucky pass-through.
+const SCORE_FLICK_MIN = FLICK_FLOOR + 0.02;
 // SOLO mode: no rival, so the ball is free to be fast (speed only raises HUMAN
 // difficulty, never a bot windfall). The ball keeps a steep SWEEP angle so it ranges
 // the full height, meaning a still/held paddle is left behind and misses; only active
@@ -257,6 +263,7 @@ export class PaddleRallySim {
         // a winning shot. Serve delay (60t) > FLICK_DECAY (45t) so a held-key bot has
         // already decayed to the floor by its first contact.
         const flick = FLICK_FLOOR + (FLICK_PEAK - FLICK_FLOOR) * Math.max(0, 1 - this.playerStreak / FLICK_DECAY);
+        this.playerLastShotFlick = flick;
         bb.velocity.y = clamp(this.playerIntentVy * flick, -this.playerSpinCap, this.playerSpinCap);
       } else {
         // The rival's spin stays inside cpuSpinCap (< its tracking speed) so it always
@@ -289,6 +296,7 @@ export class PaddleRallySim {
     bb.reset(FIELD_W / 2, FIELD_H / 2);
     bb.setVelocity(0, 0);
     this.rallyMul = 1; // reset per-hit acceleration each serve
+    this.playerLastShotFlick = 0; // a fresh rally must be won by a fresh shot
     // playerStreak is NOT reset here: it tracks paddle-motion continuity, which the
     // serve does not interrupt.
     // remember the pending serve velocity; fired when the delay elapses. The serve
@@ -307,6 +315,9 @@ export class PaddleRallySim {
    *  flick factor: a long streak (held key) decays the shot toward FLICK_FLOOR. */
   private playerStreak = 0;
   private playerPrevAction: Action = 0;
+  /** Flick power of the player's most recent shot; a point only counts if this
+   *  cleared SCORE_FLICK_MIN (a dead-held shot that slips past does not score). */
+  private playerLastShotFlick = 0;
 
   /** Advance one tick of intent. Physics integration happens in the scene step. */
   step(action: Action): void {
@@ -369,9 +380,17 @@ export class PaddleRallySim {
       if (this.reachedTarget()) this.over = true;
       else this.serve(1);
     } else if (ballC.x > FIELD_W + BALL_R) {
-      this.playerPoints += 1;
-      if (this.reachedTarget()) this.over = true;
-      else this.serve(-1);
+      // Only a shot carrying real flick scores. A dead-held shot (idle-bot
+      // signature) that slipped past the rival on a miss resets the rally with no
+      // point. Any motion freshness clears SCORE_FLICK_MIN, so a human never loses
+      // a point; a tracker that varies its motion scores normally.
+      if (this.playerLastShotFlick >= SCORE_FLICK_MIN) {
+        this.playerPoints += 1;
+        if (this.reachedTarget()) this.over = true;
+        else this.serve(-1);
+      } else {
+        this.serve(-1);
+      }
     }
   }
 
