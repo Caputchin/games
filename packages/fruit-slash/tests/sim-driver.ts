@@ -6,6 +6,7 @@
 
 import { engine } from '../src/sim/engine.js';
 import { GOOD, type SimAction } from '../src/sim/types.js';
+import { TARGET_RADIUS, HIT_PAD } from '../src/sim/constants.js';
 import type { Seed } from '@caputchin/replay-contract';
 import { reactionFloorTicks } from '@caputchin/engine-kit';
 import type { TickInput } from '@caputchin/engine-kit';
@@ -32,14 +33,22 @@ export interface PlayOpts {
   maxTicks: number;
 }
 
-/** Swipe across a target's center (down one side, move through, lift). */
+// A precise human slice: a short swipe through the fruit's centre, not a wide
+// sweep across the field (a wide sweep would clip bombs all over a dense board and
+// is not how a deliberate player slices).
 function swipeOver(x: number, y: number): SimAction[] {
   return [
-    { k: 0, x: x - 60, y },
-    { k: 1, x: x + 60, y },
+    { k: 0, x: x - 10, y },
+    { k: 1, x: x + 10, y },
     { k: 2 },
   ];
 }
+
+// Bomb-avoidance radius for the careful-human proxy: a good fruit within this of a
+// bomb is skipped, because swiping it would sweep the bomb (fatal). HIT (slice
+// reach) + the half swipe width + a small margin.
+const HIT = TARGET_RADIUS + HIT_PAD;
+const CLIP_R2 = (HIT + 18) ** 2;
 
 /** Drive the engine like the live loop: per tick, decide + apply + record the
  *  actions, then advance one logical tick. Slices every live good fruit (dodging
@@ -63,9 +72,14 @@ export function play(
     const acts: SimAction[] = [];
     if (state.sliced < target) {
       for (const t of state.targets) {
-        if (t.kind === GOOD && !t.sliced && state.tick - t.spawnTick >= reactionDelay) {
-          acts.push(...swipeOver(t.x, t.y));
-        }
+        if (t.kind !== GOOD || t.sliced || state.tick - t.spawnTick < reactionDelay) continue;
+        // A deliberate player skips a good fruit it cannot slice cleanly: if a bomb
+        // sits within the swipe's reach, swiping would clip it (fatal), so let it go.
+        const blocked = state.targets.some(
+          (o) => o.kind !== GOOD && !o.sliced && (o.x - t.x) ** 2 + (o.y - t.y) ** 2 <= CLIP_R2,
+        );
+        if (blocked) continue;
+        acts.push(...swipeOver(t.x, t.y));
       }
     }
     for (const a of acts) {
