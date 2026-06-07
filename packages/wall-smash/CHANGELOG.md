@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Caputchin/games/compare/wall-smash-v0.2.3...wall-smash-v0.3.0) (2026-06-07)
+
+
+### Features
+
+* **games:** add reaction-time gate, view hardening, and minSolveMs floor ([a816c56](https://github.com/Caputchin/games/commit/a816c56c853024848288c92fb5ae2efae4277832))
+
 ## [0.2.3](https://github.com/Caputchin/games/compare/wall-smash-v0.2.2...wall-smash-v0.2.3) (2026-06-04)
 
 

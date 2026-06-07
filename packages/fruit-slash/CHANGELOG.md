@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/Caputchin/games/compare/fruit-slash-v0.3.2...fruit-slash-v0.4.0) (2026-06-07)
+
+
+### Features
+
+* **fruit-slash:** end the round on a sliced bomb and raise bomb density to defeat scatter bots ([2f59d29](https://github.com/Caputchin/games/commit/2f59d2971e16917fea38e95fada5ab10725d29a2))
+* **games:** add reaction-time gate, view hardening, and minSolveMs floor ([a816c56](https://github.com/Caputchin/games/commit/a816c56c853024848288c92fb5ae2efae4277832))
+
 ## [0.3.2](https://github.com/Caputchin/games/compare/fruit-slash-v0.3.1...fruit-slash-v0.3.2) (2026-06-04)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/Caputchin/games/compare/whack-a-monkey-v0.3.2...whack-a-monkey-v0.4.0) (2026-06-07)
+
+
+### Features
+
+* **games:** add reaction-time gate, view hardening, and minSolveMs floor ([a816c56](https://github.com/Caputchin/games/commit/a816c56c853024848288c92fb5ae2efae4277832))
+* **whack-a-monkey:** add a lives mechanic so decoy taps defeat the scatter bot ([3c9b999](https://github.com/Caputchin/games/commit/3c9b9990f116b02ab7c0d61d6e3c77a524a83b28))
+
 ## [0.3.2](https://github.com/Caputchin/games/compare/whack-a-monkey-v0.3.1...whack-a-monkey-v0.3.2) (2026-06-04)
 
 
