@@ -79,6 +79,10 @@ jobs:
       - run: pnpm --filter ${{ matrix.pkg }} typecheck
       - run: pnpm --filter ${{ matrix.pkg }} test
       - run: pnpm --filter ${{ matrix.pkg }} build
+      # Determinism self-check: replay the just-built dist/run.js through the
+      # hostile prober. Needs the build's run artifact, so it runs last. Fails
+      # the leg (and ci-gate) on any ambient non-determinism or run-to-run drift.
+      - run: pnpm --filter ${{ matrix.pkg }} check
 
   # Single STABLE required status check. Branch protection must require THIS job
   # (the matrix legs have dynamic names and can't be required individually).

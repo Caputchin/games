@@ -98,6 +98,38 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # build's prebuild generates the live + headless wasm; tsup bundles. Then
-      # publish only this game.
+      # gate on the determinism self-check (a non-deterministic game must never
+      # ship an immutable npm version), and only then publish this game.
       - run: pnpm --filter ${{ steps.gameinfo.outputs.pkg }} build
+      - run: pnpm --filter ${{ steps.gameinfo.outputs.pkg }} check
       - run: pnpm --filter ${{ steps.gameinfo.outputs.pkg }} publish --access public --no-git-checks
+
+  # After every released game is on npm, trigger the production marketplace index
+  # so games.caputchin.com vendors + self-checks + reconciles the new versions
+  # immediately, instead of waiting for the daily 03:00 UTC cron. Best-effort by
+  # design: the npm publish above is the source of truth and the cron is the
+  # backstop, but the publish endpoint is idempotent so a red run can just be
+  # re-run. Runs only after all publish legs succeed.
+  index-prod:
+    needs: [release-please, publish]
+    if: ${{ needs.release-please.outputs.releases_created == 'true' && needs.release-please.outputs.paths_released != '[]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Wait until jsDelivr has propagated each released package's new version,
+      # so the index pins the exact immutable version rather than mutable @latest.
+      # Bounded wait: on timeout it proceeds anyway (the daily cron re-pins).
+      - name: Wait for jsDelivr to propagate released versions
+        run: bash .github/scripts/await-jsdelivr.sh '${{ needs.release-please.outputs.paths_released }}'
+      # The endpoint is public + unauthenticated (it only reads public GitHub
+      # metadata + jsDelivr), so no secret is needed. curl -f fails the job on
+      # any 4xx/5xx (rate-limit, manifest error, repo-not-found); the grep is a
+      # belt-and-suspenders check on the 200 body. One call indexes every game
+      # in caputchin.json.
+      - name: Trigger production marketplace index
+        run: |
+          resp="$(curl -fsS -X POST https://api.caputchin.com/v1/marketplace/publish \
+            -H 'Content-Type: application/json' \
+            -d '{"repo":"caputchin/games"}')"
+          echo "$resp"
+          echo "$resp" | grep -q '"ok":true' || { echo "marketplace index returned not-ok"; exit 1; }

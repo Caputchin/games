@@ -39,11 +39,13 @@
     "build": "tsup",
     "predev": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "node scripts/check.mjs"
   },
   "devDependencies": {
     "@caputchin/game-sdk": "^3.1.0",
     "@caputchin/replay-contract": "^0.3.0",
+    "@caputchin/replay-selfcheck": "^0.2.0",
     "@caputchin/replay-wasm": "^0.3.0",
     "@types/node": "^20.0.0",
     "happy-dom": "^15.0.0",
