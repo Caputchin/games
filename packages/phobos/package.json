@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@caputchin/determinism": "^0.2.0",
-    "@caputchin/game-sdk": "^3.1.0",
+    "@caputchin/game-sdk": "^3.2.0",
     "@caputchin/replay-contract": "^0.3.0",
     "@caputchin/replay-selfcheck": "^0.2.0",
     "@caputchin/replay-wasm": "^0.3.0",

@@ -41,7 +41,7 @@
     "check": "node scripts/check.mjs"
   },
   "devDependencies": {
-    "@caputchin/game-sdk": "^3.1.0",
+    "@caputchin/game-sdk": "^3.2.0",
     "@caputchin/preset-melonjs": "^0.2.1",
     "@caputchin/replay-selfcheck": "^0.2.0",
     "@types/node": "^20.0.0",

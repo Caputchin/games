@@ -40,9 +40,9 @@
   },
   "devDependencies": {
     "@caputchin/determinism": "^0.2.0",
-    "@caputchin/engine-kit": "^0.4.0",
+    "@caputchin/engine-kit": "^0.5.0",
+    "@caputchin/game-sdk": "^3.2.0",
     "@caputchin/replay-contract": "^0.3.0",
-    "@caputchin/game-sdk": "^3.1.0",
     "@types/node": "^20.0.0",
     "happy-dom": "^15.0.0",
     "tsup": "^8.0.0",

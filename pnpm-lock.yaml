@@ -15,11 +15,11 @@ importers:
   packages/blockfall:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/preset-kaplay':
         specifier: ^0.4.0
-        version: 0.4.0(@caputchin/game-sdk@3.1.0)(kaplay@3001.0.19)
+        version: 0.4.0(@caputchin/game-sdk@3.2.0)(kaplay@3001.0.19)
       '@caputchin/replay-selfcheck':
         specifier: ^0.2.0
         version: 0.2.0
@@ -48,11 +48,11 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@caputchin/engine-kit':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -78,11 +78,11 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@caputchin/engine-kit':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -108,11 +108,11 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@caputchin/engine-kit':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -135,8 +135,8 @@ importers:
   packages/monkey-maze:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/preset-melonjs':
         specifier: ^0.2.1
         version: 0.2.1(melonjs@19.6.0)
@@ -165,8 +165,8 @@ importers:
   packages/paddle-rally:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/preset-phaser':
         specifier: ^0.2.0
         version: 0.2.0(phaser@4.1.0)
@@ -198,8 +198,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -228,8 +228,8 @@ importers:
   packages/voidshot:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -261,8 +261,8 @@ importers:
   packages/wall-smash:
     devDependencies:
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -294,11 +294,11 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@caputchin/engine-kit':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
       '@caputchin/game-sdk':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@caputchin/replay-contract':
         specifier: ^0.3.0
         version: 0.3.0
@@ -327,8 +327,12 @@ packages:
     resolution: {integrity: sha512-8KlpukUOGvBWmt1C/17XKA1Adtw5M/U9OI/4073SWFCcZoI8ssBu6wKLl79U00gk0fHpXLAgViULK0vVVewe4g==}
     hasBin: true
 
-  '@caputchin/game-sdk@3.1.0':
-    resolution: {integrity: sha512-h/GDGFUc3bQmLlfY4WpST4rq+Nd6rShIa8/f8XBdybRawHUWwK4vPZBsD0potP1tdKOFqiZp1hpulPx67MF/AQ==}
+  '@caputchin/engine-kit@0.5.0':
+    resolution: {integrity: sha512-CkRttevF/7CImefv10mjluksgC6KwQ+ddEonfFOHJcF3bGxuchgPvv0hAomJrgVmeHlA/LLIQP5Lyph84kG86A==}
+    hasBin: true
+
+  '@caputchin/game-sdk@3.2.0':
+    resolution: {integrity: sha512-1Adau1hOtIbxmtwDGDG1dPYJM//9mF1/UkEuj4Acw8REPUP0lQ3wC/xljRMXK6Mj8uli5G4YPkk6kqK2fsF3oA==}
 
   '@caputchin/preset-kaplay@0.4.0':
     resolution: {integrity: sha512-Q4FWkOjmkfcIqxRLESrM1tY2R82N2ErmDlS1yvIxF18B18a7NhuavcROVmbnUKWVIDesTRnZ3f+kOefuZDXXvQ==}
@@ -1236,14 +1240,19 @@ snapshots:
       '@caputchin/replay-contract': 0.3.0
       '@caputchin/replay-selfcheck': 0.2.0
 
-  '@caputchin/game-sdk@3.1.0':
+  '@caputchin/engine-kit@0.5.0':
+    dependencies:
+      '@caputchin/replay-contract': 0.3.0
+      '@caputchin/replay-selfcheck': 0.2.0
+
+  '@caputchin/game-sdk@3.2.0':
     dependencies:
       '@caputchin/replay-contract': 0.3.0
 
-  '@caputchin/preset-kaplay@0.4.0(@caputchin/game-sdk@3.1.0)(kaplay@3001.0.19)':
+  '@caputchin/preset-kaplay@0.4.0(@caputchin/game-sdk@3.2.0)(kaplay@3001.0.19)':
     dependencies:
       '@caputchin/determinism': 0.2.0
-      '@caputchin/game-sdk': 3.1.0
+      '@caputchin/game-sdk': 3.2.0
       '@caputchin/replay-contract': 0.3.0
       kaplay: 3001.0.19
 
