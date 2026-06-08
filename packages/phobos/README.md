@@ -89,6 +89,33 @@ The game ships with no warranty, as stated in the GPL. The full license text is
 in [`LICENSE`](LICENSE), with engine and game-data attribution in
 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
+## Building the engine from source
+
+The DOOM engine ([`engine/`](engine)) compiles to WebAssembly with
+[Emscripten](https://emscripten.org/). Two artifacts come out of one source
+tree: the headless replay engine the server re-runs, and the live engine the
+player sees. The IWAD ([`engine/wad/phobos.wad`](engine/wad)) is committed, so a
+rebuild needs only `emcc` (no WAD toolchain).
+
+- **With Emscripten on your PATH** (`source <emsdk>/emsdk_env.sh`):
+
+  ```sh
+  pnpm build:engines        # headless + live
+  pnpm build                # then bundle dist/
+  ```
+
+- **With only Docker** (no local toolchain): the same build runs inside the
+  official `emscripten/emsdk` image, writing the artifacts back to your tree as
+  your own user.
+
+  ```sh
+  pnpm build:engines:docker # headless + live, via the emsdk container
+  pnpm build
+  ```
+
+  Pin the toolchain with `EMSDK_IMAGE=emscripten/emsdk:<tag>`. Add
+  `:headless` or `:live` to either command to build a single target.
+
 ---
 
 DOOM is a trademark of id Software LLC; Phobos is not affiliated with or endorsed
