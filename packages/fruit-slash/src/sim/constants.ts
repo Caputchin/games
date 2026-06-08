@@ -39,6 +39,16 @@ export const TARGET_RADIUS = 42;
  *  close enough still counts, so fast flicks feel responsive. */
 export const HIT_PAD = 16;
 
+/** Minimum blade travel (logical px, max axis displacement from first contact)
+ *  before a hit on a fruit lands - the genuine-swipe gate for rule U6. A real
+ *  slice sweeps the full ~84px fruit, so this sits far below the human minimum
+ *  (false-positive-safe by construction); a degenerate 1px point-nick can never
+ *  reach it. Chosen above the input-judge's tap/drag boundary (8px) so a slicing
+ *  stroke is unambiguously a DRAG in the captured input - i.e. it falls in the
+ *  rich path channel the input-signature judge scores, not a contentless tap.
+ *  See engine.ts `sliceSegment` and docs/features/input-signature-judging.md. */
+export const MIN_SLICE_SPAN = 12;
+
 /** Hard cap on fruit airborne at once, so a fast spawn rate can't flood the
  *  field beyond what is sliceable. */
 export const MAX_CONCURRENT = 7;

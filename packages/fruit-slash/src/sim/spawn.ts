@@ -39,5 +39,8 @@ export function spawnOne(
     spin: next() * Math.PI * 2,
     spinRate: (next() * 2 - 1) * 1.5,
     sliced: 0,
+    cutX: 0,
+    cutY: 0,
+    cutSeen: 0,
   };
 }

@@ -21,6 +21,7 @@ import {
   launchBounds,
   HIT_PAD,
   MAX_CONCURRENT,
+  MIN_SLICE_SPAN,
   STEP_S,
   TARGET_RADIUS,
 } from './constants.js';
@@ -47,7 +48,18 @@ function pushFx(state: SimState, fx: Fx): void {
   if (state.fx.length > FX_CAP) state.fx.shift();
 }
 
-/** Apply one swipe segment against the live targets, scoring every hit. */
+/** Apply one swipe segment against the live targets, scoring every hit.
+ *
+ *  Genuine-swipe gate (rule U6): a hit does not land on first contact - the
+ *  blade must travel at least `MIN_SLICE_SPAN` (max axis displacement, sqrt-free
+ *  and so bit-identical live and on replay) from where it FIRST touched the fruit
+ *  in the current down-stroke. A degenerate point-nick (a 1px `{down, +1px,
+ *  up}`) never reaches it, and the anchor resets every pointer-down (in `step`),
+ *  so two separate edge-taps cannot combine into a fake swipe either. The effect:
+ *  a slicing stroke must span wider than the tap/drag boundary, so the captured
+ *  motor input lands in the rich path channel the input-signature judge scores,
+ *  instead of degrading into a contentless tap that dodges the path envelope. A
+ *  real player's swipe sails over the span, so live play is untouched. */
 function sliceSegment(state: SimState, ax: number, ay: number, bx: number, by: number): void {
   const path = [
     { x: ax, y: ay },
@@ -57,6 +69,20 @@ function sliceSegment(state: SimState, ax: number, ay: number, bx: number, by: n
   for (const t of state.targets) {
     if (t.sliced) continue;
     if (!swipeHitsCircle(path, { x: t.x, y: t.y, r })) continue;
+    // Anchor the swipe's first contact with THIS fruit in THIS down-stroke.
+    if (!t.cutSeen) {
+      t.cutX = ax;
+      t.cutY = ay;
+      t.cutSeen = 1;
+    }
+    // The slice only lands once the blade has swept far enough from that anchor.
+    const span = Math.max(
+      Math.abs(ax - t.cutX),
+      Math.abs(bx - t.cutX),
+      Math.abs(ay - t.cutY),
+      Math.abs(by - t.cutY),
+    );
+    if (span < MIN_SLICE_SPAN) continue;
     t.sliced = 1;
     if (t.kind === GOOD) {
       // Reaction-time gate: a slice landing too soon after the fruit launched is
@@ -113,11 +139,14 @@ export const engine = defineEngine<SimState, SimAction, RawConfig, SimView>({
 
   step(state, action) {
     if (action.k === 0) {
-      // pointer down: anchor the swipe, no slice yet
+      // pointer down: anchor the swipe, no slice yet. Clear every fruit's
+      // per-stroke slice anchor so a slice must be EARNED inside one continuous
+      // swipe (two separate edge-taps cannot combine to fake the span).
       state.pointerDown = 1;
       state.lastX = action.x;
       state.lastY = action.y;
       state.hasLast = 1;
+      for (const t of state.targets) t.cutSeen = 0;
     } else if (action.k === 1) {
       // pointer move: slice the segment from the last point to this one
       if (state.pointerDown && state.hasLast) {

@@ -111,3 +111,66 @@ describe('bomb = instant loss (scatter-bot guard)', () => {
     expect(engine.isOver(state)).toBe(true);
   });
 });
+
+describe('genuine-swipe gate (U6 path-channel)', () => {
+  // Advance a default round until one good fruit has cleared the reaction floor,
+  // so a landing slice would otherwise score. Returns that fruit + the state.
+  function aRipeFruit() {
+    let state = engine.init({ seed: SEED, config: { hazard_chance: 0 } });
+    let fruit: { id: number; x: number; y: number } | undefined;
+    for (let t = 0; t < MAX; t++) {
+      state = engine.tick(state);
+      fruit = state.targets.find(
+        (f) => f.kind === GOOD && !f.sliced && state.tick - f.spawnTick >= reactionFloorTicks() + 1,
+      );
+      if (fruit) break;
+    }
+    expect(fruit).toBeDefined();
+    return { state, fruit: fruit! };
+  }
+
+  it('a 1px point-nick at the fruit centre does NOT slice (the tap-dodge is closed)', () => {
+    let { state, fruit } = aRipeFruit();
+    state = engine.step(state, { k: 0, x: fruit.x, y: fruit.y });
+    state = engine.step(state, { k: 1, x: fruit.x + 1, y: fruit.y });
+    state = engine.step(state, { k: 2 });
+    // Consumed nothing: the fruit is still live and the score is untouched.
+    expect(engine.view!(state).sliced).toBe(0);
+    expect(state.targets.find((t) => t.id === fruit.id)?.sliced).toBe(0);
+  });
+
+  it('a genuine swipe across the fruit slices and scores', () => {
+    let { state, fruit } = aRipeFruit();
+    state = engine.step(state, { k: 0, x: fruit.x - 30, y: fruit.y });
+    state = engine.step(state, { k: 1, x: fruit.x + 30, y: fruit.y });
+    state = engine.step(state, { k: 2 });
+    expect(engine.view!(state).sliced).toBe(1);
+  });
+
+  it('two separate sub-span edge-taps cannot combine into a fake swipe', () => {
+    let { state, fruit } = aRipeFruit();
+    // Tap the left edge (its own short down-stroke), release, then tap the right
+    // edge. The points span > MIN_SLICE_SPAN apart, but each stroke is tiny and
+    // the pointer-down resets the anchor, so neither stroke earns the slice.
+    state = engine.step(state, { k: 0, x: fruit.x - 20, y: fruit.y });
+    state = engine.step(state, { k: 1, x: fruit.x - 19, y: fruit.y });
+    state = engine.step(state, { k: 2 });
+    state = engine.step(state, { k: 0, x: fruit.x + 19, y: fruit.y });
+    state = engine.step(state, { k: 1, x: fruit.x + 20, y: fruit.y });
+    state = engine.step(state, { k: 2 });
+    expect(engine.view!(state).sliced).toBe(0);
+  });
+
+  it('a slow many-sample swipe accumulates span across the stroke and slices', () => {
+    // High-sample-rate humans emit many short move segments; the per-stroke
+    // anchor accumulates displacement across them, so a slow swipe still lands
+    // (no per-segment length floor that would false-reject fine sampling).
+    let { state, fruit } = aRipeFruit();
+    state = engine.step(state, { k: 0, x: fruit.x - 16, y: fruit.y });
+    for (let i = -16; i <= 16; i += 2) {
+      state = engine.step(state, { k: 1, x: fruit.x + i, y: fruit.y });
+    }
+    state = engine.step(state, { k: 2 });
+    expect(engine.view!(state).sliced).toBe(1);
+  });
+});

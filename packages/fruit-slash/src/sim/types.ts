@@ -47,6 +47,16 @@ export interface SimTarget {
   spin: number;
   spinRate: number;
   sliced: 0 | 1;
+  /** Per-stroke slice-progress anchor for the genuine-swipe gate (rule U6). A
+   *  slice only lands once the blade has travelled `MIN_SLICE_SPAN` from where it
+   *  FIRST touched this fruit in the CURRENT down-stroke - a 1px point-nick can
+   *  never reach it, forcing a real swipe whose captured input falls in the rich
+   *  path channel the input-signature judge scores. `cutSeen` flags the anchor as
+   *  set; both reset at every pointer-down. Interaction progress, not latent
+   *  answer state (it tells a reader nothing about future spawns or the seed). */
+  cutX: number;
+  cutY: number;
+  cutSeen: 0 | 1;
 }
 
 /** A transient render cue the reducer emits for the live driver to turn into
