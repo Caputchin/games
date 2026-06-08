@@ -32,12 +32,12 @@
   ],
   "scripts": {
     "build:wasm": "bash scripts/build-wasm.sh",
-    "pretest": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "pretest": "bash scripts/ensure-wasm.sh",
     "test": "cargo test && vitest run",
     "test:watch": "vitest",
-    "prebuild": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "prebuild": "bash scripts/ensure-wasm.sh",
     "build": "tsup",
-    "predev": "[ -f src/generated/live-wasm.ts ] || pnpm build:wasm",
+    "predev": "bash scripts/ensure-wasm.sh",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "check": "node scripts/check.mjs"

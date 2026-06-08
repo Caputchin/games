@@ -8,6 +8,7 @@
 
 import type { Seed } from '@caputchin/replay-contract';
 import { inflateWasm } from '@caputchin/replay-wasm';
+import { PHANTOM_TAG, tagMask } from './constants.js';
 import liveWasmB64 from './generated/live-wasm.js';
 
 interface LiveExports {
@@ -99,6 +100,9 @@ export class LiveSim {
   private constructor(
     private readonly ex: LiveExports,
     private readonly ptr: number,
+    /** Per-session tag XOR mask (rule O2 mitigation). Reverses the obfuscation the
+     *  wasm applies to each entity tag so the driver can drop honeypot phantoms. */
+    private readonly mask: number,
   ) {}
 
   private static compiled(): Promise<WebAssembly.Module> {
@@ -140,7 +144,7 @@ export class LiveSim {
       configInts.length,
       endless ? 1 : 0,
     );
-    return new LiveSim(ex, ptr);
+    return new LiveSim(ex, ptr, tagMask(seed));
   }
 
   /** Advance one fixed tick. `qx`/`qz` are the cursor target in milliunits;
@@ -166,10 +170,18 @@ export class LiveSim {
     const deathCount = i(16);
     let off = 17;
 
+    // The enemy listing mixes real enemies with render-omitted honeypot phantoms,
+    // every tag XORed by the per-session mask (rule O2 mitigation). Reverse the XOR
+    // and drop the phantom-tagged entries, so the renderer + a11y only ever see
+    // real enemies. `off` advances for every entry, phantom or not.
     const enemies: Enemy[] = [];
     for (let k = 0; k < enemyCount; k += 1) {
-      enemies.push({ kind: i(off), x: i(off + 1) / 1000, z: i(off + 2) / 1000 });
+      const tag = i(off) ^ this.mask;
+      const x = i(off + 1) / 1000;
+      const z = i(off + 2) / 1000;
       off += 3;
+      if (tag === PHANTOM_TAG) continue; // honeypot decoy: never rendered
+      enemies.push({ kind: tag, x, z });
     }
     const bolts: Bolt[] = [];
     for (let k = 0; k < boltCount; k += 1) {

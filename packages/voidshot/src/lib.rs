@@ -94,10 +94,27 @@ pub struct LiveSim {
     /// Endless play records no trace (it is never submitted), so the input buffer
     /// can't grow unbounded over a long session.
     endless: bool,
+    /// Per-session tag obfuscation mask (rule O2 mitigation, "layer 4"). Each
+    /// entity's exposed `tag` is XORed with this seed-derived value, so a bot
+    /// reading the leaked listing cannot tell real entities from the render-omitted
+    /// honeypot phantoms by a static rule; the driver decodes with the same seed.
+    mask: i32,
 }
 
 /// State buffer header length (ints before the per-entity sections).
 const STATE_HEADER: usize = 17;
+
+/// Decoded tag of a render-omitted honeypot phantom in the `live_state` listing
+/// (real enemies carry their kind 0/1/2). XORed by `mask` on the wire; the driver
+/// reverses it and drops these entries before rendering. Mirrored in
+/// `constants.ts` (`PHANTOM_TAG`).
+pub const PHANTOM_CODE: i32 = 3;
+
+/// Fold the four seed words into the per-session tag mask (0..7). Computed
+/// identically here and in `wasm.ts` so the driver decodes what this encodes.
+pub fn tag_mask(s0: u32, s1: u32, s2: u32, s3: u32) -> i32 {
+    ((s0 ^ s1 ^ s2 ^ s3) & 0x7) as i32
+}
 
 impl LiveSim {
     pub fn new(seed: [u32; 4], cfg: SimConfig, endless: bool) -> Self {
@@ -107,6 +124,7 @@ impl LiveSim {
             prev: None,
             state_buf: Vec::new(),
             endless,
+            mask: tag_mask(seed[0], seed[1], seed[2], seed[3]),
         }
     }
 
@@ -176,7 +194,12 @@ pub unsafe extern "C" fn live_step(ls: *mut LiveSim, qx: i32, qz: i32, fire: i32
 ///   [9] weapon (0 normal,1 laser,2 split,3 rockets)  [10] weapon_ticks_left
 ///   [11] invuln_ticks_left
 ///   [12] enemy_count [13] bolt_count [14] asteroid_count [15] powerup_count [16] death_count
-///   then enemy_count triples:    kind, x_milli, z_milli
+///   then enemy_count triples:    tag, x_milli, z_milli
+///     where tag = (kind|PHANTOM_CODE) XOR per-session mask. The listing MIXES the
+///     real enemies with render-omitted honeypot phantoms (rule O2 mitigation); the
+///     driver reverses the XOR with the session seed and drops the phantom-tagged
+///     entries before rendering. A leaked-state bot that reads this raw cannot tell
+///     them apart by a static rule and tracks an invisible phantom (-> phantom lock).
 ///   then bolt_count quints:      x_milli, z_milli, dirx_milli, dirz_milli, is_rocket
 ///   then asteroid_count triples: x_milli, z_milli, y_milli (height above plane)
 ///   then powerup_count triples:  kind, x_milli, z_milli
@@ -195,16 +218,25 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     let weapon_left = ls.sim.weapon_ticks_left();
     let invuln_left = ls.sim.invuln_ticks_left();
     let enemies = ls.sim.enemies();
+    let phantoms = ls.sim.phantoms();
     let bolts = ls.sim.bolts();
     let asteroids = ls.sim.asteroids();
     let powerups = ls.sim.powerups();
     let deaths = ls.sim.drain_deaths();
+    let mask = ls.mask;
+
+    // Build the obfuscated enemy listing (rule O2 mitigation). Real enemies carry
+    // their kind as the tag; honeypot phantoms carry PHANTOM_CODE; every tag is
+    // XORed with the per-session `mask`. Phantoms are SPREAD through the real
+    // entries (not a separable trailing block), while the real entries keep their
+    // order so the driver's filtered view is identical to a phantom-free build.
+    let entries = obfuscated_entities(&enemies, &phantoms, mask);
 
     let buf = &mut ls.state_buf;
     buf.clear();
     buf.reserve(
         STATE_HEADER
-            + enemies.len() * 3
+            + entries.len() * 3
             + bolts.len() * 5
             + asteroids.len() * 3
             + powerups.len() * 3
@@ -226,15 +258,15 @@ pub unsafe extern "C" fn live_state(ls: *mut LiveSim) -> *const i32 {
     buf.push(weapon);
     buf.push(weapon_left);
     buf.push(invuln_left);
-    buf.push(enemies.len() as i32);
+    buf.push(entries.len() as i32); // real enemies + interleaved honeypot phantoms
     buf.push(bolts.len() as i32);
     buf.push(asteroids.len() as i32);
     buf.push(powerups.len() as i32);
     buf.push(deaths.len() as i32);
-    for (x, z, kind) in enemies {
-        buf.push(kind as i32);
-        buf.push(milli(x));
-        buf.push(milli(z));
+    for [tag, x_milli, z_milli] in entries {
+        buf.push(tag);
+        buf.push(x_milli);
+        buf.push(z_milli);
     }
     for (x, z, dx, dz, rocket) in bolts {
         buf.push(milli(x));
@@ -292,6 +324,41 @@ pub unsafe extern "C" fn live_free(ls: *mut LiveSim) {
 
 fn milli(v: f32) -> i32 {
     (v * 1000.0) as i32
+}
+
+/// Merge real enemies and honeypot phantoms into the obfuscated `live_state`
+/// listing. Each entry is `[tag ^ mask, x_milli, z_milli]`: a real enemy's tag is
+/// its kind (0..2), a phantom's is `PHANTOM_CODE`. Real entries keep their order
+/// (so the driver's decoded view matches a phantom-free build exactly), and the
+/// phantoms are spread evenly among them so a leaked-state reader cannot peel them
+/// off as a trailing block.
+pub fn obfuscated_entities(
+    enemies: &[(f32, f32, u8)],
+    phantoms: &[(f32, f32)],
+    mask: i32,
+) -> Vec<[i32; 3]> {
+    let mut out = Vec::with_capacity(enemies.len() + phantoms.len());
+    let step = if phantoms.is_empty() {
+        usize::MAX
+    } else {
+        (enemies.len() / (phantoms.len() + 1)).max(1)
+    };
+    let mut pi = 0usize;
+    for (ri, &(x, z, kind)) in enemies.iter().enumerate() {
+        out.push([(kind as i32) ^ mask, milli(x), milli(z)]);
+        if pi < phantoms.len() && (ri + 1) % step == 0 {
+            let (px, pz) = phantoms[pi];
+            out.push([PHANTOM_CODE ^ mask, milli(px), milli(pz)]);
+            pi += 1;
+        }
+    }
+    // Any phantoms not yet placed (few/no real enemies on screen this frame).
+    while pi < phantoms.len() {
+        let (px, pz) = phantoms[pi];
+        out.push([PHANTOM_CODE ^ mask, milli(px), milli(pz)]);
+        pi += 1;
+    }
+    out
 }
 
 fn clamp_i16(v: i32) -> i16 {

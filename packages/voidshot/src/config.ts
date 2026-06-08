@@ -26,6 +26,11 @@ export interface VoidshotConfig {
   shieldHits: number;
   /** Solve budget in seconds (also bounds the replay tick loop -> bounds cost). */
   timeLimitSeconds: number;
+  /** Minimum bolt accuracy (bolt-kills / bolts-fired) required for a win, as a
+   *  0-1 fraction. The aim-skill discriminator folded into the `Won` latch (U2);
+   *  a gate-affecting param, so it rides the server-signed config (F3). Internal
+   *  (not in the customer schema); conservative so it never false-rejects a human. */
+  minAccuracy: number;
   /** Whether SFX play (render-only; never touches the sim). */
   sound: boolean;
 }
@@ -51,6 +56,7 @@ const FALLBACK: VoidshotConfig = {
   enemySpeed: jsonNumber('enemy_speed', 3.5),
   shieldHits: jsonNumber('shield_hits', 3),
   timeLimitSeconds: jsonNumber('time_limit_seconds', 60),
+  minAccuracy: jsonNumber('min_accuracy', 0.12),
   sound: jsonBool('sound', true),
 };
 
@@ -76,6 +82,7 @@ export function resolveConfig(
     enemySpeed: readNumber(c, 'enemy_speed') ?? FALLBACK.enemySpeed,
     shieldHits: readNumber(c, 'shield_hits') ?? FALLBACK.shieldHits,
     timeLimitSeconds: readNumber(c, 'time_limit_seconds') ?? FALLBACK.timeLimitSeconds,
+    minAccuracy: readNumber(c, 'min_accuracy') ?? FALLBACK.minAccuracy,
     sound: readBoolean(c, 'sound') ?? FALLBACK.sound,
   };
 }
@@ -87,8 +94,8 @@ export function soundEnabled(config: Record<string, unknown> | null | undefined)
 
 /** The flat i32 array the rapier3d sim reads. Order is the contract with
  *  `SimConfig::from_ints` (config.rs): [wave_count, enemies_per_wave,
- *  enemy_speed_milli, shield_hits, time_limit_ticks]. Used by BOTH the live and
- *  headless builds. */
+ *  enemy_speed_milli, shield_hits, time_limit_ticks, min_accuracy_milli]. Used by
+ *  BOTH the live and headless builds. */
 export function configToInts(config: Record<string, unknown> | null | undefined): Int32Array {
   const c = resolveConfig(config);
   return Int32Array.from([
@@ -97,5 +104,6 @@ export function configToInts(config: Record<string, unknown> | null | undefined)
     Math.round(c.enemySpeed * 1000),
     Math.round(c.shieldHits),
     Math.round(c.timeLimitSeconds * TICK_HZ),
+    Math.round(c.minAccuracy * 1000),
   ]);
 }

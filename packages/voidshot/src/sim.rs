@@ -61,6 +61,28 @@ const ROCKET_KIND: u8 = 5; // deaths-buffer kind for the rocket blast VFX
 const LASER_RANGE: f32 = 20.0; // continuous-beam reach
 const LASER_HALF_WIDTH: f32 = 0.7; // beam half-width for the corridor hit test
 
+// --- Bot-resistance: accuracy gate (rule U2) --------------------------------
+// A win is credited only if the player's bolt accuracy clears the configured
+// floor; this folds the aim-skill discriminator INTO the `Won` latch so it is the
+// guarded metric, not an ignored side score. Below this many bolts the round is
+// too small to gate meaningfully (a casual 1-wave clear), so the floor is skipped.
+const MIN_SHOTS_FOR_GATE: u32 = 16;
+
+// --- Bot-resistance: honeypot phantom trap (rule O2 mitigation) -------------
+// Phantom targets exist in the exposed `live_state` but are NOT rendered (the
+// driver filters them by a seed-derived marker), so a human never aims at one. A
+// bot that reads the leaked entity table and aims at every entry will track an
+// invisible phantom; sustained facing-alignment toward an *isolated* phantom (no
+// real enemy near that bearing) latches a lock that fails the round. Pure tick
+// math over sim state, so live == replay. Captcha round only (never endless).
+const PHANTOM_CAP: usize = 3; // max concurrent phantoms
+const PHANTOM_INTERVAL: u32 = 84; // ~1.4s between phantom spawns
+const PHANTOM_LIFETIME: u32 = 192; // ~3.2s on the arena before it vanishes
+const PHANTOM_MIN_DIST: f32 = 1.5; // ignore a phantom basically on top of the ship
+const PHANTOM_LOCK_TICKS: u32 = 48; // ~0.8s of sustained tracking latches the lock
+const COS_PHANTOM_CONE: f32 = 0.9925; // facing within ~7 deg of the phantom bearing
+const COS_REAL_CLEAR: f32 = 0.94; // a real enemy within ~20 deg of facing -> not a lock
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Phase {
     Playing,
@@ -141,6 +163,19 @@ struct Asteroid {
     y: f32,
 }
 
+/// A honeypot phantom: a fixed arena point that is published in `live_state` (as
+/// a decoy entity a state-reading bot can see) but is NEVER rendered, never
+/// hittable, never touches the player, and never affects waves or scoring. Its
+/// only roles are to (a) bait a leaked-state aimbot into tracking an invisible
+/// target and (b) feed the phantom-lock detector. Driven by a SEPARATE rng so the
+/// real sim's seed stream is byte-identical to a build without phantoms.
+#[derive(Clone, Copy)]
+struct Phantom {
+    x: f32,
+    z: f32,
+    die_tick: u32,
+}
+
 pub struct Sim {
     cfg: SimConfig,
     rng: Rng,
@@ -183,6 +218,22 @@ pub struct Sim {
     /// win and no time cap; ends only when the shield is depleted. Never used by
     /// the replay path (the captcha is always finite), so it has no verdict role.
     endless: bool,
+    // --- bot-resistance state (all verdict-affecting, all deterministic) ------
+    /// Bolts emitted this round (split fires 3, rockets 1, laser 0). Denominator
+    /// of the accuracy gate (rule U2).
+    bolts_spawned: u32,
+    /// Enemies destroyed by a bolt / rocket-AoE this round (NOT laser/asteroid
+    /// kills). Numerator of the accuracy gate.
+    bolt_kills: u32,
+    /// Honeypot phantoms (render-omitted decoys). Separate rng so real spawns are
+    /// unchanged byte-for-byte from a phantom-free build.
+    phantoms: Vec<Phantom>,
+    phantom_rng: Rng,
+    next_phantom: u32,
+    /// Consecutive ticks the nose has tracked an isolated phantom.
+    phantom_align_streak: u32,
+    /// Latched once a phantom lock is detected; fails the round in `check_end`.
+    phantom_locked: bool,
 }
 
 impl Sim {
@@ -239,6 +290,20 @@ impl Sim {
             hit_cd: 0,
             spawned_waves: 0,
             endless,
+            bolts_spawned: 0,
+            bolt_kills: 0,
+            phantoms: Vec::new(),
+            // Distinct fold of the same platform seed: deterministic, but a
+            // separate stream so it never advances the real-entity rng.
+            phantom_rng: Rng::new([
+                seed[3] ^ 0x5EED_F00D,
+                seed[2] ^ 0x1234_ABCD,
+                seed[1] ^ 0x9E37_79B9,
+                seed[0] ^ 0xA5A5_5A5A,
+            ]),
+            next_phantom: PHANTOM_INTERVAL,
+            phantom_align_streak: 0,
+            phantom_locked: false,
         }
     }
 
@@ -259,6 +324,17 @@ impl Sim {
     pub fn player_pos(&self) -> (f32, f32) {
         let t = self.bodies[self.player].translation();
         (t.x, t.z)
+    }
+
+    /// Whether a phantom lock has latched (a leaked-state bot tracking a decoy).
+    /// Exposed for tests; the verdict consumes it via `check_end`.
+    pub fn phantom_locked(&self) -> bool {
+        self.phantom_locked
+    }
+
+    /// (bolt_kills, bolts_spawned) for the accuracy gate. Exposed for tests.
+    pub fn accuracy_stats(&self) -> (u32, u32) {
+        (self.bolt_kills, self.bolts_spawned)
     }
 
     /// Player facing unit vector (the bolt stream direction).
@@ -347,6 +423,8 @@ impl Sim {
         self.spawn_powerups();
         self.collect_powerups();
         self.contact();
+        self.step_phantoms(); // honeypot decoys: expire + spawn (captcha round only)
+        self.detect_phantom_lock(); // latch a lock if the nose tracks a phantom
         self.check_end();
 
         self.tick += 1;
@@ -541,6 +619,7 @@ impl Sim {
 
     fn spawn_bolt(&mut self, dx: f32, dz: f32, rocket: bool) {
         let (px, pz) = self.player_pos();
+        self.bolts_spawned += 1; // accuracy-gate denominator (rule U2)
         self.bolts.push(Bolt {
             x: px + dx * PLAYER_R,
             z: pz + dz * PLAYER_R,
@@ -620,11 +699,13 @@ impl Sim {
                             dx * dx + dz * dz < aoe2
                         })
                         .collect();
+                    self.bolt_kills += caught.len() as u32; // accuracy numerator
                     for k in caught {
                         self.destroy_enemy(k);
                     }
                     self.deaths.push((bx, bz, ROCKET_KIND));
                 } else {
+                    self.bolt_kills += 1; // accuracy numerator (rule U2)
                     self.destroy_enemy(ei);
                 }
                 continue; // a not-yet-stepped bolt is now at index i
@@ -814,11 +895,98 @@ impl Sim {
         }
     }
 
+    /// Expire dead phantoms and seed new ones on a cadence (captcha round only).
+    /// Uses `phantom_rng` exclusively, so the real-entity seed stream is untouched.
+    fn step_phantoms(&mut self) {
+        if self.endless {
+            return;
+        }
+        let tick = self.tick;
+        self.phantoms.retain(|p| p.die_tick > tick);
+        if self.tick >= self.next_phantom && self.phantoms.len() < PHANTOM_CAP {
+            let angle = self.phantom_rng.range(0.0, std::f32::consts::TAU);
+            let r = self.phantom_rng.range(2.5, RIM_R - 2.0);
+            self.phantoms.push(Phantom {
+                x: r * angle.cos(),
+                z: r * angle.sin(),
+                die_tick: self.tick + PHANTOM_LIFETIME,
+            });
+            self.next_phantom = self.tick + PHANTOM_INTERVAL;
+        }
+    }
+
+    /// Latch a phantom lock when the nose tracks an *isolated* phantom (one with no
+    /// real enemy near the same bearing) for a sustained run of ticks. A human aims
+    /// only at rendered enemies, so it never tracks a phantom; a bot that aims off
+    /// the leaked entity table will. Verdict-affecting, so it is deterministic tick
+    /// math: live == replay. Captcha round only.
+    fn detect_phantom_lock(&mut self) {
+        if self.endless || self.phantom_locked || self.phantoms.is_empty() {
+            return;
+        }
+        let (px, pz) = self.player_pos();
+        let (fx, fz) = (self.fx, self.fz);
+        // Is the nose pointing within the tight cone of any far-enough phantom?
+        let on_phantom = self.phantoms.iter().any(|p| {
+            let (dx, dz) = (p.x - px, p.z - pz);
+            let d = (dx * dx + dz * dz).sqrt();
+            d >= PHANTOM_MIN_DIST && (dx * fx + dz * fz) / d > COS_PHANTOM_CONE
+        });
+        if !on_phantom {
+            self.phantom_align_streak = 0;
+            return;
+        }
+        // Isolation guard: if a LIVING real enemy sits within the (wider) clearance
+        // cone of the facing, the player may legitimately be aiming at it - never
+        // count that as a phantom lock. Pins the false-positive rate to ~0.
+        let real_in_cone = self.enemies.iter().filter(|e| e.alive).any(|e| {
+            let t = self.bodies[e.handle].translation();
+            let (dx, dz) = (t.x - px, t.z - pz);
+            let d = (dx * dx + dz * dz).sqrt();
+            d > 1e-3 && (dx * fx + dz * fz) / d > COS_REAL_CLEAR
+        });
+        if real_in_cone {
+            self.phantom_align_streak = 0;
+            return;
+        }
+        self.phantom_align_streak += 1;
+        if self.phantom_align_streak >= PHANTOM_LOCK_TICKS {
+            self.phantom_locked = true;
+        }
+    }
+
+    /// Whether the bolt accuracy clears the configured floor (rule U2). Skipped for
+    /// a round too small to gate (few bolts -> a casual single-wave clear or a
+    /// laser/asteroid-heavy win), so it only ever bites a high-volume sprayer.
+    fn accuracy_ok(&self) -> bool {
+        self.bolts_spawned < MIN_SHOTS_FOR_GATE
+            || (self.bolt_kills as i64) * 1000
+                >= (self.bolts_spawned as i64) * self.cfg.min_accuracy_milli as i64
+    }
+
+    /// (x, z) for each live phantom, for the live-state honeypot listing. Never
+    /// rendered (the driver filters them by their seed-derived marker).
+    pub fn phantoms(&self) -> Vec<(f32, f32)> {
+        self.phantoms.iter().map(|p| (p.x, p.z)).collect()
+    }
+
     fn check_end(&mut self) {
-        if self.shield <= 0 {
+        if self.shield <= 0 || self.phantom_locked {
+            // Shield gone, or a phantom lock latched (a leaked-state bot tracking an
+            // invisible decoy) -> the round fails.
             self.phase = Phase::Lost;
-        } else if !self.endless && self.spawned_waves >= self.cfg.wave_count && self.living_count() == 0 {
-            self.phase = Phase::Won;
+        } else if !self.endless
+            && self.spawned_waves >= self.cfg.wave_count
+            && self.living_count() == 0
+        {
+            // Waves cleared: a win is credited only if the player actually aimed
+            // (accuracy gate, rule U2). A blind 360-sprayer that clears the swarm by
+            // luck fails here instead of passing on a metric the verdict ignored.
+            self.phase = if self.accuracy_ok() {
+                Phase::Won
+            } else {
+                Phase::Lost
+            };
         }
     }
 }
