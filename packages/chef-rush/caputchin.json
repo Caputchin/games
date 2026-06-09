@@ -1,0 +1,35 @@
+{
+  "terms_accepted": true,
+  "license": "MIT",
+  "marketplace": {
+    "name": "Chef Rush",
+    "description": "Slash each dish the way its arrow points before it spoils, and never touch the spoiled ones.",
+    "preview": "preview.png",
+    "categories": [
+      "Arcade",
+      "Action"
+    ],
+    "support": {
+      "responsive": true,
+      "touch": true,
+      "keyboard": false,
+      "screenReader": false,
+      "audio": "optional"
+    },
+    "author": {
+      "name": "Caputchin",
+      "url": "https://caputchin.com"
+    }
+  },
+  "npm": "@caputchin/game-chef-rush",
+  "entry": "dist/chef-rush.js",
+  "run": {
+    "entry": "dist/run.js"
+  },
+  "preferred": {
+    "width": 400,
+    "height": 300,
+    "layout": "inline"
+  },
+  "minSolveMs": 2500
+}

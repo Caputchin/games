@@ -45,6 +45,10 @@
     "packages/voidshot": {
       "component": "voidshot",
       "package-name": "@caputchin/game-voidshot"
+    },
+    "packages/chef-rush": {
+      "component": "chef-rush",
+      "package-name": "@caputchin/game-chef-rush"
     }
   }
 }

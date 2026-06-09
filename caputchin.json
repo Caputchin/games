@@ -20,6 +20,7 @@
     "./packages/monkey-maze",
     "./packages/paddle-rally",
     "./packages/blockfall",
-    "./packages/voidshot"
+    "./packages/voidshot",
+    "./packages/chef-rush"
   ]
 }

@@ -1,0 +1,51 @@
+{
+  "name": "@caputchin/game-chef-rush",
+  "version": "0.1.0",
+  "description": "Chop, flip, and plate the right dish before it spoils, to prove you're human. An Excalibur.js gesture-reaction captcha. A Caputchin first-party game.",
+  "keywords": [
+    "caputchin",
+    "caputchin-game",
+    "captcha",
+    "excalibur",
+    "cooking",
+    "reaction",
+    "game"
+  ],
+  "homepage": "https://github.com/Caputchin/caputchin-games#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caputchin/caputchin-games",
+    "directory": "packages/chef-rush"
+  },
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "caputchin.json",
+    ".caputchin",
+    "preview.png",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "./dist/chef-rush.js"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@caputchin/engine-kit": "^0.5.0",
+    "@caputchin/game-sdk": "^3.2.0",
+    "@caputchin/preset-excalibur": "^0.1.0",
+    "@caputchin/replay-selfcheck": "^0.2.0",
+    "@types/node": "^20.0.0",
+    "excalibur": "0.32.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

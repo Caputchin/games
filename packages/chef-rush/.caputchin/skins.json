@@ -1,0 +1,40 @@
+{
+  "schema": {
+    "background": { "type": "color", "name": "Background", "description": "The kitchen backdrop fill." },
+    "counter": { "type": "color", "name": "Counter", "description": "The counter band the stations sit on." },
+    "station": { "type": "color", "name": "Station", "description": "An empty station disc." },
+    "station_ring": { "type": "color", "name": "Station outline", "description": "The ring around each station." },
+    "good_color": { "type": "color", "name": "Dish", "description": "A dish to serve (the good target)." },
+    "spoiled_color": { "type": "color", "name": "Spoiled dish", "description": "A spoiled decoy you must not touch." },
+    "mark_color": { "type": "color", "name": "Marks", "description": "The direction arrow and the spoiled X." },
+    "accent_color": { "type": "color", "name": "Accent", "description": "Served-dish pips and serve flashes." },
+    "life_color": { "type": "color", "name": "Lives", "description": "The lives indicator." }
+  },
+  "presets": {
+    "kitchen": {
+      "_default": true,
+      "_theme": "any",
+      "background": "#1b1410",
+      "counter": "#2a211a",
+      "station": "#3a2f25",
+      "station_ring": "#5a4836",
+      "good_color": "#f2a93b",
+      "spoiled_color": "#d24b3e",
+      "mark_color": "#fff7ec",
+      "accent_color": "#7fd86f",
+      "life_color": "#e8615a"
+    },
+    "diner": {
+      "_theme": "light",
+      "background": "#f4ece0",
+      "counter": "#e3d4bf",
+      "station": "#cdb39a",
+      "station_ring": "#a8896a",
+      "good_color": "#e08a1e",
+      "spoiled_color": "#c0392b",
+      "mark_color": "#2a1f15",
+      "accent_color": "#3aa657",
+      "life_color": "#c0392b"
+    }
+  }
+}

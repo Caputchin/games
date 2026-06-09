@@ -8,5 +8,6 @@
   "packages/monkey-maze": "0.3.0",
   "packages/paddle-rally": "0.3.0",
   "packages/blockfall": "0.3.0",
-  "packages/voidshot": "0.4.0"
+  "packages/voidshot": "0.4.0",
+  "packages/chef-rush": "0.1.0"
 }
