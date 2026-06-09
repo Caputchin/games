@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/Caputchin/games/compare/voidshot-v0.3.0...voidshot-v0.4.0) (2026-06-09)
+
+
+### Features
+
+* **voidshot:** accuracy-gate win latch + honeypot phantom trap + live_state obfuscation ([28e7c5a](https://github.com/Caputchin/games/commit/28e7c5aae293790bf368791222f5027ad23fee7d))
+
 ## [0.3.0](https://github.com/Caputchin/games/compare/voidshot-v0.2.0...voidshot-v0.3.0) (2026-06-07)
 
 

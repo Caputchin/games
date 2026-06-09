@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/Caputchin/games/compare/fruit-slash-v0.4.0...fruit-slash-v0.5.0) (2026-06-09)
+
+
+### Features
+
+* **fruit-slash:** require a genuine swipe to slice so the U6 path channel reaches the solver ([718eded](https://github.com/Caputchin/games/commit/718eded92a850a1ea7d3bc26a83e628d6191825d))
+
 ## [0.4.0](https://github.com/Caputchin/games/compare/fruit-slash-v0.3.2...fruit-slash-v0.4.0) (2026-06-07)
 
 
