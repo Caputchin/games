@@ -9,20 +9,20 @@
       "description": "The short how-to line shown along the bottom during play."
     },
     "served": {
-      "name": "Dish served",
-      "description": "Announced when the player correctly serves a dish."
+      "name": "Order served",
+      "description": "Announced when the player completes an order (all its ingredients chopped)."
     },
-    "spoiledHit": {
-      "name": "Spoiled touched",
-      "description": "Announced when the player gestures on a spoiled dish, ending the round."
+    "mistake": {
+      "name": "Wrong ingredient",
+      "description": "Announced when the player chops a wrong (off-order) or rotten ingredient, which costs a life."
     },
     "missed": {
-      "name": "Dish spoiled",
-      "description": "Announced when a dish is left too long and spoils unserved."
+      "name": "Ingredient slipped by",
+      "description": "Announced when a needed ingredient leaves the board unchopped."
     },
     "verified": {
       "name": "Verified",
-      "description": "Announced when the player serves enough dishes to pass the captcha."
+      "description": "Announced when the player completes enough orders to pass the captcha."
     },
     "failed": {
       "name": "Round over",
@@ -33,112 +33,112 @@
     "English": {
       "_lang": "en",
       "_default": true,
-      "ariaIntro": "Chef Rush, a cooking reaction game. Slash each dish in the arrow direction before it spoils, and never touch a dish marked with an X.",
-      "instruction": "Slash dishes the way the arrow points. Skip the X.",
-      "served": "Dish served.",
-      "spoiledHit": "You touched a spoiled dish. Round over.",
-      "missed": "A dish spoiled.",
-      "verified": "Verified. Kitchen cleared.",
+      "ariaIntro": "Chef Rush, a cooking reaction game. An order shows the ingredients a dish needs. Chop those ingredients as they appear on the board, and leave the wrong ones and the rotten ones alone.",
+      "instruction": "Chop the ingredients the order needs. Skip the wrong and the rotten.",
+      "served": "Order served.",
+      "mistake": "Wrong ingredient.",
+      "missed": "An ingredient slipped by.",
+      "verified": "Verified. Orders all served.",
       "failed": "Round over."
     },
-    "简体中文": {
+    "Chinese (Simplified)": {
       "_lang": "zh-Hans",
-      "ariaIntro": "Chef Rush，一款厨房反应游戏。在菜品变质前，按箭头方向划过每道菜，切勿碰到标有 X 的菜品。",
-      "instruction": "顺着箭头方向划过菜品，跳过带 X 的。",
-      "served": "上菜成功。",
-      "spoiledHit": "你碰到了变质的菜品，本轮结束。",
-      "missed": "一道菜变质了。",
-      "verified": "验证通过，后厨已清空。",
+      "ariaIntro": "Chef Rush，一款烹饪反应游戏。订单会列出一道菜所需的食材。食材在砧板上出现时切下订单需要的，错的食材和坏掉的食材都别动。",
+      "instruction": "切订单需要的食材。错的和坏的别切。",
+      "served": "上菜了。",
+      "mistake": "切错食材了。",
+      "missed": "漏掉一个食材。",
+      "verified": "验证通过。订单全部上齐。",
       "failed": "本轮结束。"
     },
-    "Español": {
+    "Spanish": {
       "_lang": "es",
-      "ariaIntro": "Chef Rush, un juego de reflejos en la cocina. Desliza cada plato en la dirección de la flecha antes de que se eche a perder, y nunca toques un plato marcado con una X.",
-      "instruction": "Desliza los platos hacia donde apunta la flecha. Salta la X.",
-      "served": "Plato servido.",
-      "spoiledHit": "Tocaste un plato echado a perder. Fin de la ronda.",
-      "missed": "Se echó a perder un plato.",
-      "verified": "Verificado. Cocina despejada.",
-      "failed": "Fin de la ronda."
+      "ariaIntro": "Chef Rush, un juego de reacción de cocina. Un pedido muestra los ingredientes que lleva un plato. Pica esos ingredientes cuando aparezcan en la tabla y deja en paz los equivocados y los podridos.",
+      "instruction": "Pica los ingredientes que pide el pedido. Salta los equivocados y los podridos.",
+      "served": "Pedido servido.",
+      "mistake": "Ingrediente equivocado.",
+      "missed": "Se escapó un ingrediente.",
+      "verified": "Verificado. Todos los pedidos servidos.",
+      "failed": "Ronda terminada."
     },
-    "العربية": {
+    "Arabic": {
       "_lang": "ar",
-      "ariaIntro": "Chef Rush، لعبة ردود فعل في المطبخ. مرّر على كل طبق باتجاه السهم قبل أن يفسد، ولا تلمس أبداً طبقاً عليه علامة X.",
-      "instruction": "مرّر على الأطباق باتجاه السهم، وتجاوز علامة X.",
-      "served": "تم تقديم الطبق.",
-      "spoiledHit": "لمست طبقاً فاسداً، انتهت الجولة.",
-      "missed": "فسد أحد الأطباق.",
-      "verified": "تم التحقق، المطبخ جاهز.",
+      "ariaIntro": "Chef Rush، لعبة طبخ بسرعة البديهة. يعرض الطلب المكونات التي يحتاجها الطبق. قطّع تلك المكونات حين تظهر على لوح التقطيع، واترك المكونات الخطأ والفاسدة دون أن تمسها.",
+      "instruction": "قطّع المكونات التي يطلبها الطلب. تجاوز الخطأ والفاسد.",
+      "served": "تم تقديم الطلب.",
+      "mistake": "مكوّن خطأ.",
+      "missed": "أفلت منك مكوّن.",
+      "verified": "تم التحقق. قُدّمت كل الطلبات.",
       "failed": "انتهت الجولة."
     },
-    "Português": {
+    "Portuguese": {
       "_lang": "pt",
-      "ariaIntro": "Chef Rush, um jogo de reflexos na cozinha. Deslize cada prato na direção da seta antes que ele estrague, e nunca toque num prato marcado com X.",
-      "instruction": "Deslize os pratos no sentido da seta. Pule o X.",
-      "served": "Prato servido.",
-      "spoiledHit": "Você tocou num prato estragado. Fim da rodada.",
-      "missed": "Um prato estragou.",
-      "verified": "Verificado. Cozinha limpa.",
-      "failed": "Fim da rodada."
+      "ariaIntro": "Chef Rush, um jogo de reação de cozinha. Um pedido mostra os ingredientes que um prato leva. Pique esses ingredientes quando aparecerem na tábua e deixe os errados e os estragados em paz.",
+      "instruction": "Pique os ingredientes que o pedido pede. Pule os errados e os estragados.",
+      "served": "Pedido servido.",
+      "mistake": "Ingrediente errado.",
+      "missed": "Um ingrediente escapou.",
+      "verified": "Verificado. Todos os pedidos servidos.",
+      "failed": "Rodada encerrada."
     },
-    "Français": {
+    "French": {
       "_lang": "fr",
-      "ariaIntro": "Chef Rush, un jeu de réflexes en cuisine. Balayez chaque plat dans le sens de la flèche avant qu'il ne s'abîme, et ne touchez jamais un plat marqué d'un X.",
-      "instruction": "Balayez les plats dans le sens de la flèche. Évitez le X.",
-      "served": "Plat servi.",
-      "spoiledHit": "Vous avez touché un plat avarié. Manche terminée.",
-      "missed": "Un plat s'est gâté.",
-      "verified": "Vérifié. Cuisine nickel.",
+      "ariaIntro": "Chef Rush, un jeu de réflexes en cuisine. Une commande indique les ingrédients d'un plat. Émincez ces ingrédients quand ils apparaissent sur la planche, et laissez les mauvais et les pourris tranquilles.",
+      "instruction": "Émincez les ingrédients de la commande. Laissez les mauvais et les pourris.",
+      "served": "Commande servie.",
+      "mistake": "Mauvais ingrédient.",
+      "missed": "Un ingrédient est passé.",
+      "verified": "Vérifié. Toutes les commandes servies.",
       "failed": "Manche terminée."
     },
-    "Deutsch": {
+    "German": {
       "_lang": "de",
-      "ariaIntro": "Chef Rush, ein Reaktionsspiel in der Küche. Wische jedes Gericht in Pfeilrichtung, bevor es verdirbt, und berühre niemals ein mit X markiertes Gericht.",
-      "instruction": "Wische die Gerichte in Pfeilrichtung. Lass das X aus.",
-      "served": "Gericht serviert.",
-      "spoiledHit": "Du hast ein verdorbenes Gericht berührt. Runde vorbei.",
-      "missed": "Ein Gericht ist verdorben.",
-      "verified": "Verifiziert. Küche blitzblank.",
+      "ariaIntro": "Chef Rush, ein Koch-Reaktionsspiel. Eine Bestellung zeigt die Zutaten, die ein Gericht braucht. Schneide diese Zutaten, sobald sie auf dem Brett erscheinen, und lass die falschen und die verdorbenen liegen.",
+      "instruction": "Schneide die Zutaten der Bestellung. Lass die falschen und verdorbenen liegen.",
+      "served": "Bestellung serviert.",
+      "mistake": "Falsche Zutat.",
+      "missed": "Eine Zutat ist durchgerutscht.",
+      "verified": "Verifiziert. Alle Bestellungen serviert.",
       "failed": "Runde vorbei."
     },
-    "Русский": {
+    "Russian": {
       "_lang": "ru",
-      "ariaIntro": "Chef Rush, игра на реакцию в кухне. Проводи по каждому блюду в направлении стрелки, пока оно не испортилось, и никогда не трогай блюдо с пометкой X.",
-      "instruction": "Проводи по блюдам в сторону стрелки. Пропускай X.",
-      "served": "Блюдо подано.",
-      "spoiledHit": "Ты задел испорченное блюдо. Раунд окончен.",
-      "missed": "Блюдо испортилось.",
-      "verified": "Проверено. Кухня чиста.",
+      "ariaIntro": "Chef Rush, кулинарная игра на реакцию. В заказе показаны ингредиенты, нужные для блюда. Нарезай эти ингредиенты, когда они появляются на доске, а неподходящие и испорченные не трогай.",
+      "instruction": "Нарезай ингредиенты из заказа. Пропускай неподходящие и испорченные.",
+      "served": "Заказ подан.",
+      "mistake": "Не тот ингредиент.",
+      "missed": "Ингредиент проскользнул.",
+      "verified": "Проверка пройдена. Все заказы поданы.",
       "failed": "Раунд окончен."
     },
-    "日本語": {
+    "Japanese": {
       "_lang": "ja",
-      "ariaIntro": "Chef Rush、キッチンの反射神経ゲームです。料理が傷む前に、矢印の向きにすばやく払ってください。X 印の料理には絶対に触れないでください。",
-      "instruction": "矢印の向きに料理を払いましょう。X は飛ばします。",
-      "served": "料理を提供しました。",
-      "spoiledHit": "傷んだ料理に触れてしまいました。ラウンド終了です。",
-      "missed": "料理が傷んでしまいました。",
-      "verified": "認証完了。厨房はぴかぴかです。",
-      "failed": "ラウンド終了です。"
+      "ariaIntro": "Chef Rush、料理の反応ゲームです。注文には一皿に必要な食材が表示されます。まな板に現れたら注文の食材を刻み、違う食材と傷んだ食材はそのままにしてください。",
+      "instruction": "注文の食材を刻みましょう。違うものと傷んだものは飛ばします。",
+      "served": "注文をお出ししました。",
+      "mistake": "食材が違います。",
+      "missed": "食材を逃しました。",
+      "verified": "認証されました。注文をすべてお出ししました。",
+      "failed": "ラウンド終了。"
     },
-    "한국어": {
+    "Korean": {
       "_lang": "ko",
-      "ariaIntro": "Chef Rush, 주방 순발력 게임입니다. 요리가 상하기 전에 화살표 방향으로 휙 베어 내고, X 표시가 있는 요리는 절대 건드리지 마세요.",
-      "instruction": "화살표 방향으로 요리를 베어 내세요. X는 건너뛰세요.",
-      "served": "요리를 냈어요.",
-      "spoiledHit": "상한 요리를 건드렸어요. 라운드 종료.",
-      "missed": "요리가 상했어요.",
-      "verified": "인증 완료. 주방이 깨끗해졌어요.",
+      "ariaIntro": "Chef Rush, 요리 반응 게임입니다. 주문에는 한 접시에 필요한 재료가 표시됩니다. 도마에 나타나면 주문의 재료를 썰고, 틀린 재료와 상한 재료는 그대로 두세요.",
+      "instruction": "주문에 맞는 재료를 써세요. 틀린 것과 상한 것은 넘기세요.",
+      "served": "주문이 나갔습니다.",
+      "mistake": "재료가 틀렸습니다.",
+      "missed": "재료를 놓쳤습니다.",
+      "verified": "인증되었습니다. 모든 주문이 나갔습니다.",
       "failed": "라운드 종료."
     },
-    "Bahasa Indonesia": {
+    "Indonesian": {
       "_lang": "id",
-      "ariaIntro": "Chef Rush, permainan refleks di dapur. Sapukan setiap hidangan ke arah panah sebelum basi, dan jangan pernah menyentuh hidangan bertanda X.",
-      "instruction": "Sapukan hidangan ke arah panah. Lewati yang ber-X.",
-      "served": "Hidangan disajikan.",
-      "spoiledHit": "Kamu menyentuh hidangan basi. Ronde selesai.",
-      "missed": "Sebuah hidangan basi.",
-      "verified": "Terverifikasi. Dapur bersih.",
+      "ariaIntro": "Chef Rush, permainan reaksi memasak. Pesanan menampilkan bahan yang dibutuhkan sebuah hidangan. Cincang bahan-bahan itu saat muncul di talenan, dan biarkan bahan yang salah dan yang busuk.",
+      "instruction": "Cincang bahan yang diminta pesanan. Lewati yang salah dan yang busuk.",
+      "served": "Pesanan disajikan.",
+      "mistake": "Bahan salah.",
+      "missed": "Satu bahan lolos.",
+      "verified": "Terverifikasi. Semua pesanan disajikan.",
       "failed": "Ronde selesai."
     }
   }

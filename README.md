@@ -16,7 +16,7 @@ The official first-party game pack for the [Caputchin](https://caputchin.com) ma
 | [Paddle Rally](packages/paddle-rally/) | Table-tennis captcha: out-rally a CPU paddle, or keep the ball alive solo. Built on Phaser. |
 | [Blockfall](packages/blockfall/) | Stack the falling blocks and clear lines to prove you're human. |
 | [Voidshot](packages/voidshot/) | Pilot your drone through a neon swarm and clear every wave before your shield burns out. Built on rapier3d + OGL. |
-| [Chef Rush](packages/chef-rush/) | Slash each dish the way its arrow points before it spoils, and never touch the spoiled ones. Built on Excalibur.js. |
+| [Chef Rush](packages/chef-rush/) | Read the order and chop the ingredients it needs as they hit the board, skipping the wrong and rotten ones. Built on Excalibur.js. |
 
 More games land here over time. Each one is browsable and embeddable on its own from the [Caputchin marketplace](https://caputchin.com/marketplace).
 

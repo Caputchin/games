@@ -1,7 +1,7 @@
 {
   "name": "@caputchin/game-chef-rush",
   "version": "0.1.0",
-  "description": "Chop, flip, and plate the right dish before it spoils, to prove you're human. An Excalibur.js gesture-reaction captcha. A Caputchin first-party game.",
+  "description": "Read the order and chop the ingredients it needs, skipping the wrong and rotten ones, to prove you're human. An Excalibur.js cooking-reaction captcha. A Caputchin first-party game.",
   "keywords": [
     "caputchin",
     "caputchin-game",

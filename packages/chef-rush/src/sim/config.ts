@@ -15,15 +15,16 @@ function read(raw: RawConfig, key: string, def: number): number {
 }
 const clamp = (n: number, min: number, max: number): number => Math.min(max, Math.max(min, n));
 
-/** Defaults: a 48s round, serve 8 dishes, 3 lives, a 1.5s actionable window,
- *  28% of dishes spoiled. Dashboard keys are seconds / percent / counts. */
+/** Defaults: serve 4 orders, 3 lives, a 3-ingredient recipe, a 1.8s window,
+ *  40% distractors, a 48s round. Dashboard keys are counts / seconds / percent. */
 export function resolveSimConfig(raw: RawConfig): ChefConfig {
   return {
-    passScore: clamp(Math.round(read(raw, 'pass_dishes', 8)), 3, 30),
+    passScore: clamp(Math.round(read(raw, 'pass_orders', 4)), 2, 12),
     lives: clamp(Math.round(read(raw, 'lives', 3)), 1, 9),
-    spawnIntervalTicks: clamp(Math.round(read(raw, 'spawn_interval_ticks', 45)), 28, 90),
-    gestureWindowTicks: clamp(Math.round(read(raw, 'gesture_window_ticks', 75)), 40, 150),
-    spoiledChance: clamp(read(raw, 'spoiled_percent', 28), 0, 60) / 100,
+    spawnIntervalTicks: clamp(Math.round(read(raw, 'spawn_interval_ticks', 40)), 24, 90),
+    ingredientWindowTicks: clamp(Math.round(read(raw, 'ingredient_window_ticks', 90)), 50, 160),
+    distractorChance: clamp(read(raw, 'distractor_percent', 40), 0, 60) / 100,
+    recipeSize: clamp(Math.round(read(raw, 'recipe_size', 3)), 1, 4),
     timeBudgetTicks: clamp(Math.round(read(raw, 'time_budget_seconds', 48)), 12, 60) * TICKS_PER_S,
   };
 }

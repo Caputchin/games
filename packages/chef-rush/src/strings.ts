@@ -6,12 +6,12 @@
 import type { ResolvedLocale } from '@caputchin/game-sdk';
 
 const EN = {
-  ariaIntro: 'Chef Rush, a cooking reaction game. Slash each dish in the arrow direction before it spoils, and never touch a dish marked with an X.',
-  instruction: 'Slash dishes the way the arrow points. Skip the X.',
-  served: 'Dish served.',
-  spoiledHit: 'You touched a spoiled dish. Round over.',
-  missed: 'A dish spoiled.',
-  verified: 'Verified. Kitchen cleared.',
+  ariaIntro: 'Chef Rush, a cooking reaction game. An order shows the ingredients a dish needs. Chop those ingredients as they appear on the board, and leave the wrong ones and the rotten ones alone.',
+  instruction: 'Chop the ingredients the order needs. Skip the wrong and the rotten.',
+  served: 'Order served.',
+  mistake: 'Wrong ingredient.',
+  missed: 'An ingredient slipped by.',
+  verified: 'Verified. Orders all served.',
   failed: 'Round over.',
 } as const;
 

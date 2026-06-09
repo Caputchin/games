@@ -3,7 +3,7 @@
   "license": "MIT",
   "marketplace": {
     "name": "Chef Rush",
-    "description": "Slash each dish the way its arrow points before it spoils, and never touch the spoiled ones.",
+    "description": "Read the order, chop the ingredients it needs as they hit the board, and skip the wrong and rotten ones.",
     "preview": "preview.png",
     "categories": [
       "Arcade",

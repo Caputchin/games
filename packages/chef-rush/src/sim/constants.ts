@@ -15,45 +15,40 @@ const FIXED_TIMESTEP_MS = 20;
 export const WORLD_W = 800;
 export const WORLD_H = 600;
 
-/** The four kitchen stations, evenly spaced along the counter row. A prompt
- *  appears at one free station at a time; the player gestures at that station. */
-export const STATIONS: ReadonlyArray<{ readonly x: number; readonly y: number }> = [
-  { x: 100, y: 400 },
-  { x: 300, y: 400 },
-  { x: 500, y: 400 },
-  { x: 700, y: 400 },
+/** The cutting-board slots an ingredient can occupy, left to right. One
+ *  ingredient per slot at a time; the player chops by swiping across it. */
+export const SLOTS: ReadonlyArray<{ readonly x: number; readonly y: number }> = [
+  { x: 110, y: 415 },
+  { x: 265, y: 415 },
+  { x: 420, y: 415 },
+  { x: 575, y: 415 },
+  { x: 730, y: 415 },
 ];
-export const STATION_COUNT = STATIONS.length;
-/** Hit radius of a station (a press within this of a station's centre is "at" it). */
-export const STATION_R = 90;
-/** Squared radius - keeps the station hit-test sqrt-free (bit-identical both ends). */
-export const STATION_R2 = STATION_R * STATION_R;
+export const SLOT_COUNT = SLOTS.length;
 
-/** Gesture directions. The wire/order is fixed; the prompt's requiredDir is one. */
-export const DIR_UP = 0;
-export const DIR_RIGHT = 1;
-export const DIR_DOWN = 2;
-export const DIR_LEFT = 3;
-export const DIR_COUNT = 4;
+/** Ingredient hit radius (the chop swipe must cross this disc). */
+export const INGREDIENT_R = 62;
+/** Extra slack on the swipe-vs-ingredient hit test. */
+export const HIT_PAD = 14;
 
-/** Genuine-gesture span (rule U6): a gesture only registers once the stroke has
+/** Genuine-gesture span (rule U6): a chop only registers once the stroke has
  *  swept at least this far (max-axis / Chebyshev displacement, sqrt-free) from
- *  where it first pressed down. A point-nick / tap never reaches it, so the
- *  captured motor input lands in the rich path (drag) channel the input-signature
- *  judge scores instead of a contentless tap. Well above the tap/drag boundary. */
-export const MIN_GESTURE_SPAN = 40;
+ *  where it pressed down. A tap / point-nick never reaches it, so the captured
+ *  motor input lands in the rich path (drag) channel the input-signature judge
+ *  scores instead of a contentless tap. Well above the tap/drag boundary. */
+export const MIN_CHOP_SPAN = 40;
 
-/** Reaction-time floor in ticks (rule R1): a gesture resolving fewer than this
- *  many ticks after a prompt became actionable is superhuman and does not score.
- *  Derived from the canonical human floor at this slot's fixed timestep. */
+/** Reaction-time floor in ticks (rule R1): a chop landing fewer than this many
+ *  ticks after an ingredient appeared is superhuman and does not count. Derived
+ *  from the canonical human floor at this slot's fixed timestep. */
 export const REACTION_TICKS = Math.ceil(REACTION_FLOOR_MS / FIXED_TIMESTEP_MS);
 
 /** Hard tick ceiling: a replay longer than this is truncated (a fail). The round
  *  normally ends far earlier (pass / out of lives / time budget). ~60s at 50 Hz. */
 export const MAX_TICKS = 3000;
 
-/** Difficulty ramp: spawns get faster and spoiled prompts more common as the
- *  round progresses. Linear over RAMP_TICKS, then held. */
+/** Difficulty ramp: spawns get faster and distractors more common as the round
+ *  progresses. Linear over RAMP_TICKS, then held. */
 export const RAMP_TICKS = 1800; // ~36s
-export const SPAWN_INTERVAL_MIN_TICKS = 26; // fastest spawn cadence at full ramp
-export const SPOILED_CHANCE_MAX = 0.45; // spoiled probability at full ramp
+export const SPAWN_INTERVAL_MIN_TICKS = 24; // fastest spawn cadence at full ramp
+export const DISTRACTOR_CHANCE_MAX = 0.55; // distractor probability at full ramp
