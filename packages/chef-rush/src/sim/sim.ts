@@ -2,37 +2,40 @@
 // fixed update (api.onTick) on BOTH ends. It reads input + randomness ONLY through
 // the preset api (so live and replay agree) and owns the pass/fail decision.
 //
-// Loop: an order ticket lists the ingredients a dish needs. Ingredients appear on
-// the cutting board; the player chops (swipes across) the ones the order needs and
-// leaves the wrong / rotten ones. Complete `passScore` orders to verify.
+// Loop: an order ticket lists the ingredients a dish needs. Ingredients appear at
+// three stations - the cutting board (chop), the pot (stir) and the pan (flip).
+// The player performs each station's gesture on the ingredients the order needs,
+// leaving wrong ingredients and rotten ones alone. Complete `passScore` orders to
+// verify.
 //
 // Anti-cheat rules implemented here (the captcha-game design standard):
-//   F2  every gate-affecting value (order recipe, ingredient type/rotten/slot,
+//   F2  every gate-affecting value (order recipe, item type/station/rotten,
 //       timing) comes from the server seed via api.rand*.
-//   R1  a chop landing < REACTION_TICKS after an ingredient appeared is superhuman
-//       and does not count (consumed, no fill).
-//   R2  chopping a WRONG or ROTTEN ingredient costs a life; distractor density +
-//       a per-ingredient window provide bad-target density + time pressure, so an
-//       indiscriminate "chop everything" bot loses before it serves enough orders.
-//   U6  a chop only registers after the stroke sweeps >= MIN_CHOP_SPAN, so the
-//       captured motor input is a rich path (drag) the input-signature judge scores.
+//   R1  a gesture landing < REACTION_TICKS after an item appeared is superhuman
+//       and does not count (the item is consumed, but it does not fill).
+//   R2  cooking a WRONG (off-recipe) or ROTTEN item costs a life; distractor
+//       density + a per-item window provide bad-target density + time pressure, so
+//       an indiscriminate "gesture everything" bot loses before it serves enough.
+//   U6  a gesture only registers after the stroke sweeps >= MIN_GESTURE_SPAN AND
+//       classifies as the station's motion (chop/stir/flip), so the captured motor
+//       input is a rich, shaped path the input-signature judge scores - not a tap.
 //   U2  `verified` latches when ordersServed >= passScore; result/pass read only that.
 
 import { isHumanReaction } from '@caputchin/engine-kit';
 import type { ExcaliburGameApi } from '@caputchin/preset-excalibur';
+import { DISTRACTOR_CHANCE_MAX, RAMP_TICKS, REACTION_TICKS, SPAWN_INTERVAL_MIN_TICKS } from './constants';
+import { cheb, classifyGesture, nearestStation } from './gestures';
 import {
-  DISTRACTOR_CHANCE_MAX,
-  HIT_PAD,
-  INGREDIENT_R,
-  MIN_CHOP_SPAN,
-  RAMP_TICKS,
-  REACTION_TICKS,
-  SLOTS,
-  SLOT_COUNT,
-  SPAWN_INTERVAL_MIN_TICKS,
-} from './constants';
-import { span, swipeHitsCircle } from './gestures';
-import { INGREDIENT_COUNT, type ChefConfig, type Fx, type Ingredient, type Order, type SimView } from './types';
+  INGREDIENT_COUNT,
+  STATION_COUNT,
+  stationOf,
+  type ChefConfig,
+  type Fx,
+  type Item,
+  type Order,
+  type SimView,
+  type Stroke,
+} from './types';
 
 export interface ChefSim {
   /** Advance one fixed tick. Wire to `api.onTick`. */
@@ -41,16 +44,18 @@ export interface ChefSim {
   view(): SimView;
 }
 
+/** Ingredient type indices grouped by their station (computed once). */
+const STATION_TYPES: number[][] = Array.from({ length: STATION_COUNT }, () => []);
+for (let t = 0; t < INGREDIENT_COUNT; t++) STATION_TYPES[stationOf(t)]!.push(t);
+
 /** Linear ramp from `from` to `to` over RAMP_TICKS, then held at `to`. */
 function ramp(tick: number, from: number, to: number): number {
   if (tick >= RAMP_TICKS) return to;
   return from + ((to - from) * tick) / RAMP_TICKS;
 }
 
-const CHOP_R2 = (INGREDIENT_R + HIT_PAD) * (INGREDIENT_R + HIT_PAD);
-
 export function createChefSim(api: ExcaliburGameApi, cfg: ChefConfig): ChefSim {
-  let ingredients: Ingredient[] = [];
+  let items: Item[] = [];
   let nextId = 0;
   let nextOrderId = 0;
   let spawnTimer = 0;
@@ -60,72 +65,94 @@ export function createChefSim(api: ExcaliburGameApi, cfg: ChefConfig): ChefSim {
   let over = false;
   let fx: Fx[] = [];
 
-  const stroke = { active: false, consumed: false, anchorX: 0, anchorY: 0, lastX: 0, lastY: 0, hasLast: false };
+  const stroke: Stroke = {
+    active: false,
+    anchorX: 0,
+    anchorY: 0,
+    lastX: 0,
+    lastY: 0,
+    minX: 0,
+    maxX: 0,
+    minY: 0,
+    maxY: 0,
+    pathLen: 0,
+  };
 
   function newOrder(): Order {
+    // Distinct ingredients (partial Fisher-Yates over the type indices), so a dish
+    // reads as several different preps rather than the same one repeated.
+    const pool = Array.from({ length: INGREDIENT_COUNT }, (_, i) => i);
     const required: number[] = [];
-    for (let i = 0; i < cfg.recipeSize; i++) required.push(api.randi(INGREDIENT_COUNT));
+    const n = Math.min(cfg.recipeSize, INGREDIENT_COUNT);
+    for (let i = 0; i < n; i++) {
+      const j = i + api.randi(INGREDIENT_COUNT - i);
+      const tmp = pool[i]!;
+      pool[i] = pool[j]!;
+      pool[j] = tmp;
+      required.push(pool[i]!);
+    }
     return { id: nextOrderId++, required, filled: required.map(() => 0) };
   }
   let order: Order = newOrder();
 
-  /** Indices of order requirements still unfilled (their ingredient types are
-   *  what the player should be chopping right now). */
-  const unfilledTypes = (): Set<number> => {
-    const s = new Set<number>();
-    for (let i = 0; i < order.required.length; i++) if (order.filled[i] === 0) s.add(order.required[i]!);
-    return s;
+  /** Ingredient types the order still needs (the ones to cook right now). */
+  const unfilledTypes = (): number[] => {
+    const out: number[] = [];
+    for (let i = 0; i < order.required.length; i++) {
+      if (order.filled[i] === 0) out.push(order.required[i]!);
+    }
+    return out;
   };
 
-  const ingredientAtSlot = (slot: number): Ingredient | undefined =>
-    ingredients.find((g) => g.slot === slot && g.done === 0);
+  const itemAtStation = (station: number): Item | undefined =>
+    items.find((it) => it.station === station && it.done === 0);
 
-  function chop(g: Ingredient, t: number): void {
-    g.done = 1;
-    if (g.rotten === 1) {
+  /** A matching gesture landed on this item. Apply the gate rules. */
+  function cook(it: Item, t: number): void {
+    it.done = 1;
+    if (it.rotten === 1) {
       lives = Math.max(0, lives - 1);
-      fx.push({ kind: 'mistake', slot: g.slot });
+      fx.push({ kind: 'mistake', station: it.station });
       return;
     }
     // First unfilled requirement matching this type.
     let req = -1;
     for (let i = 0; i < order.required.length; i++) {
-      if (order.required[i] === g.type && order.filled[i] === 0) {
+      if (order.required[i] === it.type && order.filled[i] === 0) {
         req = i;
         break;
       }
     }
     if (req < 0) {
-      // Not needed (wrong ingredient, or already have enough) -> mistake.
+      // Off-recipe (or already have enough) -> a mistake (R2).
       lives = Math.max(0, lives - 1);
-      fx.push({ kind: 'mistake', slot: g.slot });
+      fx.push({ kind: 'mistake', station: it.station });
       return;
     }
-    // Needed + fresh: R1 gate. A too-fast chop is consumed but does not fill.
-    if (!isHumanReaction(g.appearTick, t, REACTION_TICKS)) return;
+    // Needed + fresh: R1 gate. A too-fast gesture consumes the item but does not fill.
+    if (!isHumanReaction(it.appearTick, t, REACTION_TICKS)) return;
     order.filled[req] = 1;
-    fx.push({ kind: 'chop', slot: g.slot });
+    fx.push({ kind: 'cook', station: it.station });
     if (order.filled.every((f) => f === 1)) {
       ordersServed += 1;
-      fx.push({ kind: 'serve', slot: g.slot });
+      fx.push({ kind: 'serve', station: it.station });
       if (!verified && ordersServed >= cfg.passScore) verified = true;
       else order = newOrder();
     }
   }
 
-  /** Apply one swipe segment, chopping the first ingredient it crosses once the
-   *  stroke has swept a genuine span (U6). One chop per stroke. */
-  function chopSegment(ax: number, ay: number, bx: number, by: number, t: number): void {
-    if (stroke.consumed) return;
-    if (span(stroke.anchorX, stroke.anchorY, bx, by) < MIN_CHOP_SPAN) return;
-    for (const g of ingredients) {
-      if (g.done === 1) continue;
-      const s = SLOTS[g.slot]!;
-      if (!swipeHitsCircle(ax, ay, bx, by, s.x, s.y, CHOP_R2)) continue;
-      stroke.consumed = true;
-      chop(g, t);
-      return;
-    }
+  /** Resolve a completed stroke: classify it, aim it at a station, and (if the
+   *  gesture matches that station and an item is there) cook it. Wrong gesture for
+   *  a station, or an empty station, is a harmless no-op. */
+  function resolveGesture(t: number): void {
+    const kind = classifyGesture(stroke);
+    if (kind < 0) return; // not a gesture (tap / sideways)
+    const station = nearestStation(stroke.anchorX, stroke.anchorY);
+    if (station < 0) return; // not aimed at a station
+    if (kind !== station) return; // wrong motion for this station
+    const it = itemAtStation(station);
+    if (!it) return;
+    cook(it, t);
   }
 
   function spawn(t: number): void {
@@ -133,55 +160,64 @@ export function createChefSim(api: ExcaliburGameApi, cfg: ChefConfig): ChefSim {
     spawnTimer += 1;
     if (spawnTimer < interval) return;
     spawnTimer = 0;
+
     const free: number[] = [];
-    for (let i = 0; i < SLOT_COUNT; i++) if (!ingredientAtSlot(i)) free.push(i);
+    for (let s = 0; s < STATION_COUNT; s++) if (!itemAtStation(s)) free.push(s);
     if (free.length === 0) return;
-    const slot = free[api.randi(free.length)]!;
 
     const distractorChance = ramp(t, cfg.distractorChance, DISTRACTOR_CHANCE_MAX);
-    const needed = [...unfilledTypes()];
+    const needed = unfilledTypes();
+    // Needed ingredients whose station is currently free (so the order stays solvable).
+    const needable = needed.filter((type) => free.includes(stationOf(type)));
+
+    let station: number;
     let type: number;
     let rotten: 0 | 1 = 0;
-    if (needed.length > 0 && !api.chance(distractorChance)) {
-      // A needed ingredient (so the order stays fulfillable), fresh.
-      type = needed[api.randi(needed.length)]!;
-    } else if (api.chance(0.5)) {
-      // Rotten distractor (any type) - must not be chopped.
-      type = api.randi(INGREDIENT_COUNT);
-      rotten = 1;
+
+    if (needable.length > 0 && !api.chance(distractorChance)) {
+      type = needable[api.randi(needable.length)]!;
+      station = stationOf(type);
     } else {
-      // Wrong-ingredient distractor: a type NOT currently needed, fresh.
-      const wrong: number[] = [];
-      for (let i = 0; i < INGREDIENT_COUNT; i++) if (!needed.includes(i)) wrong.push(i);
-      type = wrong.length > 0 ? wrong[api.randi(wrong.length)]! : api.randi(INGREDIENT_COUNT);
+      station = free[api.randi(free.length)]!;
+      const kinds = STATION_TYPES[station]!;
+      if (api.chance(0.5)) {
+        // Rotten distractor - any ingredient of this station, must not be cooked.
+        type = kinds[api.randi(kinds.length)]!;
+        rotten = 1;
+      } else {
+        // Wrong-ingredient distractor: a station ingredient not currently needed.
+        const wrong = kinds.filter((k) => !needed.includes(k));
+        type = wrong.length > 0 ? wrong[api.randi(wrong.length)]! : kinds[api.randi(kinds.length)]!;
+      }
     }
-    ingredients.push({
+
+    items.push({
       id: nextId++,
-      slot,
+      station,
       type,
       rotten,
       appearTick: t,
-      expireTick: t + cfg.ingredientWindowTicks,
+      expireTick: t + cfg.itemWindowTicks,
       done: 0,
     });
   }
 
   function expire(t: number): void {
-    const needed = unfilledTypes();
-    for (const g of ingredients) {
-      if (g.done === 0 && t >= g.expireTick) {
-        g.done = 1;
-        // A fresh, still-needed ingredient that slipped by costs a life (you let a
-        // needed ingredient go). A distractor leaving is fine (correctly ignored).
-        if (g.rotten === 0 && needed.has(g.type)) {
+    const needed = new Set(unfilledTypes());
+    for (const it of items) {
+      if (it.done === 0 && t >= it.expireTick) {
+        it.done = 1;
+        // A fresh, still-needed ingredient that you let spoil costs a life. A
+        // distractor (wrong or rotten) leaving is correct play, no penalty.
+        if (it.rotten === 0 && needed.has(it.type)) {
           lives = Math.max(0, lives - 1);
-          fx.push({ kind: 'mistake', slot: g.slot });
+          fx.push({ kind: 'mistake', station: it.station });
         } else {
-          fx.push({ kind: 'expire', slot: g.slot });
+          fx.push({ kind: 'expire', station: it.station });
         }
       }
     }
-    if (ingredients.some((g) => g.done === 1)) ingredients = ingredients.filter((g) => g.done === 0);
+    if (items.some((it) => it.done === 1)) items = items.filter((it) => it.done === 0);
   }
 
   return {
@@ -193,20 +229,37 @@ export function createChefSim(api: ExcaliburGameApi, cfg: ChefConfig): ChefSim {
       for (const ev of api.pointer.events) {
         if (ev.kind === 0) {
           stroke.active = true;
-          stroke.consumed = false;
           stroke.anchorX = ev.x;
           stroke.anchorY = ev.y;
           stroke.lastX = ev.x;
           stroke.lastY = ev.y;
-          stroke.hasLast = true;
+          stroke.minX = ev.x;
+          stroke.maxX = ev.x;
+          stroke.minY = ev.y;
+          stroke.maxY = ev.y;
+          stroke.pathLen = 0;
         } else if (ev.kind === 1) {
-          if (stroke.active && stroke.hasLast) chopSegment(stroke.lastX, stroke.lastY, ev.x, ev.y, t);
-          stroke.lastX = ev.x;
-          stroke.lastY = ev.y;
-          stroke.hasLast = true;
+          if (stroke.active) {
+            stroke.pathLen += cheb(stroke.lastX, stroke.lastY, ev.x, ev.y);
+            stroke.lastX = ev.x;
+            stroke.lastY = ev.y;
+            if (ev.x < stroke.minX) stroke.minX = ev.x;
+            if (ev.x > stroke.maxX) stroke.maxX = ev.x;
+            if (ev.y < stroke.minY) stroke.minY = ev.y;
+            if (ev.y > stroke.maxY) stroke.maxY = ev.y;
+          }
         } else {
+          if (stroke.active) {
+            stroke.pathLen += cheb(stroke.lastX, stroke.lastY, ev.x, ev.y);
+            stroke.lastX = ev.x;
+            stroke.lastY = ev.y;
+            if (ev.x < stroke.minX) stroke.minX = ev.x;
+            if (ev.x > stroke.maxX) stroke.maxX = ev.x;
+            if (ev.y < stroke.minY) stroke.minY = ev.y;
+            if (ev.y > stroke.maxY) stroke.maxY = ev.y;
+            resolveGesture(t);
+          }
           stroke.active = false;
-          stroke.hasLast = false;
         }
       }
 
@@ -237,7 +290,7 @@ export function createChefSim(api: ExcaliburGameApi, cfg: ChefConfig): ChefSim {
 
     view(): SimView {
       return {
-        ingredients,
+        items,
         order,
         ordersServed,
         lives,

@@ -3,7 +3,7 @@
   "license": "MIT",
   "marketplace": {
     "name": "Chef Rush",
-    "description": "Read the order, chop the ingredients it needs as they hit the board, and skip the wrong and rotten ones.",
+    "description": "Read the order and cook the ingredients it needs at their stations: chop on the board, stir in the pot, flip in the pan. Skip the wrong and rotten ones.",
     "preview": "preview.png",
     "categories": [
       "Arcade",

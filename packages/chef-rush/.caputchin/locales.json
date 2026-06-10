@@ -10,15 +10,15 @@
     },
     "served": {
       "name": "Order served",
-      "description": "Announced when the player completes an order (all its ingredients chopped)."
+      "description": "Announced when the player completes an order (all its ingredients cooked at their stations)."
     },
     "mistake": {
       "name": "Wrong ingredient",
-      "description": "Announced when the player chops a wrong (off-order) or rotten ingredient, which costs a life."
+      "description": "Announced when the player cooks a wrong (off-order) or rotten ingredient, which costs a life."
     },
     "missed": {
-      "name": "Ingredient slipped by",
-      "description": "Announced when a needed ingredient leaves the board unchopped."
+      "name": "Ingredient spoiled",
+      "description": "Announced when a needed ingredient spoils at its station unworked."
     },
     "verified": {
       "name": "Verified",
@@ -33,111 +33,111 @@
     "English": {
       "_lang": "en",
       "_default": true,
-      "ariaIntro": "Chef Rush, a cooking reaction game. An order shows the ingredients a dish needs. Chop those ingredients as they appear on the board, and leave the wrong ones and the rotten ones alone.",
-      "instruction": "Chop the ingredients the order needs. Skip the wrong and the rotten.",
+      "ariaIntro": "Chef Rush, a cooking reaction game. An order lists the ingredients a dish needs. Each ingredient appears at its station: chop vegetables on the board, stir grains in the pot, flip meat in the pan. Cook the ones the order needs, and leave the wrong and the rotten alone.",
+      "instruction": "Cook what the order needs: chop, stir, flip. Skip the wrong and the rotten.",
       "served": "Order served.",
       "mistake": "Wrong ingredient.",
-      "missed": "An ingredient slipped by.",
+      "missed": "An ingredient spoiled.",
       "verified": "Verified. Orders all served.",
       "failed": "Round over."
     },
     "Chinese (Simplified)": {
       "_lang": "zh-Hans",
-      "ariaIntro": "Chef Rush，一款烹饪反应游戏。订单会列出一道菜所需的食材。食材在砧板上出现时切下订单需要的，错的食材和坏掉的食材都别动。",
-      "instruction": "切订单需要的食材。错的和坏的别切。",
+      "ariaIntro": "Chef Rush，一款烹饪反应游戏。订单会列出一道菜所需的食材。每种食材出现在各自的灶台：在砧板上切蔬菜，在锅里翻炒谷物，在煎锅里翻肉。做出订单需要的，错的食材和坏掉的都别动。",
+      "instruction": "做出订单需要的：切、炒、翻。跳过错的和坏的。",
       "served": "上菜了。",
-      "mistake": "切错食材了。",
-      "missed": "漏掉一个食材。",
+      "mistake": "食材错了。",
+      "missed": "一个食材坏了。",
       "verified": "验证通过。订单全部上齐。",
       "failed": "本轮结束。"
     },
     "Spanish": {
       "_lang": "es",
-      "ariaIntro": "Chef Rush, un juego de reacción de cocina. Un pedido muestra los ingredientes que lleva un plato. Pica esos ingredientes cuando aparezcan en la tabla y deja en paz los equivocados y los podridos.",
-      "instruction": "Pica los ingredientes que pide el pedido. Salta los equivocados y los podridos.",
+      "ariaIntro": "Chef Rush, un juego de reacción de cocina. Un pedido muestra los ingredientes que lleva un plato. Cada ingrediente aparece en su estación: pica las verduras en la tabla, remueve los granos en la olla, voltea la carne en la sartén. Cocina los que pide el pedido y deja en paz los equivocados y los podridos.",
+      "instruction": "Cocina lo que pide el pedido: pica, remueve, voltea. Salta los equivocados y los podridos.",
       "served": "Pedido servido.",
       "mistake": "Ingrediente equivocado.",
-      "missed": "Se escapó un ingrediente.",
+      "missed": "Un ingrediente se echó a perder.",
       "verified": "Verificado. Todos los pedidos servidos.",
       "failed": "Ronda terminada."
     },
     "Arabic": {
       "_lang": "ar",
-      "ariaIntro": "Chef Rush، لعبة طبخ بسرعة البديهة. يعرض الطلب المكونات التي يحتاجها الطبق. قطّع تلك المكونات حين تظهر على لوح التقطيع، واترك المكونات الخطأ والفاسدة دون أن تمسها.",
-      "instruction": "قطّع المكونات التي يطلبها الطلب. تجاوز الخطأ والفاسد.",
+      "ariaIntro": "Chef Rush، لعبة طبخ بسرعة البديهة. يعرض الطلب المكونات التي يحتاجها الطبق. يظهر كل مكوّن في محطته: قطّع الخضار على اللوح، وقلّب الحبوب في القِدر، واقلب اللحم في المقلاة. اطبخ ما يطلبه الطلب، واترك الخطأ والفاسد دون أن تمسّها.",
+      "instruction": "اطبخ ما يطلبه الطلب: تقطيع وتقليب وقلب. تجاوز الخطأ والفاسد.",
       "served": "تم تقديم الطلب.",
       "mistake": "مكوّن خطأ.",
-      "missed": "أفلت منك مكوّن.",
+      "missed": "فسد أحد المكونات.",
       "verified": "تم التحقق. قُدّمت كل الطلبات.",
       "failed": "انتهت الجولة."
     },
     "Portuguese": {
       "_lang": "pt",
-      "ariaIntro": "Chef Rush, um jogo de reação de cozinha. Um pedido mostra os ingredientes que um prato leva. Pique esses ingredientes quando aparecerem na tábua e deixe os errados e os estragados em paz.",
-      "instruction": "Pique os ingredientes que o pedido pede. Pule os errados e os estragados.",
+      "ariaIntro": "Chef Rush, um jogo de reação de cozinha. Um pedido mostra os ingredientes que um prato leva. Cada ingrediente aparece na sua estação: pique os legumes na tábua, mexa os grãos na panela, vire a carne na frigideira. Prepare os que o pedido pede e deixe os errados e os estragados em paz.",
+      "instruction": "Prepare o que o pedido pede: pique, mexa, vire. Pule os errados e os estragados.",
       "served": "Pedido servido.",
       "mistake": "Ingrediente errado.",
-      "missed": "Um ingrediente escapou.",
+      "missed": "Um ingrediente estragou.",
       "verified": "Verificado. Todos os pedidos servidos.",
       "failed": "Rodada encerrada."
     },
     "French": {
       "_lang": "fr",
-      "ariaIntro": "Chef Rush, un jeu de réflexes en cuisine. Une commande indique les ingrédients d'un plat. Émincez ces ingrédients quand ils apparaissent sur la planche, et laissez les mauvais et les pourris tranquilles.",
-      "instruction": "Émincez les ingrédients de la commande. Laissez les mauvais et les pourris.",
+      "ariaIntro": "Chef Rush, un jeu de réflexes en cuisine. Une commande indique les ingrédients d'un plat. Chaque ingrédient apparaît à son poste : émincez les légumes sur la planche, remuez les céréales dans la casserole, retournez la viande dans la poêle. Cuisinez ceux que la commande demande, et laissez les mauvais et les pourris tranquilles.",
+      "instruction": "Cuisinez ce que la commande demande : émincez, remuez, retournez. Laissez les mauvais et les pourris.",
       "served": "Commande servie.",
       "mistake": "Mauvais ingrédient.",
-      "missed": "Un ingrédient est passé.",
+      "missed": "Un ingrédient a pourri.",
       "verified": "Vérifié. Toutes les commandes servies.",
       "failed": "Manche terminée."
     },
     "German": {
       "_lang": "de",
-      "ariaIntro": "Chef Rush, ein Koch-Reaktionsspiel. Eine Bestellung zeigt die Zutaten, die ein Gericht braucht. Schneide diese Zutaten, sobald sie auf dem Brett erscheinen, und lass die falschen und die verdorbenen liegen.",
-      "instruction": "Schneide die Zutaten der Bestellung. Lass die falschen und verdorbenen liegen.",
+      "ariaIntro": "Chef Rush, ein Koch-Reaktionsspiel. Eine Bestellung zeigt die Zutaten, die ein Gericht braucht. Jede Zutat erscheint an ihrer Station: Schneide Gemüse auf dem Brett, rühre Getreide im Topf, wende Fleisch in der Pfanne. Koche die, die die Bestellung braucht, und lass die falschen und die verdorbenen liegen.",
+      "instruction": "Koche, was die Bestellung braucht: schneiden, rühren, wenden. Lass die falschen und verdorbenen liegen.",
       "served": "Bestellung serviert.",
       "mistake": "Falsche Zutat.",
-      "missed": "Eine Zutat ist durchgerutscht.",
+      "missed": "Eine Zutat ist verdorben.",
       "verified": "Verifiziert. Alle Bestellungen serviert.",
       "failed": "Runde vorbei."
     },
     "Russian": {
       "_lang": "ru",
-      "ariaIntro": "Chef Rush, кулинарная игра на реакцию. В заказе показаны ингредиенты, нужные для блюда. Нарезай эти ингредиенты, когда они появляются на доске, а неподходящие и испорченные не трогай.",
-      "instruction": "Нарезай ингредиенты из заказа. Пропускай неподходящие и испорченные.",
+      "ariaIntro": "Chef Rush, кулинарная игра на реакцию. В заказе показаны ингредиенты, нужные для блюда. Каждый ингредиент появляется на своей станции: режь овощи на доске, помешивай крупы в кастрюле, переворачивай мясо на сковороде. Готовь те, что нужны заказу, а неподходящие и испорченные не трогай.",
+      "instruction": "Готовь то, что нужно заказу: режь, помешивай, переворачивай. Пропускай неподходящие и испорченные.",
       "served": "Заказ подан.",
       "mistake": "Не тот ингредиент.",
-      "missed": "Ингредиент проскользнул.",
+      "missed": "Ингредиент испортился.",
       "verified": "Проверка пройдена. Все заказы поданы.",
       "failed": "Раунд окончен."
     },
     "Japanese": {
       "_lang": "ja",
-      "ariaIntro": "Chef Rush、料理の反応ゲームです。注文には一皿に必要な食材が表示されます。まな板に現れたら注文の食材を刻み、違う食材と傷んだ食材はそのままにしてください。",
-      "instruction": "注文の食材を刻みましょう。違うものと傷んだものは飛ばします。",
+      "ariaIntro": "Chef Rush、料理の反応ゲームです。注文には一皿に必要な食材が表示されます。食材はそれぞれの台に現れます。まな板で野菜を刻み、鍋で穀物をかき混ぜ、フライパンで肉を返してください。注文に必要なものを調理し、違う食材と傷んだ食材はそのままにします。",
+      "instruction": "注文に必要なものを調理しましょう。刻む、混ぜる、返す。違うものと傷んだものは飛ばします。",
       "served": "注文をお出ししました。",
       "mistake": "食材が違います。",
-      "missed": "食材を逃しました。",
+      "missed": "食材が傷みました。",
       "verified": "認証されました。注文をすべてお出ししました。",
       "failed": "ラウンド終了。"
     },
     "Korean": {
       "_lang": "ko",
-      "ariaIntro": "Chef Rush, 요리 반응 게임입니다. 주문에는 한 접시에 필요한 재료가 표시됩니다. 도마에 나타나면 주문의 재료를 썰고, 틀린 재료와 상한 재료는 그대로 두세요.",
-      "instruction": "주문에 맞는 재료를 써세요. 틀린 것과 상한 것은 넘기세요.",
+      "ariaIntro": "Chef Rush, 요리 반응 게임입니다. 주문에는 한 접시에 필요한 재료가 표시됩니다. 재료는 각자의 조리대에 나타납니다. 도마에서 채소를 썰고, 냄비에서 곡물을 젓고, 팬에서 고기를 뒤집으세요. 주문에 필요한 것을 조리하고, 틀린 재료와 상한 재료는 그대로 두세요.",
+      "instruction": "주문에 필요한 것을 조리하세요. 썰기, 젓기, 뒤집기. 틀린 것과 상한 것은 넘기세요.",
       "served": "주문이 나갔습니다.",
       "mistake": "재료가 틀렸습니다.",
-      "missed": "재료를 놓쳤습니다.",
+      "missed": "재료가 상했습니다.",
       "verified": "인증되었습니다. 모든 주문이 나갔습니다.",
       "failed": "라운드 종료."
     },
     "Indonesian": {
       "_lang": "id",
-      "ariaIntro": "Chef Rush, permainan reaksi memasak. Pesanan menampilkan bahan yang dibutuhkan sebuah hidangan. Cincang bahan-bahan itu saat muncul di talenan, dan biarkan bahan yang salah dan yang busuk.",
-      "instruction": "Cincang bahan yang diminta pesanan. Lewati yang salah dan yang busuk.",
+      "ariaIntro": "Chef Rush, permainan reaksi memasak. Pesanan menampilkan bahan yang dibutuhkan sebuah hidangan. Setiap bahan muncul di stasiunnya: cincang sayur di talenan, aduk biji-bijian di panci, balik daging di wajan. Masak yang diminta pesanan, dan biarkan yang salah dan yang busuk.",
+      "instruction": "Masak yang diminta pesanan: cincang, aduk, balik. Lewati yang salah dan yang busuk.",
       "served": "Pesanan disajikan.",
       "mistake": "Bahan salah.",
-      "missed": "Satu bahan lolos.",
+      "missed": "Satu bahan membusuk.",
       "verified": "Terverifikasi. Semua pesanan disajikan.",
       "failed": "Ronde selesai."
     }

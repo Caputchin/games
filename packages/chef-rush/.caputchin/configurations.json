@@ -1,12 +1,12 @@
 {
   "schema": {
-    "pass_dishes": {
+    "pass_orders": {
       "type": "range",
-      "min": 3,
-      "max": 30,
+      "min": 2,
+      "max": 12,
       "step": 1,
-      "name": "Dishes to verify",
-      "description": "Dishes a visitor must serve correctly to pass. The captcha is satisfied the moment this many are served."
+      "name": "Orders to verify",
+      "description": "Orders (dishes) a visitor must serve correctly to pass. The check is satisfied the moment this many are served."
     },
     "lives": {
       "type": "range",
@@ -14,69 +14,80 @@
       "max": 9,
       "step": 1,
       "name": "Lives",
-      "description": "Mistakes allowed. A dish that spoils unserved costs a life; touching a spoiled dish ends the round at once."
+      "description": "Mistakes allowed. Cooking a wrong or rotten ingredient costs a life, and so does letting a needed ingredient spoil. Running out of lives ends the round."
     },
     "spawn_interval_ticks": {
       "type": "range",
-      "min": 28,
+      "min": 22,
       "max": 90,
       "step": 2,
       "name": "Dish pace",
-      "description": "Ticks between new dishes (50 ticks per second). Lower means a faster, busier kitchen. The pace also ramps up over the round."
+      "description": "Ticks between new ingredients arriving at the stations (50 ticks per second). Lower means a faster, busier kitchen. The pace also ramps up over the round."
     },
-    "gesture_window_ticks": {
+    "item_window_ticks": {
       "type": "range",
-      "min": 40,
-      "max": 150,
+      "min": 70,
+      "max": 220,
       "step": 5,
-      "name": "Time per dish",
-      "description": "Ticks a dish stays before it spoils (50 ticks per second). Lower means tighter reaction pressure."
+      "name": "Time per ingredient",
+      "description": "Ticks an ingredient stays at its station before it spoils (50 ticks per second). Lower means tighter reaction pressure."
     },
-    "spoiled_percent": {
+    "distractor_percent": {
       "type": "range",
       "min": 0,
       "max": 60,
       "step": 5,
-      "name": "Spoiled chance",
-      "description": "Percent of dishes that are spoiled decoys you must NOT touch. Ramps higher over the round."
+      "name": "Wrong or rotten chance",
+      "description": "Percent of ingredients that are wrong or rotten decoys you must NOT cook. Ramps higher over the round."
+    },
+    "recipe_size": {
+      "type": "range",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "name": "Recipe size",
+      "description": "Ingredients each order needs (the recipe length). More ingredients per dish makes each order take longer to serve."
     },
     "time_budget_seconds": {
       "type": "range",
-      "min": 12,
-      "max": 60,
-      "step": 2,
+      "min": 15,
+      "max": 75,
+      "step": 5,
       "name": "Round length",
-      "description": "Seconds before the round ends. Reaching the limit without serving enough dishes is a fail."
+      "description": "Seconds before the round ends. Reaching the limit without serving enough orders is a fail."
     },
     "sound": {
       "type": "boolean",
       "name": "Sound effects",
-      "description": "Play subtle sound effects (serve, spoiled, verified). Visitors can always mute in-game."
+      "description": "Play subtle sound effects (cook, mistake, verified). Visitors can always mute in-game."
     }
   },
   "presets": {
     "default": {
       "_default": true,
-      "pass_dishes": 8,
+      "pass_orders": 3,
       "lives": 3,
-      "spawn_interval_ticks": 45,
-      "gesture_window_ticks": 75,
-      "spoiled_percent": 28,
-      "time_budget_seconds": 48,
+      "spawn_interval_ticks": 40,
+      "item_window_ticks": 130,
+      "distractor_percent": 40,
+      "recipe_size": 3,
+      "time_budget_seconds": 55,
       "sound": true
     },
     "casual": {
       "_extends": "default",
-      "pass_dishes": 5,
-      "gesture_window_ticks": 95,
-      "spoiled_percent": 20
+      "pass_orders": 2,
+      "item_window_ticks": 170,
+      "distractor_percent": 25,
+      "recipe_size": 2
     },
     "challenge": {
       "_extends": "default",
-      "pass_dishes": 12,
-      "spawn_interval_ticks": 32,
-      "gesture_window_ticks": 55,
-      "spoiled_percent": 40
+      "pass_orders": 5,
+      "spawn_interval_ticks": 30,
+      "item_window_ticks": 95,
+      "distractor_percent": 50,
+      "recipe_size": 4
     }
   }
 }

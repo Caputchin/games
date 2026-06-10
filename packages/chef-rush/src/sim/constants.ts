@@ -15,30 +15,42 @@ const FIXED_TIMESTEP_MS = 20;
 export const WORLD_W = 800;
 export const WORLD_H = 600;
 
-/** The cutting-board slots an ingredient can occupy, left to right. One
- *  ingredient per slot at a time; the player chops by swiping across it. */
-export const SLOTS: ReadonlyArray<{ readonly x: number; readonly y: number }> = [
-  { x: 110, y: 415 },
-  { x: 265, y: 415 },
-  { x: 420, y: 415 },
-  { x: 575, y: 415 },
-  { x: 730, y: 415 },
+/** The three stations on the counter, left to right. The array index is the
+ *  station id AND the required gesture id (0 board/chop, 1 pot/stir, 2 pan/flip).
+ *  An ingredient appears at its station and is worked with the matching gesture. */
+export const STATIONS: ReadonlyArray<{ readonly x: number; readonly y: number }> = [
+  { x: 158, y: 432 }, // board
+  { x: 400, y: 432 }, // pot
+  { x: 642, y: 432 }, // pan
 ];
-export const SLOT_COUNT = SLOTS.length;
 
-/** Ingredient hit radius (the chop swipe must cross this disc). */
-export const INGREDIENT_R = 62;
-/** Extra slack on the swipe-vs-ingredient hit test. */
-export const HIT_PAD = 14;
+/** How close a stroke's anchor (press point) must be to a station centre for the
+ *  gesture to be aimed at it. Stations are 242px apart, so this never overlaps. */
+export const STATION_R = 150;
 
-/** Genuine-gesture span (rule U6): a chop only registers once the stroke has
- *  swept at least this far (max-axis / Chebyshev displacement, sqrt-free) from
- *  where it pressed down. A tap / point-nick never reaches it, so the captured
- *  motor input lands in the rich path (drag) channel the input-signature judge
- *  scores instead of a contentless tap. Well above the tap/drag boundary. */
-export const MIN_CHOP_SPAN = 40;
+/** Ingredient draw / footprint radius at its station. */
+export const ITEM_R = 60;
 
-/** Reaction-time floor in ticks (rule R1): a chop landing fewer than this many
+/** Genuine-gesture span floor (rule U6): a gesture only registers once the stroke's
+ *  bounding box has swept at least this far (max-axis / Chebyshev extent, sqrt-free).
+ *  A tap / point-nick never reaches it, so the captured motor input lands in the
+ *  rich path (drag) channel the input-signature judge scores, not a contentless tap. */
+export const MIN_GESTURE_SPAN = 46;
+
+// --- Gesture shape thresholds (integer-ratio comparisons, sqrt-free) -------------
+// A STIR loops back on itself: its path length is well beyond its bounding span and
+// it ends near where it started. A CHOP/FLIP is a near-straight stroke whose net
+// displacement is vertical (down = chop, up = flip). All compared as cross-multiplied
+// integers so there is no division and no environment drift.
+
+/** Stir if pathLen >= STIR_PATH_NUM/STIR_PATH_DEN * span (i.e. >= 2.0x). */
+export const STIR_PATH_NUM = 2;
+export const STIR_PATH_DEN = 1;
+/** ...and the net displacement is small vs the span: netCheb <= STIR_NET_NUM/STIR_NET_DEN * span (<= 0.6x). */
+export const STIR_NET_NUM = 3;
+export const STIR_NET_DEN = 5;
+
+/** Reaction-time floor in ticks (rule R1): a gesture landing fewer than this many
  *  ticks after an ingredient appeared is superhuman and does not count. Derived
  *  from the canonical human floor at this slot's fixed timestep. */
 export const REACTION_TICKS = Math.ceil(REACTION_FLOOR_MS / FIXED_TIMESTEP_MS);
@@ -50,5 +62,5 @@ export const MAX_TICKS = 3000;
 /** Difficulty ramp: spawns get faster and distractors more common as the round
  *  progresses. Linear over RAMP_TICKS, then held. */
 export const RAMP_TICKS = 1800; // ~36s
-export const SPAWN_INTERVAL_MIN_TICKS = 24; // fastest spawn cadence at full ramp
-export const DISTRACTOR_CHANCE_MAX = 0.55; // distractor probability at full ramp
+export const SPAWN_INTERVAL_MIN_TICKS = 22; // fastest spawn cadence at full ramp
+export const DISTRACTOR_CHANCE_MAX = 0.58; // distractor probability at full ramp

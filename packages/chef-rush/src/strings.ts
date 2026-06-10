@@ -6,11 +6,11 @@
 import type { ResolvedLocale } from '@caputchin/game-sdk';
 
 const EN = {
-  ariaIntro: 'Chef Rush, a cooking reaction game. An order shows the ingredients a dish needs. Chop those ingredients as they appear on the board, and leave the wrong ones and the rotten ones alone.',
-  instruction: 'Chop the ingredients the order needs. Skip the wrong and the rotten.',
+  ariaIntro: 'Chef Rush, a cooking reaction game. An order lists the ingredients a dish needs. Each ingredient appears at its station: chop vegetables on the board, stir grains in the pot, flip meat in the pan. Cook the ones the order needs, and leave the wrong and the rotten alone.',
+  instruction: 'Cook what the order needs: chop, stir, flip. Skip the wrong and the rotten.',
   served: 'Order served.',
   mistake: 'Wrong ingredient.',
-  missed: 'An ingredient slipped by.',
+  missed: 'An ingredient spoiled.',
   verified: 'Verified. Orders all served.',
   failed: 'Round over.',
 } as const;
