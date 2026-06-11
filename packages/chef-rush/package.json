@@ -1,6 +1,6 @@
 {
   "name": "@caputchin/game-chef-rush",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read the order and chop the ingredients it needs, skipping the wrong and rotten ones, to prove you're human. An Excalibur.js cooking-reaction captcha. A Caputchin first-party game.",
   "keywords": [
     "caputchin",
