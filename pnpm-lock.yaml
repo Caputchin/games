@@ -42,6 +42,36 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
 
+  packages/chef-rush:
+    devDependencies:
+      '@caputchin/engine-kit':
+        specifier: ^0.5.0
+        version: 0.5.0
+      '@caputchin/game-sdk':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@caputchin/preset-excalibur':
+        specifier: ^0.2.0
+        version: 0.2.0(@caputchin/game-sdk@3.2.0)(excalibur@0.32.0)
+      '@caputchin/replay-selfcheck':
+        specifier: ^0.2.0
+        version: 0.2.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.41
+      excalibur:
+        specifier: 0.32.0
+        version: 0.32.0
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.14)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.41)(happy-dom@15.11.7)
+
   packages/dino-runner:
     devDependencies:
       '@caputchin/determinism':
@@ -333,6 +363,12 @@ packages:
 
   '@caputchin/game-sdk@3.2.0':
     resolution: {integrity: sha512-1Adau1hOtIbxmtwDGDG1dPYJM//9mF1/UkEuj4Acw8REPUP0lQ3wC/xljRMXK6Mj8uli5G4YPkk6kqK2fsF3oA==}
+
+  '@caputchin/preset-excalibur@0.2.0':
+    resolution: {integrity: sha512-kGiJMt0vshdjaZhrsXXw078by30DuUn9bbGEbNpryR4bw5pKd3tyOGAEiGqelJK/0OKarOWX5opvoZUWAf1+dQ==}
+    peerDependencies:
+      '@caputchin/game-sdk': ^3.0.0
+      excalibur: 0.32.0
 
   '@caputchin/preset-kaplay@0.4.0':
     resolution: {integrity: sha512-Q4FWkOjmkfcIqxRLESrM1tY2R82N2ErmDlS1yvIxF18B18a7NhuavcROVmbnUKWVIDesTRnZ3f+kOefuZDXXvQ==}
@@ -926,6 +962,9 @@ packages:
   eventemitter3@5.0.4:
     resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
+  excalibur@0.32.0:
+    resolution: {integrity: sha512-anCvsZK2Dh3BTlw/ERHr3fvfqF2vdJHw88soCs3r6EIwxbhibNRILMZw3Ae6GMTY8FkzRfkGLyk7DlEZVesUaw==}
+
   expect-type@1.3.0:
     resolution: {integrity: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==}
     engines: {node: '>=12.0.0'}
@@ -1248,6 +1287,13 @@ snapshots:
   '@caputchin/game-sdk@3.2.0':
     dependencies:
       '@caputchin/replay-contract': 0.3.0
+
+  '@caputchin/preset-excalibur@0.2.0(@caputchin/game-sdk@3.2.0)(excalibur@0.32.0)':
+    dependencies:
+      '@caputchin/determinism': 0.2.0
+      '@caputchin/game-sdk': 3.2.0
+      '@caputchin/replay-contract': 0.3.0
+      excalibur: 0.32.0
 
   '@caputchin/preset-kaplay@0.4.0(@caputchin/game-sdk@3.2.0)(kaplay@3001.0.19)':
     dependencies:
@@ -1670,6 +1716,8 @@ snapshots:
       '@types/estree': 1.0.9
 
   eventemitter3@5.0.4: {}
+
+  excalibur@0.32.0: {}
 
   expect-type@1.3.0: {}
 

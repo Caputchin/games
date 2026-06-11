@@ -40,7 +40,7 @@
   "devDependencies": {
     "@caputchin/engine-kit": "^0.5.0",
     "@caputchin/game-sdk": "^3.2.0",
-    "@caputchin/preset-excalibur": "^0.1.0",
+    "@caputchin/preset-excalibur": "^0.2.0",
     "@caputchin/replay-selfcheck": "^0.2.0",
     "@types/node": "^20.0.0",
     "excalibur": "0.32.0",
