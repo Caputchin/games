@@ -6,13 +6,21 @@
 import type { ResolvedLocale } from '@caputchin/game-sdk';
 
 const EN = {
-  ariaIntro: 'Chef Rush, a cooking reaction game. An order lists the ingredients a dish needs. Each ingredient appears at its station: chop vegetables on the board, stir grains in the pot, flip meat in the pan. Cook the ones the order needs, and leave the wrong and the rotten alone.',
-  instruction: 'Cook what the order needs: chop, stir, flip. Skip the wrong and the rotten.',
+  ariaIntro: 'Chef Rush, a cooking game. Ingredients arrive one at a time on the prep counter. The order card maps each ingredient a dish needs to its action: chop on the board, stir in the pot, flip in the pan. Drag an ingredient the order needs to its station and do the action to cook it; drag a wrong or rotten ingredient to the trash. Serve enough dishes to pass.',
+  instruction: 'Drag each ingredient to its station and cook it. Trash the wrong and the rotten.',
+  startPrompt: 'Tap to start',
+  servedLabel: 'Served',
   served: 'Order served.',
-  mistake: 'Wrong ingredient.',
+  mistake: 'Wrong move.',
   missed: 'An ingredient spoiled.',
   verified: 'Verified. Orders all served.',
   failed: 'Round over.',
+  wonTitle: 'Verified!',
+  wonBody: 'Nice cooking. Keep playing if you like.',
+  keepPlaying: 'Keep playing',
+  lostTitle: 'Round over',
+  lostBody: 'Out of lives. Give it another go.',
+  tryAgain: 'Try again',
 } as const;
 
 const RTL = new Set(['ar', 'he', 'fa', 'ur', 'yi', 'ps', 'sd']);

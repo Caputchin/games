@@ -2,11 +2,11 @@
   "schema": {
     "pass_orders": {
       "type": "range",
-      "min": 2,
-      "max": 12,
+      "min": 1,
+      "max": 8,
       "step": 1,
-      "name": "Orders to verify",
-      "description": "Orders (dishes) a visitor must serve correctly to pass. The check is satisfied the moment this many are served."
+      "name": "Dishes to verify",
+      "description": "Dishes (orders) a visitor must serve correctly to pass. The check is satisfied the moment this many are served."
     },
     "lives": {
       "type": "range",
@@ -14,23 +14,15 @@
       "max": 9,
       "step": 1,
       "name": "Lives",
-      "description": "Mistakes allowed. Cooking a wrong or rotten ingredient costs a life, and so does letting a needed ingredient spoil. Running out of lives ends the round."
-    },
-    "spawn_interval_ticks": {
-      "type": "range",
-      "min": 22,
-      "max": 90,
-      "step": 2,
-      "name": "Dish pace",
-      "description": "Ticks between new ingredients arriving at the stations (50 ticks per second). Lower means a faster, busier kitchen. The pace also ramps up over the round."
+      "description": "Mistakes allowed. Cooking a wrong or rotten ingredient, dropping one at the wrong station, trashing a needed one, or letting a needed one spoil each costs a life. Running out ends the round."
     },
     "item_window_ticks": {
       "type": "range",
-      "min": 70,
-      "max": 220,
-      "step": 5,
+      "min": 150,
+      "max": 500,
+      "step": 10,
       "name": "Time per ingredient",
-      "description": "Ticks an ingredient stays at its station before it spoils (50 ticks per second). Lower means tighter reaction pressure."
+      "description": "Ticks an ingredient waits on the prep counter before it spoils (50 ticks per second). Lower means tighter reaction pressure."
     },
     "distractor_percent": {
       "type": "range",
@@ -38,7 +30,7 @@
       "max": 60,
       "step": 5,
       "name": "Wrong or rotten chance",
-      "description": "Percent of ingredients that are wrong or rotten decoys you must NOT cook. Ramps higher over the round."
+      "description": "Percent of ingredients that are wrong (not on the order) or rotten and must be trashed, not cooked."
     },
     "recipe_size": {
       "type": "range",
@@ -50,11 +42,11 @@
     },
     "time_budget_seconds": {
       "type": "range",
-      "min": 15,
-      "max": 75,
+      "min": 20,
+      "max": 90,
       "step": 5,
       "name": "Round length",
-      "description": "Seconds before the round ends. Reaching the limit without serving enough orders is a fail."
+      "description": "Seconds before the round ends. Reaching the limit without serving enough dishes is a fail."
     },
     "sound": {
       "type": "boolean",
@@ -65,27 +57,25 @@
   "presets": {
     "default": {
       "_default": true,
-      "pass_orders": 3,
+      "pass_orders": 2,
       "lives": 3,
-      "spawn_interval_ticks": 40,
-      "item_window_ticks": 130,
-      "distractor_percent": 40,
+      "item_window_ticks": 300,
+      "distractor_percent": 50,
       "recipe_size": 3,
-      "time_budget_seconds": 55,
+      "time_budget_seconds": 75,
       "sound": true
     },
     "casual": {
       "_extends": "default",
-      "pass_orders": 2,
-      "item_window_ticks": 170,
-      "distractor_percent": 25,
+      "pass_orders": 1,
+      "item_window_ticks": 400,
+      "distractor_percent": 20,
       "recipe_size": 2
     },
     "challenge": {
       "_extends": "default",
-      "pass_orders": 5,
-      "spawn_interval_ticks": 30,
-      "item_window_ticks": 95,
+      "pass_orders": 4,
+      "item_window_ticks": 200,
       "distractor_percent": 50,
       "recipe_size": 4
     }

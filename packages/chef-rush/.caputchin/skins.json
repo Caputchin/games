@@ -1,40 +1,134 @@
 {
   "schema": {
-    "background": { "type": "color", "name": "Background", "description": "The kitchen backdrop fill." },
-    "counter": { "type": "color", "name": "Counter", "description": "The counter band the stations sit on." },
-    "station": { "type": "color", "name": "Station", "description": "An empty station disc." },
-    "station_ring": { "type": "color", "name": "Station outline", "description": "The ring around each station." },
-    "good_color": { "type": "color", "name": "Dish", "description": "A dish to serve (the good target)." },
-    "spoiled_color": { "type": "color", "name": "Spoiled dish", "description": "A spoiled decoy you must not touch." },
-    "mark_color": { "type": "color", "name": "Marks", "description": "The direction arrow and the spoiled X." },
-    "accent_color": { "type": "color", "name": "Accent", "description": "Served-dish pips and serve flashes." },
-    "life_color": { "type": "color", "name": "Lives", "description": "The lives indicator." }
+    "wall": {
+      "type": "color",
+      "name": "Wall",
+      "description": "The kitchen back wall."
+    },
+    "counter": {
+      "type": "color",
+      "name": "Counter",
+      "description": "The wooden counter the stations sit on."
+    },
+    "board": {
+      "type": "color",
+      "name": "Cutting board",
+      "description": "The chopping board surface."
+    },
+    "board_edge": {
+      "type": "color",
+      "name": "Cutting board edge",
+      "description": "The cutting board edge and grain."
+    },
+    "ticket": {
+      "type": "color",
+      "name": "Order ticket",
+      "description": "The order card paper."
+    },
+    "ink": {
+      "type": "color",
+      "name": "Ticket text",
+      "description": "Text on the order ticket and overlay cards."
+    },
+    "accent_color": {
+      "type": "color",
+      "name": "Accent",
+      "description": "Cook flashes, the served counter, the success check."
+    },
+    "life_color": {
+      "type": "color",
+      "name": "Lives",
+      "description": "The hearts in the lives indicator."
+    },
+    "art_broccoli": {
+      "type": "image",
+      "name": "Broccoli art (optional)",
+      "description": "Image for the broccoli instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_carrot": {
+      "type": "image",
+      "name": "Carrot art (optional)",
+      "description": "Image for the carrot instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_corn": {
+      "type": "image",
+      "name": "Corn art (optional)",
+      "description": "Image for the corn instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_egg": {
+      "type": "image",
+      "name": "Egg art (optional)",
+      "description": "Image for the egg instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_lettuce": {
+      "type": "image",
+      "name": "Lettuce art (optional)",
+      "description": "Image for the lettuce instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_mushroom": {
+      "type": "image",
+      "name": "Mushroom art (optional)",
+      "description": "Image for the mushroom instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_onion": {
+      "type": "image",
+      "name": "Onion art (optional)",
+      "description": "Image for the onion instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_potato": {
+      "type": "image",
+      "name": "Potato art (optional)",
+      "description": "Image for the potato instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_ribs": {
+      "type": "image",
+      "name": "Ribs art (optional)",
+      "description": "Image for the ribs instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_salmon": {
+      "type": "image",
+      "name": "Salmon art (optional)",
+      "description": "Image for the salmon instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_steak": {
+      "type": "image",
+      "name": "Steak art (optional)",
+      "description": "Image for the steak instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_tomato": {
+      "type": "image",
+      "name": "Tomato art (optional)",
+      "description": "Image for the tomato instead of the built-in sprite. Absent uses the bundled art."
+    },
+    "art_zucchini": {
+      "type": "image",
+      "name": "Zucchini art (optional)",
+      "description": "Image for the zucchini instead of the built-in sprite. Absent uses the bundled art."
+    }
   },
   "presets": {
     "kitchen": {
       "_default": true,
-      "_theme": "any",
-      "background": "#1b1410",
-      "counter": "#2a211a",
-      "station": "#3a2f25",
-      "station_ring": "#5a4836",
-      "good_color": "#f2a93b",
-      "spoiled_color": "#d24b3e",
-      "mark_color": "#fff7ec",
-      "accent_color": "#7fd86f",
+      "_theme": "light",
+      "wall": "#efd9bd",
+      "counter": "#aa7a48",
+      "board": "#e0bd84",
+      "board_edge": "#a07a44",
+      "ticket": "#fbf4e4",
+      "ink": "#3a2c1c",
+      "accent_color": "#56b84e",
       "life_color": "#e8615a"
     },
-    "diner": {
-      "_theme": "light",
-      "background": "#f4ece0",
-      "counter": "#e3d4bf",
-      "station": "#cdb39a",
-      "station_ring": "#a8896a",
-      "good_color": "#e08a1e",
-      "spoiled_color": "#c0392b",
-      "mark_color": "#2a1f15",
-      "accent_color": "#3aa657",
-      "life_color": "#c0392b"
+    "midnight": {
+      "_theme": "dark",
+      "wall": "#241d2a",
+      "counter": "#3a2e28",
+      "board": "#c7a86a",
+      "board_edge": "#8a6a3c",
+      "ticket": "#efe7da",
+      "ink": "#2a2118",
+      "accent_color": "#5fd0a0",
+      "life_color": "#ff6b6b"
     }
   }
 }

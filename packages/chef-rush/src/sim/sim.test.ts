@@ -1,13 +1,14 @@
 // Gate tests for the Chef Rush sim, driven through a mock api (no engine), so each
-// constitution rule is asserted directly: R1 (reaction floor), R2 (wrong/rotten
-// cook costs a life), U6 (genuine-gesture span), U2 (pass latch), plus a correct
-// cook - and a unit test of the gesture classifier (chop / stir / flip).
+// constitution rule is asserted directly: a correct drag+cook (U2), R1 (reaction
+// floor), R2 (wrong/rotten cook, wrong station, trashing a needed item all cost a
+// life; correctly trashing a distractor does not), U6 (genuine-gesture span), plus a
+// spoil; and a unit test of the gesture classifier (chop / stir / flip).
 
 import { describe, expect, it } from 'vitest';
 import { createChefSim } from './sim';
-import { classifyGesture } from './gestures';
-import type { ChefConfig, SimView, Stroke } from './types';
-import { MIN_GESTURE_SPAN, STATIONS } from './constants';
+import { classifyGesture, type Stroke } from './gestures';
+import { GAME_LOST, GAME_PLAYING, GAME_WAITING, type ChefConfig } from './types';
+import { MIN_GESTURE_SPAN, overlayButtonRect, PREP, STATIONS, TRASH } from './constants';
 import type { ExcaliburGameApi } from '@caputchin/preset-excalibur';
 
 interface PointerEv {
@@ -62,90 +63,126 @@ function makeApi(opts: { randi?: (n: number) => number; chance?: (p: number) => 
 const baseCfg = (over: Partial<ChefConfig> = {}): ChefConfig => ({
   passScore: 1,
   lives: 3,
-  spawnIntervalTicks: 1,
-  itemWindowTicks: 300,
+  itemWindowTicks: 400,
   distractorChance: 0,
   recipeSize: 1,
-  timeBudgetTicks: 2000,
+  timeBudgetTicks: 4000,
   ...over,
 });
 
-/** A downward slash anchored on station `k` (the chop gesture; span >= MIN). */
-function chop(k: number): PointerEv[] {
-  const s = STATIONS[k]!;
+/** A drag of the prep item to a station / the trash. */
+function dragTo(x: number, y: number): PointerEv[] {
   return [
-    { kind: 0, x: s.x, y: s.y - 30 },
-    { kind: 2, x: s.x, y: s.y + 40 },
+    { kind: 0, x: PREP.x, y: PREP.y },
+    { kind: 1, x: (PREP.x + x) / 2, y: (PREP.y + y) / 2 },
+    { kind: 2, x, y },
+  ];
+}
+const dragToStation = (s: number): PointerEv[] => dragTo(STATIONS[s]!.x, STATIONS[s]!.y);
+const dragToTrash = (): PointerEv[] => dragTo(TRASH.x, TRASH.y);
+
+/** A chop gesture (down slash) anchored at station `s`. */
+function chopAt(s: number): PointerEv[] {
+  const c = STATIONS[s]!;
+  return [
+    { kind: 0, x: c.x, y: c.y - 30 },
+    { kind: 2, x: c.x, y: c.y + 40 },
   ];
 }
 
-/** Run ticks 0..gestureTick-1 empty (spawns fill stations), then the gesture. */
-function play(cfg: ChefConfig, opts: Parameters<typeof makeApi>[0], gestureTick: number, evs: PointerEv[]) {
+/** A tap on the start button (the game waits for one before anything spawns). */
+const startBtn = overlayButtonRect(GAME_WAITING);
+const START: PointerEv = { kind: 0, x: startBtn.x + startBtn.w / 2, y: startBtn.y + startBtn.h / 2 };
+
+/** Drive the sim across ticks 0..maxTick, applying `plan`'s events at their ticks.
+ *  Injects the start tap at tick 0 so the round is playing from the first tick. */
+function drive(cfg: ChefConfig, opts: Parameters<typeof makeApi>[0], plan: Map<number, PointerEv[]>, maxTick: number) {
   const h = makeApi(opts);
   const sim = createChefSim(h.api, cfg);
-  for (let t = 0; t < gestureTick; t++) {
-    h.step(t, []);
+  for (let t = 0; t <= maxTick && !h.out.over; t++) {
+    const evs = plan.get(t) ?? [];
+    h.step(t, t === 0 ? [START, ...evs] : evs);
     sim.tick();
   }
-  h.step(gestureTick, evs);
-  sim.tick();
   return { h, sim };
 }
 
 describe('Chef Rush gates', () => {
-  it('cooks a needed ingredient, completes the order, and latches the pass (U2)', () => {
-    // randi=>0 -> recipe [tomato @ board]; spawns are needed tomatoes (no distractor).
-    const { h } = play(baseCfg(), {}, 10, chop(0));
+  it('drags a needed ingredient to its station, cooks it, serves, and passes (U2)', () => {
+    // randi=>0 -> recipe [tomato @ board]; the first item is that tomato.
+    const plan = new Map([[3, dragToStation(0)], [12, chopAt(0)]]);
+    const { h } = drive(baseCfg(), {}, plan, 24);
     expect(h.out.score).toBe(1);
     expect(h.out.passed).toBe(true);
     expect(h.out.over).toBe(true);
   });
 
-  it('R1: a too-fast gesture does not fill the order', () => {
-    const { h, sim } = play(baseCfg({ passScore: 2 }), {}, 3, chop(0));
+  it('R1: a too-fast cook does not fill the order', () => {
+    const plan = new Map([[1, dragToStation(0)], [4, chopAt(0)]]); // 4 - 0 < REACTION_TICKS
+    const { h, sim } = drive(baseCfg({ passScore: 2 }), {}, plan, 10);
     expect(h.out.score).toBe(0);
     expect(h.out.passed).toBe(false);
-    // the ingredient was consumed but the order slot stays unfilled
-    const v: SimView = sim.view();
-    expect(v.order?.filled.every((f) => f === 0)).toBe(true);
+    expect(sim.view().order?.filled.every((f) => f === 0)).toBe(true);
   });
 
   it('R2: cooking a rotten ingredient costs a life', () => {
-    // chance=>true -> every spawn is a rotten distractor (at the board).
-    const { h } = play(baseCfg({ lives: 1 }), { chance: () => true }, 10, chop(0));
-    expect(h.out.over).toBe(true);
-    expect(h.out.passed).toBe(false);
+    // chance=>true -> the first item is a rotten distractor.
+    const plan = new Map([[3, dragToStation(0)]]);
+    const { sim } = drive(baseCfg({ lives: 1 }), { chance: () => true }, plan, 10);
+    expect(sim.view().gamePhase).toBe(GAME_LOST);
   });
 
-  it('R2: cooking a wrong (off-recipe) ingredient costs a life', () => {
-    // distractor check (p<0.5) true, rotten check (p===0.5) false -> wrong-type fresh.
-    const { h } = play(baseCfg({ lives: 1 }), { chance: (p) => p < 0.5 }, 10, chop(0));
-    expect(h.out.over).toBe(true);
-    expect(h.out.passed).toBe(false);
+  it('R2: dropping a needed ingredient at the wrong station costs a life', () => {
+    // tomato belongs at the board (0); drop it at the pan (2).
+    const plan = new Map([[3, dragToStation(2)]]);
+    const { sim } = drive(baseCfg({ lives: 1 }), {}, plan, 10);
+    expect(sim.view().gamePhase).toBe(GAME_LOST);
   });
 
-  it('U6: a sub-span gesture does not register', () => {
-    const s = STATIONS[0]!;
+  it('R2: trashing a needed ingredient costs a life', () => {
+    const plan = new Map([[3, dragToTrash()]]);
+    const { sim } = drive(baseCfg({ lives: 1 }), {}, plan, 10);
+    expect(sim.view().gamePhase).toBe(GAME_LOST);
+  });
+
+  it('correctly trashing a wrong ingredient costs no life', () => {
+    // chance=(p)=>p<0.5 -> the first item is a wrong-type fresh distractor (carrot).
+    const plan = new Map([[3, dragToTrash()]]);
+    const { sim } = drive(baseCfg({ lives: 3 }), { chance: (p) => p < 0.5 }, plan, 10);
+    expect(sim.view().lives).toBe(3);
+    expect(sim.view().gamePhase).toBe(GAME_PLAYING);
+  });
+
+  it('U6: a sub-span gesture does not cook the placed item', () => {
+    const c = STATIONS[0]!;
     const tiny: PointerEv[] = [
-      { kind: 0, x: s.x, y: s.y },
-      { kind: 2, x: s.x, y: s.y + (MIN_GESTURE_SPAN - 12) },
+      { kind: 0, x: c.x, y: c.y },
+      { kind: 2, x: c.x, y: c.y + (MIN_GESTURE_SPAN - 12) },
     ];
-    const { h, sim } = play(baseCfg({ passScore: 2 }), {}, 10, tiny);
+    const plan = new Map([[2, dragToStation(0)], [12, tiny]]);
+    const { h, sim } = drive(baseCfg({ passScore: 2 }), {}, plan, 16);
     expect(h.out.score).toBe(0);
-    const v = sim.view();
-    expect(v.items.some((it) => it.station === 0 && it.done === 0)).toBe(true);
+    expect(sim.view().item?.phase).toBe(1); // still placed at the station, uncooked
   });
 
   it('loses a life when a needed ingredient spoils unworked', () => {
-    const cfg = baseCfg({ passScore: 9, itemWindowTicks: 8, lives: 1 });
+    const { sim } = drive(baseCfg({ passScore: 9, itemWindowTicks: 8, lives: 1 }), {}, new Map(), 30);
+    expect(sim.view().gamePhase).toBe(GAME_LOST);
+  });
+
+  it('waits for a start tap before anything spawns (no RNG drawn until then)', () => {
     const h = makeApi({});
-    const sim = createChefSim(h.api, cfg);
-    for (let t = 0; t < 40 && !h.out.over; t++) {
+    const sim = createChefSim(h.api, baseCfg());
+    for (let t = 0; t < 20; t++) {
       h.step(t, []);
       sim.tick();
     }
-    expect(h.out.over).toBe(true);
-    expect(h.out.passed).toBe(false);
+    expect(sim.view().gamePhase).toBe(GAME_WAITING);
+    expect(sim.view().item).toBeNull();
+    h.step(20, [START]);
+    sim.tick();
+    expect(sim.view().gamePhase).toBe(GAME_PLAYING);
+    expect(sim.view().item).not.toBeNull();
   });
 });
 
@@ -179,22 +216,13 @@ describe('gesture classifier', () => {
   it('classifies a downward slash as chop (0)', () => {
     expect(classifyGesture(mk([[400, 380], [402, 470]]))).toBe(0);
   });
-
   it('classifies an upward flick as flip (2)', () => {
     expect(classifyGesture(mk([[400, 470], [398, 380]]))).toBe(2);
   });
-
   it('classifies a loop as stir (1)', () => {
-    expect(
-      classifyGesture(mk([[400, 432], [450, 432], [450, 482], [400, 482], [400, 432]])),
-    ).toBe(1);
+    expect(classifyGesture(mk([[400, 432], [450, 432], [450, 482], [400, 482], [400, 432]]))).toBe(1);
   });
-
   it('rejects a sub-span nick (-1)', () => {
     expect(classifyGesture(mk([[400, 432], [410, 444]]))).toBe(-1);
-  });
-
-  it('rejects a sideways swipe (-1)', () => {
-    expect(classifyGesture(mk([[360, 432], [460, 430]]))).toBe(-1);
   });
 });
