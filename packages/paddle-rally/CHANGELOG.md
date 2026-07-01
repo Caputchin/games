@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/Caputchin/games/compare/paddle-rally-v0.3.0...paddle-rally-v0.4.0) (2026-07-01)
+
+
+### Features
+
+* **paddle-rally:** widen points-to-win range to 1..10 ([88908fa](https://github.com/Caputchin/games/commit/88908faff435681c557044f95dd790e976d30be9))
+
 ## [0.3.0](https://github.com/Caputchin/games/compare/paddle-rally-v0.2.0...paddle-rally-v0.3.0) (2026-06-07)
 
 
