@@ -10,15 +10,19 @@
 //     held-key bot, which hits at the same raw speed, cannot.
 //   - a random/erratic bot is filtered PROBABILISTICALLY, not absolutely: it jerks
 //     the paddle, so it sometimes earns flick power and, when it happens to be in
-//     position, scores by luck. Measured ~3% at the easier difficulties (5..8),
-//     falling to ~0 by 10. That residual is the deliberate cost of making the game
-//     human-winnable (this is the accept-residual posture, not a false zero). A
-//     TRACKING bot beats Paddle Rally like a human does, inherent to every skill game; the
-//     platform layers other signals. See the README "Security model" section.
+//     position, scores by luck. This residual is TARGET-DEPENDENT: at the security-grade
+//     band (target >= 3) it is a few percent (~2-3% rival, <1% solo, falling toward 0 by
+//     difficulty 10 / higher targets); at the LOW-FRICTION floor the site owner can opt
+//     into (target 1-2) it climbs sharply (measured rival ~9% / solo ~37% at target 1),
+//     because a single point / a couple of returns is a much shorter luck window. That
+//     residual is the deliberate cost of making the game human-winnable at low friction
+//     (accept-residual posture, not a false zero). A TRACKING bot beats Paddle Rally like
+//     a human does, inherent to every skill game; the platform layers other signals. See
+//     the README "Security model" section.
 // `./install` (via the recorder's imports) stubs the DOM before Phaser.
 import '@caputchin/preset-phaser/install';
 import { describe, expect, it } from 'vitest';
-import { FIELD_W, MAX_TICKS, SERVE_DELAY, type Action } from '../src/sim.js';
+import { FIELD_W, MAX_TICKS, SERVE_DELAY, type Action, type Mode } from '../src/sim.js';
 import { recordRun, trackBall, idle, holdUp, holdDown, type IntentContext } from './harness.js';
 
 const SEEDS: ReadonlyArray<readonly [number, number, number, number]> = [
@@ -27,11 +31,16 @@ const SEEDS: ReadonlyArray<readonly [number, number, number, number]> = [
 ];
 
 const DIFFICULTIES = [5, 6, 7, 8, 9, 10] as const; // the enforced schema floor..max
+// The enforced target range: floor (1), default (3), ceiling (10). The bot-resistance
+// claims are asserted at BOTH extremes: target 1 (the single-point concern) and target
+// 10 (a long game gives an erratic bot the most chances to fluke a point).
+const TARGETS = [1, 3, 10] as const;
 
 // A reproducible random-input bot: a non-tracking paddle jerking up/down/still from a
-// seeded stream. It is the erratic adversary the pinned ball speed + multi-point
-// target defend against; it cannot sustain a tracking paddle-rally, and at the reachable
-// configs its bypass measured 0.
+// seeded stream. It is the erratic adversary the pinned ball speed + multi-point target
+// defend against; it cannot sustain a tracking paddle-rally. Its bypass is target-
+// dependent: within the documented ceiling at the security-grade band (target >= 3),
+// climbing at the low-friction floor (target 1-2). See the posture note above.
 function mulberry32(a: number): () => number {
   return () => {
     a |= 0; a = (a + 0x6d2b79f5) | 0;
@@ -48,6 +57,26 @@ const randomBot = (n: number): ((c: IntentContext) => Action) => {
   };
 };
 
+// Random-bot bypass fraction for one (mode, target), swept over the difficulty band x
+// `iters` generated seeds. Shared by the rival + solo empirical bound tests so both
+// assert against the SAME measurement path the posture notes quote.
+async function randomBotBypass(mode: Mode, target: number, iters: number): Promise<number> {
+  let runs = 0;
+  let wins = 0;
+  for (let i = 1; i <= iters; i++) {
+    const seed = [
+      Math.imul(i, 2654435761) >>> 0, Math.imul(i, 40503) >>> 0,
+      Math.imul(i, 2246822519) >>> 0, (Math.imul(i, 3266489917) + 1) >>> 0,
+    ] as const;
+    for (const cpu_difficulty of DIFFICULTIES) {
+      const rec = await recordRun({ seed, config: { mode, target, cpu_difficulty }, intent: randomBot(i * 31 + cpu_difficulty), maxTicks: 6000 });
+      runs += 1;
+      if (rec.passed) wins += 1;
+    }
+  }
+  return wins / runs;
+}
+
 describe('PaddleRallySim (Arcade physics)', () => {
   it('holds the ball at centre for the serve delay, then fires it', async () => {
     const rec = await recordRun({ seed: [1, 2, 3, 4], config: { target: 3 }, intent: idle, maxTicks: SERVE_DELAY + 30 });
@@ -60,13 +89,15 @@ describe('PaddleRallySim (Arcade physics)', () => {
   // the rival returns them and they never score. Swept across the whole reachable
   // difficulty band (ball speed is fixed in the sim) x seeds. This is the claim
   // Paddle Rally actually upholds absolutely.
-  it('idle and constant-input bots NEVER win (by construction), across difficulty 5..10', async () => {
+  it('idle and constant-input bots NEVER win (by construction), across difficulty 5..10 x target 1..10', async () => {
     const wins: string[] = [];
     for (const [label, intent] of [['idle', idle], ['up', holdUp], ['down', holdDown]] as const) {
       for (const cpu_difficulty of DIFFICULTIES) {
-        for (const seed of SEEDS) {
-          const rec = await recordRun({ seed, config: { target: 3, cpu_difficulty }, intent, maxTicks: 6000 });
-          if (rec.passed) wins.push(`${label} d${cpu_difficulty} seed ${seed.join('.')}`);
+        for (const target of TARGETS) {
+          for (const seed of SEEDS) {
+            const rec = await recordRun({ seed, config: { target, cpu_difficulty }, intent, maxTicks: 6000 });
+            if (rec.passed) wins.push(`${label} d${cpu_difficulty} t${target} seed ${seed.join('.')}`);
+          }
         }
       }
     }
@@ -76,13 +107,17 @@ describe('PaddleRallySim (Arcade physics)', () => {
   // The flick-score gate: a held/idle paddle imparts only the decayed floor, so
   // even a shot that slips past the rival on a miss does not convert. Stronger
   // than "never wins": a held/idle bot never scores a SINGLE point.
-  it('a held/idle bot never scores a point (flick-score gate), across difficulty 5..10', async () => {
+  it('a held/idle bot never scores a point (flick-score gate), across difficulty 5..10 x target 1..10', async () => {
     const scored: string[] = [];
     for (const [label, intent] of [['idle', idle], ['up', holdUp], ['down', holdDown]] as const) {
       for (const cpu_difficulty of DIFFICULTIES) {
-        for (const seed of SEEDS) {
-          const rec = await recordRun({ seed, config: { target: 3, cpu_difficulty }, intent, maxTicks: 6000 });
-          if (rec.score > 0) scored.push(`${label} d${cpu_difficulty} seed ${seed.join('.')} -> ${rec.score}`);
+        // The longest game (target 10) gives the bot the most chances to fluke a point,
+        // so it is the tightest test of the flick-score gate; the floor (1) is swept too.
+        for (const target of TARGETS) {
+          for (const seed of SEEDS) {
+            const rec = await recordRun({ seed, config: { target, cpu_difficulty }, intent, maxTicks: 6000 });
+            if (rec.score > 0) scored.push(`${label} d${cpu_difficulty} t${target} seed ${seed.join('.')} -> ${rec.score}`);
+          }
         }
       }
     }
@@ -93,25 +128,20 @@ describe('PaddleRallySim (Arcade physics)', () => {
   // the easier difficulties, ~0 by 10), NOT to zero. Property check over generated
   // seeds x the difficulty band; the bypass is explicitly a probabilistic ceiling
   // (see the posture note), the deliberate cost of a flick that a human can win with.
-  it('a random/erratic bot is filtered within the documented bound', async () => {
-    let runs = 0;
-    let wins = 0;
-    for (let i = 1; i <= 50; i++) {
-      const seed = [
-        Math.imul(i, 2654435761) >>> 0, Math.imul(i, 40503) >>> 0,
-        Math.imul(i, 2246822519) >>> 0, (Math.imul(i, 3266489917) + 1) >>> 0,
-      ] as const;
-      for (const cpu_difficulty of DIFFICULTIES) {
-        const rec = await recordRun({ seed, config: { target: 3, cpu_difficulty }, intent: randomBot(i * 31 + cpu_difficulty), maxTicks: 6000 });
-        runs += 1;
-        if (rec.passed) wins += 1;
-      }
+  // EMPIRICAL guarantee, TARGET-DEPENDENT. The random-bot bypass is a probabilistic
+  // ceiling, not a false zero, and its height depends on how long the game is:
+  //   - SECURITY-GRADE band (target >= 3, incl. the default): under the 5% ceiling
+  //     (measured ~2.3% at target 3, falling toward 0 by target 10).
+  //   - LOW-FRICTION band (target 1-2), which the site owner deliberately opts into for
+  //     a quicker check: a much shorter luck window, so the bypass climbs (measured
+  //     rival ~9.3% at target 1, ~3.0% at target 2). Asserted against honest, headroomed
+  //     ceilings so a REGRESSION (rival weakening past these measured rates) still trips.
+  it('a random/erratic bot bypass stays within the documented, target-dependent ceiling', async () => {
+    for (const target of [3, 5, 10]) {
+      expect(await randomBotBypass('rival', target, 50), `rival security-grade target ${target}`).toBeLessThan(0.05);
     }
-    // 300 runs over the reachable band (~2% average bypass measured, ~3% worst at the
-    // easier difficulties). Assert the documented ceiling holds, not a false zero: a
-    // regression that lets the bypass climb past ~5% (rival weakening, or a held-key
-    // bot earning flick power) trips this, while the honest ~2-3% rate keeps it green.
-    expect(wins / runs).toBeLessThan(0.05);
+    expect(await randomBotBypass('rival', 1, 50), 'rival low-friction target 1').toBeLessThan(0.15);
+    expect(await randomBotBypass('rival', 2, 50), 'rival low-friction target 2').toBeLessThan(0.07);
   });
 
   it('a tracking player wins the easiest (floor difficulty 5) default', async () => {
@@ -125,6 +155,21 @@ describe('PaddleRallySim (Arcade physics)', () => {
     // does strictly better. (Pre-flick the rival tip-caught everything and only a long
     // grind won; the flick lets a moving player score by skill, early.)
     expect(wins).toBe(SEEDS.length);
+  });
+
+  // HUMAN-WINNABLE across the whole target range: the widened floor (1) and ceiling
+  // (10) must both stay winnable by a moving player inside the tick ceiling, else the
+  // config exposes an unbeatable setting. A tracking player clears every seed at both
+  // ends (measured max ~2900 ticks at target 10, well under MAX_TICKS).
+  it('a tracking player wins across the target range (floor 1 to ceiling 10), d5', async () => {
+    for (const target of TARGETS) {
+      let wins = 0;
+      for (const seed of SEEDS) {
+        const rec = await recordRun({ seed, config: { target, cpu_difficulty: 5 }, intent: trackBall, maxTicks: 6000 });
+        if (rec.passed) wins += 1;
+      }
+      expect(wins, `rival target ${target}`).toBe(SEEDS.length);
+    }
   });
 
   // RESOLUTION INVARIANT. A moving player's flick lands a hard shot that beats the
@@ -180,47 +225,48 @@ describe('PaddleRallySim (solo mode)', () => {
   // BY CONSTRUCTION: idle and held-key never survive. vy scales with vx (capped at
   // paddle speed) so the ball keeps ranging the full court at any speed; a still or
   // wall-pinned paddle is always left behind. Swept across the whole difficulty band x
-  // seeds at the SHORTEST reachable survival (target 3), where luck has the best shot.
-  it('no idle or held-key bot survives solo, across difficulty 5..10', async () => {
+  // seeds x the target range, including the SHORTEST reachable survival (target 1),
+  // where luck has the best shot.
+  it('no idle or held-key bot survives solo, across difficulty 5..10 x target 1..10', async () => {
     const survivors: string[] = [];
     for (const cpu_difficulty of DIFFICULTIES) {
-      for (const seed of SEEDS) {
-        for (const [label, intent] of [['idle', idle], ['up', holdUp], ['down', holdDown]] as const) {
-          const rec = await recordRun({ seed, config: { mode: 'solo', target: 3, cpu_difficulty }, intent, maxTicks: 6000 });
-          if (rec.passed) survivors.push(`${label} d${cpu_difficulty} seed ${seed.join('.')}`);
+      for (const target of TARGETS) {
+        for (const seed of SEEDS) {
+          for (const [label, intent] of [['idle', idle], ['up', holdUp], ['down', holdDown]] as const) {
+            const rec = await recordRun({ seed, config: { mode: 'solo', target, cpu_difficulty }, intent, maxTicks: 6000 });
+            if (rec.passed) survivors.push(`${label} d${cpu_difficulty} t${target} seed ${seed.join('.')}`);
+          }
         }
       }
     }
     expect(survivors).toEqual([]);
   });
 
-  // EMPIRICAL: a random bot can luck through a few short returns. Measured ~3% at the
-  // shortest survival (target 3), lower at the preset length (5). A documented ceiling,
-  // not a false zero (the accept-residual posture, same as rival).
-  it('a random bot is filtered within the documented bound (solo)', async () => {
-    let runs = 0;
-    let wins = 0;
-    for (let i = 1; i <= 40; i++) {
-      const seed = [
-        Math.imul(i, 2654435761) >>> 0, Math.imul(i, 40503) >>> 0,
-        Math.imul(i, 2246822519) >>> 0, (Math.imul(i, 3266489917) + 1) >>> 0,
-      ] as const;
-      for (const cpu_difficulty of DIFFICULTIES) {
-        const rec = await recordRun({ seed, config: { mode: 'solo', target: 3, cpu_difficulty }, intent: randomBot(i * 31 + cpu_difficulty), maxTicks: 6000 });
-        runs += 1;
-        if (rec.passed) wins += 1;
-      }
+  // EMPIRICAL, TARGET-DEPENDENT (same posture as rival, but the drop-off is steeper).
+  // Surviving a target number of returns is luck^target for a non-tracking bot, so:
+  //   - SECURITY-GRADE band (target >= 3, incl. the presets at 5): well under the 5%
+  //     ceiling (measured ~0.8% at target 3, ~0 by target 5).
+  //   - LOW-FRICTION band (target 1-2): a single / double return is a wide luck window,
+  //     so the bypass is high (measured ~37.5% at target 1, ~8.8% at target 2). This is
+  //     the deliberate cost of a one-return solo check; asserted against honest ceilings
+  //     so a regression past the measured rates still trips.
+  it('a random bot bypass stays within the documented, target-dependent ceiling (solo)', async () => {
+    for (const target of [3, 5, 10]) {
+      expect(await randomBotBypass('solo', target, 40), `solo security-grade target ${target}`).toBeLessThan(0.05);
     }
-    expect(wins / runs).toBeLessThan(0.05);
+    expect(await randomBotBypass('solo', 1, 40), 'solo low-friction target 1').toBeLessThan(0.45);
+    expect(await randomBotBypass('solo', 2, 40), 'solo low-friction target 2').toBeLessThan(0.14);
   });
 
-  it('a tracking player survives solo at the preset length', async () => {
-    let passed = 0;
-    for (const seed of SEEDS) {
-      const rec = await recordRun({ seed, config: { mode: 'solo', target: 5, cpu_difficulty: 5 }, intent: trackBall, maxTicks: 6000 });
-      if (rec.passed) passed += 1;
+  it('a tracking player survives solo across the target range (floor 1 to ceiling 10)', async () => {
+    for (const target of TARGETS) {
+      let passed = 0;
+      for (const seed of SEEDS) {
+        const rec = await recordRun({ seed, config: { mode: 'solo', target, cpu_difficulty: 5 }, intent: trackBall, maxTicks: 6000 });
+        if (rec.passed) passed += 1;
+      }
+      expect(passed, `solo target ${target}`).toBe(SEEDS.length);
     }
-    expect(passed).toBe(SEEDS.length);
   });
 
   // Determinism: the solo verdict must not depend on Math.random (same asymmetry as

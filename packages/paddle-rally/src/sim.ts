@@ -91,11 +91,16 @@ const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > 
 function resolve(config: PaddleRallyConfig | null | undefined): ResolvedConfig {
   const c = config ?? {};
   const mode: Mode = c.mode === 'solo' ? 'solo' : 'rival';
-  // target is floored at 3 (not 1): in rival mode a single lucky point would let
-  // residual random-bot luck through, but luck does not compound over 3 points; in
-  // solo the same knob IS the returns-to-survive count. The floor holds the bots-lose
-  // invariant even if a config bypasses the UI.
-  const target = clamp(Math.trunc(c.target ?? 3), 3, 99);
+  // target ranges 1..10 (site-owner knob; default 3). SECURITY NOTE: the bots-lose
+  // guarantee is TARGET-DEPENDENT. Idle/held (non-playing) bots lose at EVERY target by
+  // construction (the flick-score gate denies them any point; solo's court-wide sweep
+  // leaves a still paddle behind). But a random/erratic bot's bypass climbs steeply at
+  // low targets: measured rival ~9% / solo ~37% at target 1, ~3% / ~9% at target 2,
+  // both under the 5% ceiling from target 3 up. So targets 1-2 are LOW-FRICTION,
+  // LOW-SECURITY settings the owner deliberately opts into; target >= 3 is the
+  // security-grade band. The clamp guards a UI-bypassing config; the upper 99 is
+  // harmless (a higher target only makes it harder for bots).
+  const target = clamp(Math.trunc(c.target ?? 3), 1, 99);
   // difficulty is floored at 5: in rival, below it a held-key bot's english resonates
   // into stray points; in solo it scales the ball speed. At d5..10 the bot floor holds.
   const cpuDifficulty = clamp(Math.trunc(c.cpu_difficulty ?? 5), 5, 10);

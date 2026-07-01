@@ -1,7 +1,7 @@
 {
   "schema": {
     "mode": { "type": "list", "values": ["rival", "solo"], "name": "Mode (rival = vs CPU, solo = keep it alive)" },
-    "target": { "type": "range", "min": 3, "max": 7, "step": 1, "name": "Points to win (rival) / returns to survive (solo)" },
+    "target": { "type": "range", "min": 1, "max": 10, "step": 1, "name": "Points to win (rival) / returns to survive (solo)" },
     "paddle_speed": { "type": "range", "min": 3, "max": 12, "step": 1, "name": "Paddle speed" },
     "cpu_difficulty": { "type": "range", "min": 5, "max": 10, "step": 1, "name": "Difficulty (5 easiest)" },
     "sound": { "type": "boolean", "name": "Sound" }
