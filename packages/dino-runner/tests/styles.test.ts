@@ -48,4 +48,26 @@ describe.each(['.dr-sound', '.dr-button'])('dino-runner %s hover transition', (s
       .map((r) => r.style.getPropertyValue('transition'));
     expect(transitions).toContain('none');
   });
+
+  // The override has the same specificity as the base rule, so it only wins
+  // when it comes later in the sheet.
+  it('places the reduced-motion override after every base transition rule', () => {
+    const rules = parseRules();
+    const baseIndexes = styleRulesFor(rules, selector)
+      .filter((r) => r.style.getPropertyValue('transition') !== '')
+      .map((r) => rules.indexOf(r));
+    const overrideIndexes = rules
+      .filter(
+        (r): r is CSSMediaRule =>
+          r instanceof CSSMediaRule &&
+          /prefers-reduced-motion:\s*reduce/.test(r.conditionText) &&
+          reducedMotionRules([r]).some(
+            (s) => selectors(s).includes(selector) && s.style.getPropertyValue('transition') === 'none',
+          ),
+      )
+      .map((r) => rules.indexOf(r));
+    expect(baseIndexes.length).toBeGreaterThan(0);
+    expect(overrideIndexes.length).toBeGreaterThan(0);
+    expect(Math.max(...overrideIndexes)).toBeGreaterThan(Math.max(...baseIndexes));
+  });
 });
