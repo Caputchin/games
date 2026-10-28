@@ -85,9 +85,10 @@ html, body, #cpt-root {
 .dr-stage {
   position: absolute;
   inset: 0;
-  /* Query container so the HUD font + spacing track the rendered width (cqw).
-     The world is scaled by --dr-scale but the HUD lives in the unscaled stage,
-     so a fixed px HUD reads oversized on a narrow embed; cqw scales it down. */
+  /* Query container: the HUD's cqw font + spacing resolve against the stage's
+     rendered width. The HUD is a child of .dr-world (game.ts), so --dr-scale
+     scales it too; the clamp() bounds keep it legible on a narrow embed. The
+     sound toggle and the overlay host sit here in the unscaled stage. */
   container-type: inline-size;
 }
 
@@ -169,7 +170,9 @@ html, body, #cpt-root {
 .dr-badge[data-hidden="true"] { display: none; }
 
 /* In-game sound toggle, top-left (mirrors the HUD top-right). Icon-only,
-   inherits the foreground color via currentColor. */
+   inherits the foreground color via currentColor. Same skin-colored,
+   feathered backing as .dr-hud: stars, clouds and the moon drift through
+   this corner and would otherwise sit on the icon. */
 .dr-sound {
   position: absolute;
   top: 5px;
@@ -178,13 +181,15 @@ html, body, #cpt-root {
   height: 18px;
   padding: 0;
   border: 0;
-  background: transparent;
+  border-radius: 3px;
+  background: var(--dr-bg);
+  box-shadow: 0 0 4px 3px var(--dr-bg);
   color: var(--dr-fg);
   cursor: pointer;
   line-height: 0;
 }
 .dr-sound svg { display: block; width: 100%; height: 100%; }
-.dr-sound:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring); border-radius: 3px; }
+.dr-sound:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring), 0 0 4px 3px var(--dr-bg); }
 
 .dr-overlay {
   position: absolute;
