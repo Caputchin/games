@@ -189,6 +189,12 @@ html, body, #cpt-root {
   line-height: 0;
 }
 .dr-sound svg { display: block; width: 100%; height: 100%; }
+/* Hover tints only the backing tile (the skin's button_secondary_hover_bg);
+   the feather stays --dr-bg so the tile still blends into the sky. Gated on
+   a hover-capable pointer so a tap on a phone does not leave it stuck tinted. */
+@media (hover: hover) {
+  .dr-sound:hover { background: var(--dr-button-secondary-hover-bg); }
+}
 .dr-sound:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring), 0 0 4px 3px var(--dr-bg); }
 
 .dr-overlay {
