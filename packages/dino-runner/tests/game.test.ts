@@ -82,6 +82,31 @@ describe('runDinoRunner', () => {
     cleanup();
   });
 
+  it('puts a 359x90 touch stage in the xs bucket and keeps the tap hint', () => {
+    // jsdom has no layout: give the stage the phone-strip rect and a coarse
+    // pointer, as a 600x150 frame scaled to a 375 touch viewport would have.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const [w, h] = this.classList.contains('dr-stage') ? [359, 90] : [0, 0];
+        return { x: 0, y: 0, top: 0, left: 0, right: w, bottom: h, width: w, height: h, toJSON: () => ({}) } as DOMRect;
+      });
+    const media = vi
+      .spyOn(window, 'matchMedia')
+      .mockImplementation((q: string) => ({ matches: q.includes('coarse') }) as MediaQueryList);
+    try {
+      const { container, cleanup } = harness();
+      expect(container.querySelector<HTMLElement>('.dr-root')?.dataset['size']).toBe('xs');
+      const hint = container.querySelector('.dr-overlay--start .dr-hint');
+      expect(hint?.textContent).toBe('Tap to jump');
+      expect(hint?.getAttribute('aria-hidden')).toBeNull();
+      cleanup();
+    } finally {
+      rect.mockRestore();
+      media.mockRestore();
+    }
+  });
+
   it('cleans up the DOM and stops the loop', () => {
     const { container, pump, cleanup } = harness();
     cleanup();

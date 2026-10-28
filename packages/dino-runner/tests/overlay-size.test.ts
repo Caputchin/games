@@ -3,8 +3,8 @@ import { overlaySize, STAGE_HEIGHT } from '../src/styles.js';
 
 // The start / game-over overlay picks its chrome from the stage height. A
 // short strip (a pinned height, or 600x150 scaled to a 375 viewport: 359x90)
-// must land in the compact bucket that hides the controls hint, or the title
-// and hint clip.
+// must land in the compact bucket that moves the controls hint beside the
+// button, or the title and hint clip.
 describe('dino-runner overlaySize', () => {
   it('keeps the preferred 150px height at md', () => {
     expect(overlaySize(STAGE_HEIGHT)).toBe('md');
