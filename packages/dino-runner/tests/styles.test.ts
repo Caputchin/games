@@ -69,14 +69,25 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
   );
 }
 
-// Top-level index of each rule that holds a reduced-motion `transition: none`
-// for `selector`, at any depth.
+// A rule turns motion off with `transition: none`, `transition-property: none`
+// or a zero `transition-duration` for every listed transition. happy-dom keeps
+// longhands as written, so each is read on its own.
+function disablesTransition(rule: CSSStyleRule): boolean {
+  if (rule.style.getPropertyValue('transition') === 'none') return true;
+  if (rule.style.getPropertyValue('transition-property') === 'none') return true;
+  const durations = rule.style.getPropertyValue('transition-duration');
+  const zero = /^[+-]?(0+\.?0*|\.0+)m?s$/;
+  return durations !== '' && durations.split(',').every((d) => zero.test(d.trim()));
+}
+
+// Top-level index of each rule that holds a reduced-motion override disabling
+// the transition for `selector`, at any depth.
 function overrideIndexes(rules: CSSRule[], selector: string): number[] {
   const overrides = (rule: CSSRule): boolean => {
     if (!isGroupingRule(rule)) return false;
     if (rule instanceof CSSMediaRule && isReducedMotion(rule)) {
       return nestedStyleRules(rule, false).some(
-        (s) => selectors(s).includes(selector) && s.style.getPropertyValue('transition') === 'none',
+        (s) => selectors(s).includes(selector) && disablesTransition(s),
       );
     }
     return Array.from(rule.cssRules).some(overrides);
@@ -131,6 +142,28 @@ describe('reduced-motion order check', () => {
   ])('orders a base transition in %s against the override', (_, base) => {
     expect(overrideComesLast(parseRules(`${base} ${override}`), '.x')).toBe(true);
     expect(overrideComesLast(parseRules(`${override} ${base}`), '.x')).toBe(false);
+  });
+
+  it.each([
+    ['transition: none', 'transition: none'],
+    ['transition-property: none', 'transition-property: none'],
+    ['transition-duration: 0s', 'transition-duration: 0s'],
+    ['a zero transition-duration list', 'transition-duration: 0ms, 0s'],
+  ])('recognises an override written as %s', (_, declaration) => {
+    const disabled = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
+    const base = '.x { transition: color 1s; }';
+    expect(overrideComesLast(parseRules(`${base} ${disabled}`), '.x')).toBe(true);
+    expect(overrideComesLast(parseRules(`${disabled} ${base}`), '.x')).toBe(false);
+  });
+
+  it.each([
+    ['a non-zero transition-duration', 'transition-duration: 1s'],
+    ['a partly zero transition-duration list', 'transition-duration: 0s, 1s'],
+    ['a transition-property other than none', 'transition-property: color'],
+    ['only a transition-delay', 'transition-delay: 0s'],
+  ])('ignores an override that keeps motion with %s', (_, declaration) => {
+    const kept = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
+    expect(overrideIndexes(parseRules(`.x { transition: color 1s; } ${kept}`), '.x')).toEqual([]);
   });
 
   // happy-dom flattens nested blocks (`@supports { @media { … } }` parses as an
