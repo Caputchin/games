@@ -26,6 +26,21 @@ import { WORLD_WIDTH, WORLD_HEIGHT, GROUND_LINE_HEIGHT } from './constants.js';
 export const STAGE_WIDTH = WORLD_WIDTH;
 export const STAGE_HEIGHT = WORLD_HEIGHT;
 
+/** Overlay chrome bucket for a stage height, written to `.dr-root[data-size]`.
+ *  Each bucket's start / game-over copy must fit its smallest height. The
+ *  preferred 150px height is `md`, also on a phone (a full-width embed there
+ *  is ~341x150). `sm` keeps the controls hint down to 130px; `xs` is a
+ *  shorter strip (a pinned height, or the 600x150 frame scaled down to a 375
+ *  viewport: 359x90) and hides the hint visually and tightens the rest. */
+export type OverlaySize = 'lg' | 'md' | 'sm' | 'xs';
+
+export function overlaySize(height: number): OverlaySize {
+  if (height >= 220) return 'lg';
+  if (height >= 150) return 'md';
+  if (height >= 130) return 'sm';
+  return 'xs';
+}
+
 export const STYLES = `
 html, body, #cpt-root {
   width: 100%;
@@ -234,21 +249,41 @@ html, body, #cpt-root {
 .dr-button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring); }
 
 /* Responsive overlay chrome: game.ts sets data-size on .dr-root from the stage
-   height. Dino renders as a short, wide strip, so the start / game-over copy
-   would overflow (and clip the title) at a small embed. As the height shrinks,
-   SHRINK the copy (title, body, button, gaps) rather than dropping it, so the
-   description stays visible at every size; only the secondary controls hint is
-   dropped at the very smallest. The score line (.dr-line--score) is always kept
-   so the game-over screen never loses the player's result. */
+   height (overlaySize above). Dino renders as a short, wide strip, so the
+   start / game-over copy would overflow (and clip the title) at a small embed.
+   As the height shrinks, SHRINK the copy (title, body, button, gaps) rather
+   than dropping it, so the description stays visible at every size; only the
+   secondary controls hint leaves the layout, at the smallest (xs), and stays
+   in the accessibility tree there (visually hidden, like .dr-announce). The body line
+   loses its 42ch cap below md so the longest locales (fr, de) wrap to two
+   lines instead of three. The score line (.dr-line--score) is always kept so
+   the game-over screen never loses the player's result. */
 .dr-root[data-size="md"] .dr-overlay { gap: 6px; padding: 8px 10px; }
 .dr-root[data-size="md"] .dr-title { font-size: 18px; }
 
-.dr-root[data-size="xs"] .dr-overlay { gap: 4px; padding: 6px 8px; }
-.dr-root[data-size="xs"] .dr-title { font-size: 15px; letter-spacing: 1px; }
-.dr-root[data-size="xs"] .dr-line { font-size: 11px; line-height: 1.3; }
-.dr-root[data-size="xs"] .dr-hint { font-size: 10px; }
-.dr-root[data-size="xs"] .dr-button { padding: 6px 14px; font-size: 12px; }
-.dr-root[data-size="xs"] .dr-button-icon { width: 16px; height: 16px; }
+.dr-root[data-size="sm"] .dr-overlay { gap: 4px; padding: 6px 8px; }
+.dr-root[data-size="sm"] .dr-title { font-size: 15px; letter-spacing: 1px; }
+.dr-root[data-size="sm"] .dr-line { font-size: 11px; line-height: 1.3; max-width: none; }
+.dr-root[data-size="sm"] .dr-hint { font-size: 10px; }
+.dr-root[data-size="sm"] .dr-button { padding: 6px 14px; font-size: 12px; }
+.dr-root[data-size="sm"] .dr-button-icon { width: 16px; height: 16px; }
+
+.dr-root[data-size="xs"] .dr-overlay { gap: 3px; padding: 4px 8px; }
+.dr-root[data-size="xs"] .dr-title { font-size: 14px; line-height: 1.15; letter-spacing: 1px; }
+.dr-root[data-size="xs"] .dr-line { font-size: 11px; line-height: 1.25; max-width: none; }
+.dr-root[data-size="xs"] .dr-hint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.dr-root[data-size="xs"] .dr-buttons { margin-top: 0; }
+.dr-root[data-size="xs"] .dr-button { padding: 4px 12px; font-size: 12px; }
+.dr-root[data-size="xs"] .dr-button-icon { width: 14px; height: 14px; }
 
 .dr-button-icon { width: 18px; height: 18px; }
 .dr-button-icon svg { display: block; width: 100%; height: 100%; }

@@ -28,7 +28,7 @@ import { cjkFontStack } from './fonts.js';
 import { createAnnouncer, prefersReducedMotion } from './a11y.js';
 import { createSfx } from './audio.js';
 import { SOUND_CLIPS } from './sounds.js';
-import { STYLES } from './styles.js';
+import { STYLES, overlaySize } from './styles.js';
 import { renderStartScreen, renderGameOverScreen } from './screens.js';
 
 // Score interval between milestone chimes.
@@ -175,11 +175,8 @@ export function runDinoRunner(opts: GameOptions): () => void {
     scale = Math.min(rect.width / WORLD_WIDTH, rect.height / WORLD_HEIGHT);
     root.style.setProperty('--dr-scale', String(scale));
     // Drive the responsive start / game-over overlay off the stage height so
-    // the copy never overflows a short embed. Dino is a thin strip (a tall
-    // embed is rare), so the buckets sit low: the overlay drops to title + the
-    // essential line + button as the height shrinks.
-    const h = rect.height;
-    root.dataset['size'] = h >= 220 ? 'lg' : h >= 150 ? 'md' : 'xs';
+    // the copy never overflows a short embed (buckets: overlaySize in styles.ts).
+    root.dataset['size'] = overlaySize(rect.height);
   }
   let resizeObserver: ResizeObserver | null = null;
   if (typeof view.ResizeObserver === 'function') {
