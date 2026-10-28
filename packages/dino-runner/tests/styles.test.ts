@@ -24,12 +24,13 @@ function styleRulesFor(rules: CSSRule[], selector: string): CSSStyleRule[] {
   );
 }
 
+function isReducedMotion(rule: CSSMediaRule): boolean {
+  return /prefers-reduced-motion:\s*reduce/.test(rule.conditionText);
+}
+
 function reducedMotionRules(rules: CSSRule[]): CSSStyleRule[] {
   return rules
-    .filter(
-      (r): r is CSSMediaRule =>
-        r instanceof CSSMediaRule && /prefers-reduced-motion:\s*reduce/.test(r.conditionText),
-    )
+    .filter((r): r is CSSMediaRule => r instanceof CSSMediaRule && isReducedMotion(r))
     .flatMap((m) => Array.from(m.cssRules))
     .filter((r): r is CSSStyleRule => r instanceof CSSStyleRule);
 }
@@ -50,17 +51,30 @@ describe.each(['.dr-sound', '.dr-button'])('dino-runner %s hover transition', (s
   });
 
   // The override has the same specificity as the base rule, so it only wins
-  // when it comes later in the sheet.
+  // when it comes later in the sheet. A base rule inside another @media block
+  // (for example `(hover: hover)`) counts at its block's position.
   it('places the reduced-motion override after every base transition rule', () => {
     const rules = parseRules();
-    const baseIndexes = styleRulesFor(rules, selector)
-      .filter((r) => r.style.getPropertyValue('transition') !== '')
-      .map((r) => rules.indexOf(r));
+    const baseIndexes = rules
+      .flatMap((r, index) => {
+        if (r instanceof CSSStyleRule) return [{ rule: r, index }];
+        if (r instanceof CSSMediaRule && !isReducedMotion(r)) {
+          return Array.from(r.cssRules)
+            .filter((s): s is CSSStyleRule => s instanceof CSSStyleRule)
+            .map((s) => ({ rule: s, index }));
+        }
+        return [];
+      })
+      .filter(
+        ({ rule }) =>
+          selectors(rule).includes(selector) && rule.style.getPropertyValue('transition') !== '',
+      )
+      .map(({ index }) => index);
     const overrideIndexes = rules
       .filter(
         (r): r is CSSMediaRule =>
           r instanceof CSSMediaRule &&
-          /prefers-reduced-motion:\s*reduce/.test(r.conditionText) &&
+          isReducedMotion(r) &&
           reducedMotionRules([r]).some(
             (s) => selectors(s).includes(selector) && s.style.getPropertyValue('transition') === 'none',
           ),
