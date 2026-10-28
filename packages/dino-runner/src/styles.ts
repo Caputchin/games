@@ -130,8 +130,12 @@ html, body, #cpt-root {
 
 .dr-hud {
   position: absolute;
-  top: clamp(3px, 1cqw, 6px);
-  right: clamp(6px, 1.6cqw, 10px);
+  /* Anchored to the corner; the old top/right offsets are now padding, so
+     the text sits where it did and the backing reaches the world's edges
+     (no gap for a sprite to show through beside the digits). */
+  top: 0;
+  right: 0;
+  padding: clamp(3px, 1cqw, 6px) clamp(6px, 1.6cqw, 10px) 1px 4px;
   display: flex;
   gap: clamp(7px, 2cqw, 12px);
   font-variant-numeric: tabular-nums;
@@ -139,7 +143,17 @@ html, body, #cpt-root {
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--dr-fg);
+  /* Skin-colored backing: clouds, stars and the moon drift through the HUD
+     band and would otherwise sit on the score text. The feathered shadow
+     fades sprites out at the inner edges instead of cutting them. */
+  border-bottom-left-radius: 4px;
+  background: var(--dr-bg);
+  box-shadow: 0 0 4px 3px var(--dr-bg);
 }
+
+/* Nothing to show (score + best off, not verified yet): no backing, or the
+   empty box would cut a hole in passing clouds. */
+.dr-hud[data-hidden="true"] { display: none; }
 
 .dr-hud .label {
   opacity: 0.6;

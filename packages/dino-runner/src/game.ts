@@ -461,6 +461,7 @@ export function runDinoRunner(opts: GameOptions): () => void {
   }
 
   function renderHud(): void {
+    hud.root.dataset['hidden'] = verified || cfg.showBest || cfg.showScore ? 'false' : 'true';
     hud.badge.dataset['hidden'] = verified ? 'false' : 'true';
     if (verified) hud.badge.textContent = `✓ ${strings.t('verifiedBadge')}`;
     hud.best.dataset['hidden'] = cfg.showBest ? 'false' : 'true';
