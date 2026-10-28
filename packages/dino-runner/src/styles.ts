@@ -187,6 +187,7 @@ html, body, #cpt-root {
   color: var(--dr-fg);
   cursor: pointer;
   line-height: 0;
+  transition: background-color 150ms ease-out;
 }
 .dr-sound svg { display: block; width: 100%; height: 100%; }
 /* Hover tints only the backing tile (the skin's button_secondary_hover_bg);
@@ -269,9 +270,16 @@ html, body, #cpt-root {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: background-color 150ms ease-out;
 }
 .dr-button:hover { background: var(--dr-button-hover); }
 .dr-button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring); }
+/* Hover tints fade in over 150ms ease-out (docs/brand/design.md, Motion);
+   reduced motion swaps the tint instantly. Only background-color moves, so
+   the focus ring still appears at once. */
+@media (prefers-reduced-motion: reduce) {
+  .dr-sound, .dr-button { transition: none; }
+}
 
 /* Responsive overlay chrome: game.ts sets data-size on .dr-root from the stage
    height (overlaySize above). Dino renders as a short, wide strip, so the
