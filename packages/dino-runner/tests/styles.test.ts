@@ -59,7 +59,8 @@ function setsTransition(rule: CSSStyleRule): boolean {
   );
 }
 
-// A rule marks a transition shorthand or longhand !important.
+// A base rule marks a transition shorthand or longhand !important. Any one
+// counts, which can only make the order check stricter.
 function importantTransition(rule: CSSStyleRule): boolean {
   return Array.from({ length: rule.style.length }, (_, i) => rule.style.item(i)).some(
     (name) =>
@@ -74,19 +75,29 @@ interface Match {
   important: boolean;
 }
 
-// Each top-level rule whose style rules `find` returns for it, with its index.
-function matches(rules: CSSRule[], find: (rule: CSSRule) => CSSStyleRule[]): Match[] {
+// Each top-level rule whose style rules `find` returns for it, with its index;
+// `important` reads each found rule's priority.
+function matches(
+  rules: CSSRule[],
+  find: (rule: CSSRule) => CSSStyleRule[],
+  important: (rule: CSSStyleRule) => boolean,
+): Match[] {
   return rules.flatMap((r, index) => {
     const found = find(r);
-    return found.length > 0 ? [{ index, important: found.some(importantTransition) }] : [];
+    return found.length > 0 ? [{ index, important: found.some(important) }] : [];
   });
 }
 
 // Each top-level rule that holds a base transition for `selector`, however
 // deeply it is nested outside a reduced-motion block.
 function baseTransitions(rules: CSSRule[], selector: string): Match[] {
-  return matches(rules, (r) =>
-    nestedStyleRules(r, true).filter((s) => selectors(s).includes(selector) && setsTransition(s)),
+  return matches(
+    rules,
+    (r) =>
+      nestedStyleRules(r, true).filter(
+        (s) => selectors(s).includes(selector) && setsTransition(s),
+      ),
+    importantTransition,
   );
 }
 
@@ -102,8 +113,9 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
 // `transition: none` resets the property to none and the duration to 0s, and
 // any other shorthand is taken to keep motion. happy-dom keeps a repeated
 // property at its first position, so a rule that declares the same transition
-// property twice is out of scope.
-function disablesTransition(rule: CSSStyleRule): boolean {
+// property twice is out of scope. Returns null when motion stays on, else
+// whether the declaration that turns it off is !important.
+function disabling(rule: CSSStyleRule): { important: boolean } | null {
   const style = rule.style;
   const names = Array.from({ length: style.length }, (_, i) => style.item(i));
   const rank = (name: string): number => {
@@ -114,15 +126,26 @@ function disablesTransition(rule: CSSStyleRule): boolean {
   };
   const shorthand = rank('transition');
   const none = style.getPropertyValue('transition') === 'none';
-  const cascaded = (longhand: string, reset: string): string | null => {
-    if (rank(longhand) > shorthand) return style.getPropertyValue(longhand);
-    if (shorthand === -1) return '';
-    return none ? reset : null;
+  const declared = (name: string, value = style.getPropertyValue(name)) => ({
+    value,
+    important: style.getPropertyPriority(name) === 'important',
+  });
+  const cascaded = (longhand: string, reset: string) => {
+    if (rank(longhand) > shorthand) return declared(longhand);
+    if (shorthand === -1) return { value: '', important: false };
+    return none ? declared('transition', reset) : null;
   };
-  if (cascaded('transition-property', 'none') === 'none') return true;
+  const property = cascaded('transition-property', 'none');
+  if (property?.value === 'none') return { important: property.important };
   const durations = cascaded('transition-duration', '0s');
   const zero = /^[+-]?(0+\.?0*|\.0+)m?s$/;
-  return !!durations && durations.split(',').every((d) => zero.test(d.trim()));
+  return durations?.value && durations.value.split(',').every((d) => zero.test(d.trim()))
+    ? { important: durations.important }
+    : null;
+}
+
+function disablesTransition(rule: CSSStyleRule): boolean {
+  return disabling(rule) !== null;
 }
 
 // Each top-level rule that holds a reduced-motion override disabling the
@@ -137,7 +160,7 @@ function overrides(rules: CSSRule[], selector: string): Match[] {
     }
     return Array.from(rule.cssRules).flatMap(overriding);
   };
-  return matches(rules, overriding);
+  return matches(rules, overriding, (s) => disabling(s)!.important);
 }
 
 function overrideIndexes(rules: CSSRule[], selector: string): number[] {
@@ -248,6 +271,9 @@ describe('reduced-motion order check', () => {
     expect(overrideComesLast(parseRules(`${important} ${base}`), '.x')).toBe(true);
     const longhand = reduced('transition-duration: 0s !important; transition: color 1s');
     expect(overrideComesLast(parseRules(`${base} ${longhand}`), '.x')).toBe(true);
+    const delay = reduced('transition: none; transition-delay: 0s !important');
+    expect(overrideComesLast(parseRules(`${importantBase} ${delay}`), '.x')).toBe(false);
+    expect(overrideComesLast(parseRules(`${delay} ${base}`), '.x')).toBe(false);
     expect(overrideComesLast(parseRules(`${base} ${importantBase} ${important}`), '.x')).toBe(true);
     expect(overrideComesLast(parseRules(`${importantBase} ${normal} ${base} ${normal}`), '.x')).toBe(
       false,
