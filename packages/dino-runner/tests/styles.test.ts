@@ -24,8 +24,9 @@ function styleRulesFor(rules: CSSRule[], selector: string): CSSStyleRule[] {
   );
 }
 
+// Media features are case-insensitive and happy-dom keeps the author's case.
 function isReducedMotion(rule: CSSMediaRule): boolean {
-  return /prefers-reduced-motion:\s*reduce/.test(rule.conditionText);
+  return /prefers-reduced-motion:\s*reduce/i.test(rule.conditionText);
 }
 
 function reducedMotionRules(rules: CSSRule[]): CSSStyleRule[] {
@@ -71,11 +72,14 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
 
 // A rule turns motion off with `transition: none`, `transition-property: none`
 // or a zero `transition-duration` for every listed transition. happy-dom keeps
-// longhands as written, so each is read on its own.
+// longhands as written, so each is read on its own. Keywords and units are
+// case-insensitive and happy-dom keeps the author's case, so values are
+// lowercased first.
 function disablesTransition(rule: CSSStyleRule): boolean {
-  if (rule.style.getPropertyValue('transition') === 'none') return true;
-  if (rule.style.getPropertyValue('transition-property') === 'none') return true;
-  const durations = rule.style.getPropertyValue('transition-duration');
+  const value = (name: string) => rule.style.getPropertyValue(name).toLowerCase();
+  if (value('transition') === 'none') return true;
+  if (value('transition-property') === 'none') return true;
+  const durations = value('transition-duration');
   const zero = /^[+-]?(0+\.?0*|\.0+)m?s$/;
   return durations !== '' && durations.split(',').every((d) => zero.test(d.trim()));
 }
@@ -144,11 +148,21 @@ describe('reduced-motion order check', () => {
     expect(overrideComesLast(parseRules(`${override} ${base}`), '.x')).toBe(false);
   });
 
+  it('recognises an override under an uppercase media condition', () => {
+    const upper = '@media (PREFERS-REDUCED-MOTION: REDUCE) { .x { transition: none; } }';
+    const base = '.x { transition: color 1s; }';
+    expect(overrideComesLast(parseRules(`${base} ${upper}`), '.x')).toBe(true);
+    expect(overrideComesLast(parseRules(`${upper} ${base}`), '.x')).toBe(false);
+  });
+
   it.each([
     ['transition: none', 'transition: none'],
     ['transition-property: none', 'transition-property: none'],
     ['transition-duration: 0s', 'transition-duration: 0s'],
     ['a zero transition-duration list', 'transition-duration: 0ms, 0s'],
+    ['uppercase transition: NONE', 'transition: NONE'],
+    ['uppercase transition-property: NONE', 'transition-property: NONE'],
+    ['uppercase transition-duration units', 'transition-duration: 0S, 0MS'],
   ])('recognises an override written as %s', (_, declaration) => {
     const disabled = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     const base = '.x { transition: color 1s; }';
@@ -160,6 +174,7 @@ describe('reduced-motion order check', () => {
     ['a non-zero transition-duration', 'transition-duration: 1s'],
     ['a partly zero transition-duration list', 'transition-duration: 0s, 1s'],
     ['a transition-property other than none', 'transition-property: color'],
+    ['an uppercase non-zero transition-duration', 'transition-duration: 1S'],
     ['only a transition-delay', 'transition-delay: 0s'],
   ])('ignores an override that keeps motion with %s', (_, declaration) => {
     const kept = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
