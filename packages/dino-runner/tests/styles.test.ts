@@ -59,20 +59,46 @@ function setsTransition(rule: CSSStyleRule): boolean {
   );
 }
 
-// Top-level index of each rule that holds a base transition for `selector`,
-// however deeply it is nested outside a reduced-motion block.
-function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
-  return rules.flatMap((r, index) =>
-    nestedStyleRules(r, true).some((s) => selectors(s).includes(selector) && setsTransition(s))
-      ? [index]
-      : [],
+// A rule marks a transition shorthand or longhand !important.
+function importantTransition(rule: CSSStyleRule): boolean {
+  return Array.from({ length: rule.style.length }, (_, i) => rule.style.item(i)).some(
+    (name) =>
+      (name === 'transition' || name.startsWith('transition-')) &&
+      rule.style.getPropertyPriority(name) === 'important',
   );
+}
+
+// A top-level rule index, and whether a matching rule under it is !important.
+interface Match {
+  index: number;
+  important: boolean;
+}
+
+// Each top-level rule whose style rules `find` returns for it, with its index.
+function matches(rules: CSSRule[], find: (rule: CSSRule) => CSSStyleRule[]): Match[] {
+  return rules.flatMap((r, index) => {
+    const found = find(r);
+    return found.length > 0 ? [{ index, important: found.some(importantTransition) }] : [];
+  });
+}
+
+// Each top-level rule that holds a base transition for `selector`, however
+// deeply it is nested outside a reduced-motion block.
+function baseTransitions(rules: CSSRule[], selector: string): Match[] {
+  return matches(rules, (r) =>
+    nestedStyleRules(r, true).filter((s) => selectors(s).includes(selector) && setsTransition(s)),
+  );
+}
+
+function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
+  return baseTransitions(rules, selector).map((m) => m.index);
 }
 
 // A rule turns motion off with `transition: none`, `transition-property: none`
 // or a zero `transition-duration` for every listed transition. happy-dom keeps
 // the shorthand and each longhand as written instead of cascading them, so
-// cascade by hand: a longhand counts only when declared after the shorthand,
+// cascade by hand: a longhand counts only when it beats the shorthand (it is
+// !important and the shorthand is not, or both match and it comes later),
 // `transition: none` resets the property to none and the duration to 0s, and
 // any other shorthand is taken to keep motion. happy-dom keeps a repeated
 // property at its first position, so a rule that declares the same transition
@@ -80,10 +106,16 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
 function disablesTransition(rule: CSSStyleRule): boolean {
   const style = rule.style;
   const names = Array.from({ length: style.length }, (_, i) => style.item(i));
-  const shorthand = names.lastIndexOf('transition');
+  const rank = (name: string): number => {
+    const index = names.lastIndexOf(name);
+    return index !== -1 && style.getPropertyPriority(name) === 'important'
+      ? index + names.length
+      : index;
+  };
+  const shorthand = rank('transition');
   const none = style.getPropertyValue('transition') === 'none';
   const cascaded = (longhand: string, reset: string): string | null => {
-    if (names.lastIndexOf(longhand) > shorthand) return style.getPropertyValue(longhand);
+    if (rank(longhand) > shorthand) return style.getPropertyValue(longhand);
     if (shorthand === -1) return '';
     return none ? reset : null;
   };
@@ -93,25 +125,38 @@ function disablesTransition(rule: CSSStyleRule): boolean {
   return !!durations && durations.split(',').every((d) => zero.test(d.trim()));
 }
 
-// Top-level index of each rule that holds a reduced-motion override disabling
-// the transition for `selector`, at any depth.
-function overrideIndexes(rules: CSSRule[], selector: string): number[] {
-  const overrides = (rule: CSSRule): boolean => {
-    if (!isGroupingRule(rule)) return false;
+// Each top-level rule that holds a reduced-motion override disabling the
+// transition for `selector`, at any depth.
+function overrides(rules: CSSRule[], selector: string): Match[] {
+  const overriding = (rule: CSSRule): CSSStyleRule[] => {
+    if (!isGroupingRule(rule)) return [];
     if (rule instanceof CSSMediaRule && isReducedMotion(rule)) {
-      return nestedStyleRules(rule, false).some(
+      return nestedStyleRules(rule, false).filter(
         (s) => selectors(s).includes(selector) && disablesTransition(s),
       );
     }
-    return Array.from(rule.cssRules).some(overrides);
+    return Array.from(rule.cssRules).flatMap(overriding);
   };
-  return rules.flatMap((r, index) => (overrides(r) ? [index] : []));
+  return matches(rules, overriding);
 }
 
+function overrideIndexes(rules: CSSRule[], selector: string): number[] {
+  return overrides(rules, selector).map((m) => m.index);
+}
+
+// Every base transition needs an override that beats it: an !important
+// override beats a normal base wherever it sits, a normal override never beats
+// an !important base, and otherwise the later rule wins.
 function overrideComesLast(rules: CSSRule[], selector: string): boolean {
-  const base = baseTransitionIndexes(rules, selector);
-  const override = overrideIndexes(rules, selector);
-  return base.length > 0 && override.length > 0 && Math.max(...override) > Math.max(...base);
+  const base = baseTransitions(rules, selector);
+  const override = overrides(rules, selector);
+  const beats = (o: Match, b: Match): boolean =>
+    o.important !== b.important ? o.important : o.index > b.index;
+  return (
+    base.length > 0 &&
+    override.length > 0 &&
+    base.every((b) => override.some((o) => beats(o, b)))
+  );
 }
 
 describe.each(['.dr-sound', '.dr-button'])('dino-runner %s hover transition', (selector) => {
@@ -181,9 +226,32 @@ describe('reduced-motion order check', () => {
     ['a zero transition-duration before the shorthand', 'transition-duration: 0s; transition: color 1s'],
     ['transition-property: none before the shorthand', 'transition-property: none; transition: color 1s'],
     ['transition: none then a non-zero property and duration', 'transition: none; transition-property: color; transition-duration: 1s'],
+    [
+      'a zero transition-duration after an important shorthand',
+      'transition: color 1s !important; transition-duration: 0s',
+    ],
   ])('ignores an override that keeps motion with %s', (_, declaration) => {
     const kept = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     expect(overrideIndexes(parseRules(`.x { transition: color 1s; } ${kept}`), '.x')).toEqual([]);
+  });
+
+  it('weighs !important between the base transition and the override', () => {
+    const base = '.x { transition: color 1s; }';
+    const importantBase = '.x { transition: color 1s !important; }';
+    const reduced = (declaration: string) =>
+      `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
+    const normal = reduced('transition: none');
+    const important = reduced('transition: none !important');
+    expect(overrideComesLast(parseRules(`${importantBase} ${normal}`), '.x')).toBe(false);
+    expect(overrideComesLast(parseRules(`${importantBase} ${important}`), '.x')).toBe(true);
+    expect(overrideComesLast(parseRules(`${important} ${importantBase}`), '.x')).toBe(false);
+    expect(overrideComesLast(parseRules(`${important} ${base}`), '.x')).toBe(true);
+    const longhand = reduced('transition-duration: 0s !important; transition: color 1s');
+    expect(overrideComesLast(parseRules(`${base} ${longhand}`), '.x')).toBe(true);
+    expect(overrideComesLast(parseRules(`${base} ${importantBase} ${important}`), '.x')).toBe(true);
+    expect(overrideComesLast(parseRules(`${importantBase} ${normal} ${base} ${normal}`), '.x')).toBe(
+      false,
+    );
   });
 
   // happy-dom flattens nested blocks (`@supports { @media { … } }` parses as an
