@@ -74,7 +74,9 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
 // the shorthand and each longhand as written instead of cascading them, so
 // cascade by hand: a longhand counts only when declared after the shorthand,
 // `transition: none` resets the property to none and the duration to 0s, and
-// any other shorthand is taken to keep motion.
+// any other shorthand is taken to keep motion. happy-dom keeps a repeated
+// property at its first position, so a rule that declares the same transition
+// property twice is out of scope.
 function disablesTransition(rule: CSSStyleRule): boolean {
   const style = rule.style;
   const names = Array.from({ length: style.length }, (_, i) => style.item(i));
