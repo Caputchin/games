@@ -71,13 +71,24 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
 
 // A rule turns motion off with `transition: none`, `transition-property: none`
 // or a zero `transition-duration` for every listed transition. happy-dom keeps
-// longhands as written, so each is read on its own.
+// the shorthand and each longhand as written instead of cascading them, so
+// cascade by hand: a longhand counts only when declared after the shorthand,
+// `transition: none` resets the property to none and the duration to 0s, and
+// any other shorthand is taken to keep motion.
 function disablesTransition(rule: CSSStyleRule): boolean {
-  if (rule.style.getPropertyValue('transition') === 'none') return true;
-  if (rule.style.getPropertyValue('transition-property') === 'none') return true;
-  const durations = rule.style.getPropertyValue('transition-duration');
+  const style = rule.style;
+  const names = Array.from({ length: style.length }, (_, i) => style.item(i));
+  const shorthand = names.lastIndexOf('transition');
+  const none = style.getPropertyValue('transition') === 'none';
+  const cascaded = (longhand: string, reset: string): string | null => {
+    if (names.lastIndexOf(longhand) > shorthand) return style.getPropertyValue(longhand);
+    if (shorthand === -1) return '';
+    return none ? reset : null;
+  };
+  if (cascaded('transition-property', 'none') === 'none') return true;
+  const durations = cascaded('transition-duration', '0s');
   const zero = /^[+-]?(0+\.?0*|\.0+)m?s$/;
-  return durations !== '' && durations.split(',').every((d) => zero.test(d.trim()));
+  return !!durations && durations.split(',').every((d) => zero.test(d.trim()));
 }
 
 // Top-level index of each rule that holds a reduced-motion override disabling
@@ -149,6 +160,10 @@ describe('reduced-motion order check', () => {
     ['transition-property: none', 'transition-property: none'],
     ['transition-duration: 0s', 'transition-duration: 0s'],
     ['a zero transition-duration list', 'transition-duration: 0ms, 0s'],
+    ['a zero transition-duration after the shorthand', 'transition: color 1s; transition-duration: 0s'],
+    ['transition-property: none after the shorthand', 'transition: color 1s; transition-property: none'],
+    ['transition: none then a transition-property', 'transition: none; transition-property: color'],
+    ['transition: none then a transition-duration', 'transition: none; transition-duration: 1s'],
   ])('recognises an override written as %s', (_, declaration) => {
     const disabled = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     const base = '.x { transition: color 1s; }';
@@ -161,6 +176,9 @@ describe('reduced-motion order check', () => {
     ['a partly zero transition-duration list', 'transition-duration: 0s, 1s'],
     ['a transition-property other than none', 'transition-property: color'],
     ['only a transition-delay', 'transition-delay: 0s'],
+    ['a zero transition-duration before the shorthand', 'transition-duration: 0s; transition: color 1s'],
+    ['transition-property: none before the shorthand', 'transition-property: none; transition: color 1s'],
+    ['transition: none then a non-zero property and duration', 'transition: none; transition-property: color; transition-duration: 1s'],
   ])('ignores an override that keeps motion with %s', (_, declaration) => {
     const kept = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     expect(overrideIndexes(parseRules(`.x { transition: color 1s; } ${kept}`), '.x')).toEqual([]);
