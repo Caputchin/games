@@ -82,6 +82,30 @@ describe('runDinoRunner', () => {
     cleanup();
   });
 
+  it('hides the HUD backing until it has something to show', () => {
+    // Score and best off: the HUD box (and its sky-masking backing) stays
+    // hidden until the run verifies and the badge appears.
+    const ctx = {
+      locale: null,
+      skin: null,
+      config: { pass_score: 1, show_score: false, show_best: false },
+    } as unknown as GameContext;
+    const { container, pump, cleanup } = harness(ctx);
+    const hud = (): string | null | undefined => container.querySelector('.dr-hud')?.getAttribute('data-hidden');
+    pump(2);
+    expect(hud()).toBe('true');
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+    pump(20); // accrue past score 1
+    expect(hud()).toBe('false');
+    cleanup();
+  });
+
+  it('shows the HUD backing from the start when the score is on', () => {
+    const { container, cleanup } = harness();
+    expect(container.querySelector('.dr-hud')?.getAttribute('data-hidden')).toBe('false');
+    cleanup();
+  });
+
   it('puts a 359x90 touch stage in the xs bucket and keeps the tap hint', () => {
     // jsdom has no layout: give the stage the phone-strip rect and a coarse
     // pointer, as a 600x150 frame scaled to a 375 touch viewport would have.

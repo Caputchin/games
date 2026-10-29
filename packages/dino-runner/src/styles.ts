@@ -85,9 +85,10 @@ html, body, #cpt-root {
 .dr-stage {
   position: absolute;
   inset: 0;
-  /* Query container so the HUD font + spacing track the rendered width (cqw).
-     The world is scaled by --dr-scale but the HUD lives in the unscaled stage,
-     so a fixed px HUD reads oversized on a narrow embed; cqw scales it down. */
+  /* Query container: the HUD's cqw font + spacing resolve against the stage's
+     rendered width. The HUD is a child of .dr-world (game.ts), so --dr-scale
+     scales it too; the clamp() bounds keep it legible on a narrow embed. The
+     sound toggle and the overlay host sit here in the unscaled stage. */
   container-type: inline-size;
 }
 
@@ -130,8 +131,12 @@ html, body, #cpt-root {
 
 .dr-hud {
   position: absolute;
-  top: clamp(3px, 1cqw, 6px);
-  right: clamp(6px, 1.6cqw, 10px);
+  /* Anchored to the corner; the old top/right offsets are now padding, so
+     the text sits where it did and the backing reaches the world's edges
+     (no gap for a sprite to show through beside the digits). */
+  top: 0;
+  right: 0;
+  padding: clamp(3px, 1cqw, 6px) clamp(6px, 1.6cqw, 10px) 1px 4px;
   display: flex;
   gap: clamp(7px, 2cqw, 12px);
   font-variant-numeric: tabular-nums;
@@ -139,7 +144,17 @@ html, body, #cpt-root {
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--dr-fg);
+  /* Skin-colored backing: clouds, stars and the moon drift through the HUD
+     band and would otherwise sit on the score text. The feathered shadow
+     fades sprites out at the inner edges instead of cutting them. */
+  border-bottom-left-radius: 4px;
+  background: var(--dr-bg);
+  box-shadow: 0 0 4px 3px var(--dr-bg);
 }
+
+/* Nothing to show (score + best off, not verified yet): no backing, or the
+   empty box would cut a hole in passing clouds. */
+.dr-hud[data-hidden="true"] { display: none; }
 
 .dr-hud .label {
   opacity: 0.6;
@@ -155,7 +170,9 @@ html, body, #cpt-root {
 .dr-badge[data-hidden="true"] { display: none; }
 
 /* In-game sound toggle, top-left (mirrors the HUD top-right). Icon-only,
-   inherits the foreground color via currentColor. */
+   inherits the foreground color via currentColor. Same skin-colored,
+   feathered backing as .dr-hud: stars, clouds and the moon drift through
+   this corner and would otherwise sit on the icon. */
 .dr-sound {
   position: absolute;
   top: 5px;
@@ -164,13 +181,21 @@ html, body, #cpt-root {
   height: 18px;
   padding: 0;
   border: 0;
-  background: transparent;
+  border-radius: 3px;
+  background: var(--dr-bg);
+  box-shadow: 0 0 4px 3px var(--dr-bg);
   color: var(--dr-fg);
   cursor: pointer;
   line-height: 0;
 }
 .dr-sound svg { display: block; width: 100%; height: 100%; }
-.dr-sound:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring); border-radius: 3px; }
+/* Hover tints only the backing tile (the skin's button_secondary_hover_bg);
+   the feather stays --dr-bg so the tile still blends into the sky. Gated on
+   a hover-capable pointer so a tap on a phone does not leave it stuck tinted. */
+@media (hover: hover) {
+  .dr-sound:hover { background: var(--dr-button-secondary-hover-bg); }
+}
+.dr-sound:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--dr-focus-ring), 0 0 4px 3px var(--dr-bg); }
 
 .dr-overlay {
   position: absolute;

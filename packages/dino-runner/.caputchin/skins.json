@@ -37,8 +37,8 @@
     },
     "button_secondary_hover_bg": {
       "type": "color",
-      "name": "Touch control active bg",
-      "description": "Active / pressed background of the on-screen touch controls."
+      "name": "Sound toggle hover bg",
+      "description": "Hover background of the in-game sound toggle."
     },
     "focus_ring": {
       "type": "color",
