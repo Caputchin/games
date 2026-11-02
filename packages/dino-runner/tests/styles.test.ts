@@ -125,35 +125,41 @@ function splitOutsideParens(value: string, separator: RegExp): string[] {
 }
 
 const TIME = /^[+-]?(\d+\.?\d*|\.\d+)m?s$/;
-const NOT_PROPERTY = new Set([
-  'ease',
-  'ease-in',
-  'ease-out',
-  'ease-in-out',
-  'linear',
-  'step-start',
-  'step-end',
-  'normal',
-  'allow-discrete',
-]);
+const EASING = /^(ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end|(cubic-bezier|steps|linear)\(.*\))$/;
+const BEHAVIOR = /^(normal|allow-discrete)$/;
+
+// happy-dom exposes a camelCase string accessor on CSSStyleDeclaration for
+// each property it knows (`all` included), so a name with one counts as a
+// property; `length`, `item()` and the like are not strings. Properties
+// happy-dom does not know (`translate`, `scale`, prefixed names) fail the
+// check rather than pass it.
+const knownProperties = document.createElement('div').style as unknown as Record<string, unknown>;
+function isProperty(token: string): boolean {
+  if (token === 'none' || token.startsWith('--')) return true;
+  const camel = token.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  return typeof knownProperties[camel] === 'string';
+}
 
 // The transition-property and transition-duration lists a `transition`
 // shorthand sets. happy-dom keeps the shorthand as written without expanding
-// it, so expand by hand: per item the property is its one token that is not a
-// time, timing function or behavior (default `all`) and the duration is its
-// first time (default 0s). A CSS-wide keyword (`inherit` and the like) or a
-// function other than a timing function (`var()`, `calc()`) could be anything,
-// so it returns null and counts as keeping motion.
+// it, so expand by hand: per item each token is a time, a timing function, a
+// behavior or a property (`all`, `none`, a custom property or a known property
+// name); the property defaults to `all` and the duration is the first time
+// (default 0s). Any other token (a CSS-wide keyword such as `inherit`, a
+// function such as `var()` or `calc()`, a keyword this list does not know, a
+// second property) could mean anything, so it returns null and counts as
+// keeping motion.
 function shorthandLonghands(shorthand: string): Record<string, string> | null {
-  if (/^(inherit|initial|unset|revert|revert-layer)$/.test(shorthand.trim())) return null;
   const items = splitOutsideParens(shorthand, /,/).map((item) => splitOutsideParens(item, /\s/));
-  const opaque = (t: string) => t.includes('(') && !/^(cubic-bezier|steps|linear)\(/.test(t);
-  if (items.flat().some(opaque)) return null;
-  const expanded = items.map((tokens) => ({
-    property:
-      tokens.find((t) => !TIME.test(t) && !t.includes('(') && !NOT_PROPERTY.has(t)) ?? 'all',
-    duration: tokens.find((t) => TIME.test(t)) ?? '0s',
-  }));
+  const expanded = [];
+  for (const tokens of items) {
+    const properties = tokens.filter((t) => !TIME.test(t) && !EASING.test(t) && !BEHAVIOR.test(t));
+    if (properties.length > 1 || !properties.every(isProperty)) return null;
+    expanded.push({
+      property: properties[0] ?? 'all',
+      duration: tokens.find((t) => TIME.test(t)) ?? '0s',
+    });
+  }
   return {
     'transition-property': expanded.map((i) => i.property).join(', '),
     'transition-duration': expanded.map((i) => i.duration).join(', '),
@@ -314,6 +320,9 @@ describe('reduced-motion order check', () => {
       'a zero-duration shorthand list',
       'transition: color 0s cubic-bezier(0, 0, 1, 1), opacity 0ms steps(4, end)',
     ],
+    ['a zero-duration shorthand with a hyphenated property', 'transition: background-color 0s ease-in-out'],
+    ['a zero-duration shorthand with a custom property', 'transition: --tint 0s'],
+    ['a zero-duration shorthand with a behavior', 'transition: color 0s allow-discrete'],
   ])('recognises an override written as %s', (_, declaration) => {
     const disabled = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     const base = '.x { transition: color 1s; }';
@@ -346,6 +355,10 @@ describe('reduced-motion order check', () => {
     ['a custom-property shorthand', 'transition: var(--motion)'],
     ['a custom-property duration', 'transition: color var(--duration)'],
     ['a calc() duration', 'transition: color calc(0s + 1s)'],
+    ['a zero-duration shorthand with an unknown keyword', 'transition: 0s future-keyword'],
+    ['a zero-duration shorthand with two properties', 'transition: color 0s opacity'],
+    ['a zero-duration shorthand naming an unknown property', 'transition: fooprop 0s'],
+    ['a zero-duration shorthand naming a style member', 'transition: length 0s'],
   ])('ignores an override that keeps motion with %s', (_, declaration) => {
     const kept = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     expect(overrideIndexes(parseRules(`.x { transition: color 1s; } ${kept}`), '.x')).toEqual([]);
