@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.1](https://github.com/Caputchin/games/compare/dino-runner-v0.5.0...dino-runner-v0.5.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **dino-runner:** back the HUD with the skin color so sky sprites never cover the score ([13d7975](https://github.com/Caputchin/games/commit/13d79750f5180120788a436fba315d417a98763f))
+* **dino-runner:** back the sound toggle with the skin color so sky sprites never cover it ([d23bf65](https://github.com/Caputchin/games/commit/d23bf65fe60484ab9fa7a9a2edacf6190bcc5363))
+* **dino-runner:** fade the button and sound toggle hover tints over 150ms ease-out ([a9d1f87](https://github.com/Caputchin/games/commit/a9d1f87670f22a069cd3e6080ba31605002e9fc2))
+* **dino-runner:** fade the button and sound toggle hover tints over 150ms ease-out ([b72ca36](https://github.com/Caputchin/games/commit/b72ca365012c55cfb06e650f97c55d10376dc65b))
+* **dino-runner:** fit the start and game-over overlay in a 90px-tall frame ([edea360](https://github.com/Caputchin/games/commit/edea360b357a2732668bf95e6b929b00868948b3))
+* **dino-runner:** fit the start and game-over overlay in a 90px-tall frame ([0be9f58](https://github.com/Caputchin/games/commit/0be9f58cd3950a07497978105a3ded671de0ba6d))
+* **dino-runner:** keep the controls hint visible beside Start in the xs start screen ([a36a1ba](https://github.com/Caputchin/games/commit/a36a1ba0d0182df0f319f881acbc70eb8ef2dc9d))
+* **dino-runner:** keep the HUD and sound toggle clear of sky sprites and add a sound toggle hover ([6a44c53](https://github.com/Caputchin/games/commit/6a44c53d20eb48320c9c1feb476fe026d818797b))
+* **dino-runner:** tint the sound toggle backing on hover in both skins ([a9574c7](https://github.com/Caputchin/games/commit/a9574c7eed9abc009bd3fc3ad10306bcae252682))
+
 ## [0.5.0](https://github.com/Caputchin/games/compare/dino-runner-v0.4.2...dino-runner-v0.5.0) (2026-06-07)
 
 
