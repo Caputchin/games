@@ -24,8 +24,9 @@ function styleRulesFor(rules: CSSRule[], selector: string): CSSStyleRule[] {
   );
 }
 
+// Media features are case-insensitive and happy-dom keeps the author's case.
 function isReducedMotion(rule: CSSMediaRule): boolean {
-  return /prefers-reduced-motion:\s*reduce/.test(rule.conditionText);
+  return /prefers-reduced-motion:\s*reduce/i.test(rule.conditionText);
 }
 
 function reducedMotionRules(rules: CSSRule[]): CSSStyleRule[] {
@@ -169,9 +170,12 @@ function shorthandLonghands(shorthand: string): Record<string, string> | null {
 // at its first position, so a rule that declares the same transition property
 // twice is out of scope. Returns null when motion stays on, else whether a
 // declaration that turns it off is !important: when both the property and the
-// duration turn it off, the stronger one decides.
+// duration turn it off, the stronger one decides. Keywords and units are
+// case-insensitive and happy-dom keeps the author's case, so values are
+// lowercased first.
 function disabling(rule: CSSStyleRule): { important: boolean } | null {
   const style = rule.style;
+  const value = (name: string) => style.getPropertyValue(name).toLowerCase();
   const names = Array.from({ length: style.length }, (_, i) => style.item(i));
   const rank = (name: string): number => {
     const index = names.lastIndexOf(name);
@@ -180,9 +184,9 @@ function disabling(rule: CSSStyleRule): { important: boolean } | null {
       : index;
   };
   const shorthand = rank('transition');
-  const expanded = shorthandLonghands(style.getPropertyValue('transition'));
-  const declared = (name: string, value = style.getPropertyValue(name)) => ({
-    value,
+  const expanded = shorthandLonghands(value('transition'));
+  const declared = (name: string, declaredValue = value(name)) => ({
+    value: declaredValue,
     important: style.getPropertyPriority(name) === 'important',
   });
   const cascaded = (longhand: string) => {
@@ -282,11 +286,21 @@ describe('reduced-motion order check', () => {
     expect(overrideComesLast(parseRules(`${override} ${base}`), '.x')).toBe(false);
   });
 
+  it('recognises an override under an uppercase media condition', () => {
+    const upper = '@media (PREFERS-REDUCED-MOTION: REDUCE) { .x { transition: none; } }';
+    const base = '.x { transition: color 1s; }';
+    expect(overrideComesLast(parseRules(`${base} ${upper}`), '.x')).toBe(true);
+    expect(overrideComesLast(parseRules(`${upper} ${base}`), '.x')).toBe(false);
+  });
+
   it.each([
     ['transition: none', 'transition: none'],
     ['transition-property: none', 'transition-property: none'],
     ['transition-duration: 0s', 'transition-duration: 0s'],
     ['a zero transition-duration list', 'transition-duration: 0ms, 0s'],
+    ['uppercase transition: NONE', 'transition: NONE'],
+    ['uppercase transition-property: NONE', 'transition-property: NONE'],
+    ['uppercase transition-duration units', 'transition-duration: 0S, 0MS'],
     ['a zero transition-duration after the shorthand', 'transition: color 1s; transition-duration: 0s'],
     ['transition-property: none after the shorthand', 'transition: color 1s; transition-property: none'],
     ['transition: none then a transition-property', 'transition: none; transition-property: color'],
@@ -311,6 +325,7 @@ describe('reduced-motion order check', () => {
     ['a non-zero transition-duration', 'transition-duration: 1s'],
     ['a partly zero transition-duration list', 'transition-duration: 0s, 1s'],
     ['a transition-property other than none', 'transition-property: color'],
+    ['an uppercase non-zero transition-duration', 'transition-duration: 1S'],
     ['only a transition-delay', 'transition-delay: 0s'],
     ['a zero transition-duration before the shorthand', 'transition-duration: 0s; transition: color 1s'],
     ['transition-property: none before the shorthand', 'transition-property: none; transition: color 1s'],
@@ -326,6 +341,8 @@ describe('reduced-motion order check', () => {
       'transition: all 0s; transition-duration: 1s',
     ],
     ['a CSS-wide keyword shorthand', 'transition: inherit'],
+    ['an uppercase non-zero shorthand', 'transition: COLOR 1S'],
+    ['an uppercase shorthand whose zero time is the delay', 'transition: 1S 0S'],
     ['a custom-property shorthand', 'transition: var(--motion)'],
     ['a custom-property duration', 'transition: color var(--duration)'],
     ['a calc() duration', 'transition: color calc(0s + 1s)'],
