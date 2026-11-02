@@ -105,16 +105,71 @@ function baseTransitionIndexes(rules: CSSRule[], selector: string): number[] {
   return baseTransitions(rules, selector).map((m) => m.index);
 }
 
-// A rule turns motion off with `transition: none`, `transition-property: none`
-// or a zero `transition-duration` for every listed transition. happy-dom keeps
+// Split on whitespace or commas outside parentheses, so `cubic-bezier(0, 0, 1, 1)`
+// and `steps(4, end)` stay one token.
+function splitOutsideParens(value: string, separator: RegExp): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const char of value) {
+    if (char === '(') depth++;
+    if (char === ')') depth--;
+    if (depth === 0 && separator.test(char)) {
+      parts.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  return [...parts, current].map((p) => p.trim()).filter((p) => p !== '');
+}
+
+const TIME = /^[+-]?(\d+\.?\d*|\.\d+)m?s$/;
+const NOT_PROPERTY = new Set([
+  'ease',
+  'ease-in',
+  'ease-out',
+  'ease-in-out',
+  'linear',
+  'step-start',
+  'step-end',
+  'normal',
+  'allow-discrete',
+]);
+
+// The transition-property and transition-duration lists a `transition`
+// shorthand sets. happy-dom keeps the shorthand as written without expanding
+// it, so expand by hand: per item the property is its one token that is not a
+// time, timing function or behavior (default `all`) and the duration is its
+// first time (default 0s). A CSS-wide keyword (`inherit` and the like) or a
+// function other than a timing function (`var()`, `calc()`) could be anything,
+// so it returns null and counts as keeping motion.
+function shorthandLonghands(shorthand: string): Record<string, string> | null {
+  if (/^(inherit|initial|unset|revert|revert-layer)$/.test(shorthand.trim())) return null;
+  const items = splitOutsideParens(shorthand, /,/).map((item) => splitOutsideParens(item, /\s/));
+  const opaque = (t: string) => t.includes('(') && !/^(cubic-bezier|steps|linear)\(/.test(t);
+  if (items.flat().some(opaque)) return null;
+  const expanded = items.map((tokens) => ({
+    property:
+      tokens.find((t) => !TIME.test(t) && !t.includes('(') && !NOT_PROPERTY.has(t)) ?? 'all',
+    duration: tokens.find((t) => TIME.test(t)) ?? '0s',
+  }));
+  return {
+    'transition-property': expanded.map((i) => i.property).join(', '),
+    'transition-duration': expanded.map((i) => i.duration).join(', '),
+  };
+}
+
+// A rule turns motion off with `transition-property: none` or a zero
+// `transition-duration` for every listed transition, set directly or through
+// the shorthand (`transition: none`, `transition: all 0s`). happy-dom keeps
 // the shorthand and each longhand as written instead of cascading them, so
 // cascade by hand: a longhand counts only when it beats the shorthand (it is
 // !important and the shorthand is not, or both match and it comes later),
-// `transition: none` resets the property to none and the duration to 0s, and
-// any other shorthand is taken to keep motion. happy-dom keeps a repeated
-// property at its first position, so a rule that declares the same transition
-// property twice is out of scope. Returns null when motion stays on, else
-// whether the declaration that turns it off is !important.
+// else the shorthand's expansion counts. happy-dom keeps a repeated property
+// at its first position, so a rule that declares the same transition property
+// twice is out of scope. Returns null when motion stays on, else whether the
+// declaration that turns it off is !important.
 function disabling(rule: CSSStyleRule): { important: boolean } | null {
   const style = rule.style;
   const names = Array.from({ length: style.length }, (_, i) => style.item(i));
@@ -125,19 +180,19 @@ function disabling(rule: CSSStyleRule): { important: boolean } | null {
       : index;
   };
   const shorthand = rank('transition');
-  const none = style.getPropertyValue('transition') === 'none';
+  const expanded = shorthandLonghands(style.getPropertyValue('transition'));
   const declared = (name: string, value = style.getPropertyValue(name)) => ({
     value,
     important: style.getPropertyPriority(name) === 'important',
   });
-  const cascaded = (longhand: string, reset: string) => {
+  const cascaded = (longhand: string) => {
     if (rank(longhand) > shorthand) return declared(longhand);
     if (shorthand === -1) return { value: '', important: false };
-    return none ? declared('transition', reset) : null;
+    return expanded ? declared('transition', expanded[longhand]) : null;
   };
-  const property = cascaded('transition-property', 'none');
+  const property = cascaded('transition-property');
   if (property?.value === 'none') return { important: property.important };
-  const durations = cascaded('transition-duration', '0s');
+  const durations = cascaded('transition-duration');
   const zero = /^[+-]?(0+\.?0*|\.0+)m?s$/;
   return durations?.value && durations.value.split(',').every((d) => zero.test(d.trim()))
     ? { important: durations.important }
@@ -234,6 +289,15 @@ describe('reduced-motion order check', () => {
     ['transition-property: none after the shorthand', 'transition: color 1s; transition-property: none'],
     ['transition: none then a transition-property', 'transition: none; transition-property: color'],
     ['transition: none then a transition-duration', 'transition: none; transition-duration: 1s'],
+    ['a zero-duration shorthand', 'transition: 0s'],
+    ['transition: all 0s', 'transition: all 0s'],
+    ['transition: none 0s', 'transition: none 0s'],
+    ['a shorthand with no duration', 'transition: color'],
+    ['a zero-duration shorthand with a delay', 'transition: color 0s ease-out 1s'],
+    [
+      'a zero-duration shorthand list',
+      'transition: color 0s cubic-bezier(0, 0, 1, 1), opacity 0ms steps(4, end)',
+    ],
   ])('recognises an override written as %s', (_, declaration) => {
     const disabled = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     const base = '.x { transition: color 1s; }';
@@ -253,6 +317,16 @@ describe('reduced-motion order check', () => {
       'a zero transition-duration after an important shorthand',
       'transition: color 1s !important; transition-duration: 0s',
     ],
+    ['a partly zero shorthand list', 'transition: color 1s, opacity 0s'],
+    ['a shorthand whose zero time is the delay', 'transition: 1s 0s'],
+    [
+      'a non-zero transition-duration after a zero shorthand',
+      'transition: all 0s; transition-duration: 1s',
+    ],
+    ['a CSS-wide keyword shorthand', 'transition: inherit'],
+    ['a custom-property shorthand', 'transition: var(--motion)'],
+    ['a custom-property duration', 'transition: color var(--duration)'],
+    ['a calc() duration', 'transition: color calc(0s + 1s)'],
   ])('ignores an override that keeps motion with %s', (_, declaration) => {
     const kept = `@media (prefers-reduced-motion: reduce) { .x { ${declaration}; } }`;
     expect(overrideIndexes(parseRules(`.x { transition: color 1s; } ${kept}`), '.x')).toEqual([]);
